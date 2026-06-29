@@ -29,7 +29,7 @@ export default function HomeScreen() {
   const colors = useColors();
   const insets = useSafeAreaInsets();
   const { user, getUserById } = useAuth();
-  const { chats, groups, channels, getMyBids, getBidsForSeller, getMyOrders } = useData();
+  const { chats, groups, channels } = useData();
 
   if (!user) return null;
 
@@ -46,12 +46,6 @@ export default function HomeScreen() {
   const myChannels = channels
     .filter((c) => c.followers.includes(user.id) || c.ownerId === user.id)
     .slice(0, 3);
-
-  const myBids = user.role === "buyer" ? getMyBids(user.id) : [];
-  const sellerBids = user.role === "seller"
-    ? channels.filter((c) => c.ownerId === user.id).flatMap((c) => getBidsForSeller(c.id))
-    : [];
-  const myOrders = getMyOrders(user.id, user.role);
 
   const paddingBottom = Platform.OS === "ios" ? 90 : Platform.OS === "web" ? 100 : 90;
 
@@ -102,46 +96,6 @@ export default function HomeScreen() {
             </Text>
           </View>
         </View>
-
-        {/* Stats Row */}
-        <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.statsScroll} contentContainerStyle={styles.statsContent}>
-          {user.role === "buyer" && (
-            <>
-              <StatCard label="Active Bids" value={myBids.filter(b => b.status === "active").length} icon="trending-up" colors={colors} />
-              <StatCard label="My Orders" value={myOrders.length} icon="package" colors={colors} />
-            </>
-          )}
-          {user.role === "seller" && (
-            <>
-              <StatCard label="Bid Requests" value={sellerBids.length} icon="trending-up" colors={colors} />
-              <StatCard label="My Orders" value={myOrders.length} icon="package" colors={colors} />
-              <StatCard label="My Channels" value={channels.filter(c => c.ownerId === user.id).length} icon="radio" colors={colors} />
-            </>
-          )}
-          <StatCard label="Groups" value={groups.filter(g => g.members.includes(user.id)).length} icon="users" colors={colors} />
-        </ScrollView>
-
-        {/* Quick actions */}
-        {user.role === "buyer" && (
-          <QuickActions
-            colors={colors}
-            items={[
-              { label: "Wishlist", icon: "heart", onPress: () => router.push("/wishlist") },
-              { label: "My Bids", icon: "trending-up", onPress: () => router.push("/my-bids") },
-              { label: "Orders", icon: "package", onPress: () => router.push("/my-orders") },
-            ]}
-          />
-        )}
-        {user.role === "seller" && (
-          <QuickActions
-            colors={colors}
-            items={[
-              { label: "Analytics", icon: "bar-chart-2", onPress: () => router.push("/analytics") },
-              { label: "Bid Requests", icon: "trending-up", onPress: () => router.push("/seller-bids") },
-              { label: "Orders", icon: "package", onPress: () => router.push("/my-orders") },
-            ]}
-          />
-        )}
 
         {/* Recent Chats */}
         <SectionHeader title="Recent Chats" onView={() => router.push("/(tabs)/chat")} colors={colors} />
@@ -238,33 +192,6 @@ export default function HomeScreen() {
   );
 }
 
-function StatCard({ label, value, icon, colors }: { label: string; value: number; icon: string; colors: any }) {
-  return (
-    <View style={[statStyles.card, { backgroundColor: colors.card, borderColor: colors.border }]}>
-      <Feather name={icon as any} size={20} color={colors.primary} />
-      <Text style={[statStyles.value, { color: colors.foreground }]}>{value}</Text>
-      <Text style={[statStyles.label, { color: colors.mutedForeground }]}>{label}</Text>
-    </View>
-  );
-}
-
-function QuickActions({ items, colors }: { items: { label: string; icon: string; onPress: () => void }[]; colors: any }) {
-  return (
-    <View style={qaStyles.row}>
-      {items.map((item) => (
-        <TouchableOpacity
-          key={item.label}
-          style={[qaStyles.btn, { backgroundColor: colors.secondary, borderColor: colors.border }]}
-          onPress={item.onPress}
-        >
-          <Feather name={item.icon as any} size={20} color={colors.primary} />
-          <Text style={[qaStyles.label, { color: colors.foreground }]}>{item.label}</Text>
-        </TouchableOpacity>
-      ))}
-    </View>
-  );
-}
-
 function SectionHeader({ title, onView, colors }: { title: string; onView: () => void; colors: any }) {
   return (
     <View style={shStyles.row}>
@@ -311,8 +238,6 @@ const styles = StyleSheet.create({
   greeting: { fontSize: 20, fontWeight: "700" },
   roleBadge: { paddingHorizontal: 10, paddingVertical: 4, borderRadius: 20 },
   roleText: { fontSize: 11, fontWeight: "700" },
-  statsScroll: { marginBottom: 4 },
-  statsContent: { paddingHorizontal: 16, gap: 10, paddingBottom: 4 },
   card: {
     flexDirection: "row",
     alignItems: "center",
@@ -336,32 +261,6 @@ const styles = StyleSheet.create({
   },
   ownerBadge: { paddingHorizontal: 8, paddingVertical: 3, borderRadius: 6 },
   ownerText: { fontSize: 10, fontWeight: "700", color: "#fff" },
-});
-
-const statStyles = StyleSheet.create({
-  card: {
-    width: 100,
-    padding: 14,
-    borderRadius: 14,
-    borderWidth: 1,
-    alignItems: "center",
-    gap: 4,
-  },
-  value: { fontSize: 22, fontWeight: "800" },
-  label: { fontSize: 11, textAlign: "center" },
-});
-
-const qaStyles = StyleSheet.create({
-  row: { flexDirection: "row", gap: 10, paddingHorizontal: 16, marginBottom: 8 },
-  btn: {
-    flex: 1,
-    alignItems: "center",
-    padding: 12,
-    borderRadius: 12,
-    borderWidth: 1,
-    gap: 6,
-  },
-  label: { fontSize: 11, fontWeight: "600" },
 });
 
 const shStyles = StyleSheet.create({
