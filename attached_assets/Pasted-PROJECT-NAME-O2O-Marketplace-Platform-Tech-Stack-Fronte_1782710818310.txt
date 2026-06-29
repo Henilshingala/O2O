@@ -1,0 +1,919 @@
+PROJECT NAME:
+O2O Marketplace Platform
+
+Tech Stack
+
+Frontend:
+React Native + Expo
+
+Backend:
+Node.js
+Express.js
+
+Database:
+PostgreSQL
+
+ORM:
+Prisma ORM
+
+Realtime:
+Socket.IO
+
+Authentication:
+JWT
+
+Storage:
+Supabase Storage or AWS S3
+
+Push Notifications:
+Firebase Cloud Messaging
+
+Email:
+Nodemailer
+
+OTP:
+Email OTP verification
+
+---
+
+CURRENT STATUS
+
+The application already exists.
+
+Many screens are implemented.
+
+PostgreSQL tables were created successfully.
+
+Data is inserted.
+
+But signup and login are failing.
+
+I need a complete refactor and stabilization.
+
+Do not redesign UI.
+
+Keep existing design.
+
+Improve backend architecture.
+
+Fix authentication.
+
+Fix database integration.
+
+Make it production ready.
+
+---
+
+AUTHENTICATION
+
+Fix Signup
+
+Requirements:
+
+username unique
+
+email unique
+
+mobile unique
+
+role required
+
+buyer or seller
+
+password hashing with bcrypt
+
+JWT token generation
+
+store user inside PostgreSQL
+
+return proper errors
+
+duplicate username
+
+duplicate email
+
+duplicate mobile
+
+Fix Login
+
+Allow login using:
+
+username
+
+password
+
+Verify bcrypt password
+
+Return JWT
+
+Save refresh token
+
+Session support
+
+Fix current signup/login errors.
+
+---
+
+FORGOT PASSWORD
+
+Step 1
+
+Enter email
+
+Generate OTP
+
+Save OTP
+
+Expiration 5 minutes
+
+Send email
+
+Step 2
+
+Verify OTP
+
+Validate expiration
+
+Step 3
+
+Reset Password
+
+Enter password
+
+Confirm password
+
+Hash password
+
+Update database
+
+Invalidate old password
+
+Login should work only with new password
+
+---
+
+HOME PAGE
+
+Remove Dashboard
+
+Replace dashboard with Chat Home.
+
+Chat Home should show:
+
+Recent Chats
+
+Recent Groups
+
+Recent Channels
+
+Unread count
+
+Search users
+
+Search friends
+
+Search groups
+
+Search channels
+
+Notifications
+
+Friend requests
+
+---
+
+FRIEND SYSTEM
+
+Search user by username.
+
+Send friend request.
+
+Notification created.
+
+Receiver sees notification.
+
+Accept request.
+
+Reject request.
+
+If accepted
+
+status = friends
+
+If rejected
+
+sender receives:
+
+Request rejected
+
+If accepted
+
+sender receives:
+
+You are now friends
+
+Only accepted friends can chat.
+
+---
+
+NOTIFICATION SYSTEM
+
+friend request
+
+friend accepted
+
+friend rejected
+
+bid selected
+
+bid rejected
+
+offer accepted
+
+offer rejected
+
+order confirmed
+
+group invitation
+
+new message
+
+channel updates
+
+Use realtime sockets.
+
+---
+
+PRIVATE CHAT
+
+Telegram-like experience.
+
+Features:
+
+text
+
+emoji
+
+image
+
+video
+
+file
+
+audio
+
+poll
+
+location
+
+reply
+
+delete message
+
+edit message
+
+typing indicator
+
+online status
+
+seen status
+
+delivered status
+
+message reactions
+
+pagination
+
+media gallery
+
+Only friends can message.
+
+---
+
+GROUPS
+
+Create Group page.
+
+Show only accepted friends.
+
+Search friends.
+
+Multiple selection.
+
+Group image upload.
+
+Fix current issue:
+
+group image not uploading.
+
+Allow:
+
+change image
+
+remove image
+
+rename group
+
+description edit
+
+add members
+
+remove members
+
+leave group
+
+delete group
+
+Admin permissions.
+
+Group chat supports:
+
+text
+
+video
+
+image
+
+file
+
+audio
+
+poll
+
+location
+
+reactions
+
+replies
+
+---
+
+CHANNELS
+
+BUYER VIEW
+
+Only read.
+
+Cannot post.
+
+Can wishlist products.
+
+Can follow channel.
+
+Can view products.
+
+Can create bid from product.
+
+SELLER VIEW
+
+See own channels.
+
+Create channel.
+
+Edit channel.
+
+Delete channel.
+
+Create posts.
+
+Text post
+
+Product post
+
+Only seller can post.
+
+Followers cannot post.
+
+---
+
+PRODUCT POSTS
+
+Product supports:
+
+max 5 images
+
+max 5 videos
+
+images optional
+
+videos optional
+
+both allowed simultaneously
+
+name
+
+description
+
+price
+
+quantity
+
+category
+
+details
+
+specifications
+
+tags
+
+seller info
+
+views
+
+likes
+
+wishlist count
+
+---
+
+REPOST
+
+Seller page should show:
+
+Repost
+
+Clicking repost:
+
+Auto-fill product.
+
+Seller can edit:
+
+images
+
+videos
+
+name
+
+price
+
+description
+
+details
+
+Delete media.
+
+Add media.
+
+Create NEW product.
+
+Do not modify old post.
+
+Old post remains unchanged.
+
+New row inserted.
+
+---
+
+WISHLIST
+
+Buyer can save products.
+
+Buyer wishlist page shows:
+
+channel
+
+product
+
+price
+
+comparison
+
+Create Bid button
+
+---
+
+BIDS
+
+BUYER
+
+Create Bid.
+
+Fields:
+
+image
+
+product name
+
+quantity
+
+budget per product
+
+description
+
+optional details
+
+Duration fixed:
+
+30 minutes
+
+Two modes:
+
+wishlist sellers
+
+all sellers
+
+If wishlist sellers selected
+
+Only wishlist channels receive bid invitation.
+
+If all sellers selected
+
+Bid becomes public.
+
+Visible only to sellers.
+
+---
+
+SELLER BID SYSTEM
+
+Seller receives notification.
+
+Join Bid
+
+Reject Bid
+
+Reject reason optional
+
+Seller submits:
+
+offer price
+
+delivery duration
+
+message
+
+Can update price during bidding.
+
+Realtime updates.
+
+---
+
+LIVE BIDDING
+
+Socket.IO required.
+
+Buyer sees:
+
+offers count
+
+highest
+
+lowest
+
+average
+
+remaining time
+
+seller names
+
+Seller sees:
+
+only prices
+
+seller identities hidden
+
+Seller cannot see competitors.
+
+Only buyer sees seller names.
+
+30 minute countdown.
+
+Auto close.
+
+Buyer selects winner.
+
+Winner receives:
+
+Order Request
+
+Others receive:
+
+Offer Rejected
+
+Buyer can reject everyone.
+
+---
+
+BID HISTORY
+
+Buyer
+
+Current bids
+
+Past bids
+
+Accepted
+
+Rejected
+
+Winner
+
+Offers history
+
+Seller
+
+Running bids
+
+Invited bids
+
+Joined bids
+
+Won bids
+
+Lost bids
+
+Rejected bids
+
+---
+
+ORDER FLOW
+
+Buyer selects seller.
+
+Seller gets request.
+
+Accept order.
+
+Order confirmed.
+
+Private order chat opens.
+
+Only buyer and seller can access.
+
+---
+
+PROFILE
+
+Editable:
+
+profile picture
+
+name
+
+bio
+
+city
+
+description
+
+Not editable:
+
+username
+
+email
+
+mobile
+
+---
+
+SETTINGS
+
+Dark mode
+
+language
+
+notifications
+
+privacy
+
+logout
+
+---
+
+POSTGRESQL
+
+Migrate existing database.
+
+Use Prisma.
+
+Create schema.
+
+Tables:
+
+users
+
+sessions
+
+otp
+
+friends
+
+friend_requests
+
+notifications
+
+conversations
+
+messages
+
+message_media
+
+polls
+
+poll_votes
+
+groups
+
+group_members
+
+channels
+
+followers
+
+products
+
+product_media
+
+wishlist
+
+bids
+
+bid_participants
+
+offers
+
+orders
+
+reviews
+
+analytics
+
+---
+
+DATABASE RULES
+
+Cascade delete.
+
+Indexes.
+
+Foreign keys.
+
+Unique constraints.
+
+created_at
+
+updated_at
+
+soft delete
+
+UUID ids
+
+---
+
+SOCKET EVENTS
+
+friend_request
+
+friend_accepted
+
+friend_rejected
+
+message
+
+group_message
+
+channel_post
+
+bid_created
+
+bid_offer
+
+bid_selected
+
+bid_rejected
+
+notification
+
+typing
+
+seen
+
+online
+
+---
+
+STORAGE
+
+Images
+
+Videos
+
+Documents
+
+Use Supabase Storage.
+
+Or AWS S3.
+
+---
+
+PERFORMANCE
+
+Pagination
+
+Infinite scrolling
+
+Lazy loading
+
+Optimistic updates
+
+Caching
+
+Query optimization
+
+Indexes
+
+---
+
+SECURITY
+
+JWT refresh tokens
+
+bcrypt
+
+rate limiting
+
+helmet
+
+cors
+
+validation
+
+sanitization
+
+SQL injection protection
+
+---
+
+FIX EXISTING BUGS
+
+Signup not working
+
+Login not working
+
+PostgreSQL integration issues
+
+Friend requests
+
+Notifications
+
+Group image upload
+
+Realtime updates
+
+Media uploads
+
+Bid updates
+
+Socket disconnections
+
+OTP verification
+
+Password reset
+
+Repost issues
+
+---
+
+DELIVERABLES
+
+Refactor current project.
+
+Do not rebuild from scratch.
+
+Preserve UI.
+
+Fix backend.
+
+Connect PostgreSQL properly.
+
+Generate Prisma schema.
+
+Generate migrations.
+
+Generate APIs.
+
+Generate socket handlers.
+
+Generate service layer.
+
+Generate repository layer.
+
+Generate controllers.
+
+Generate validation.
+
+Generate documentation.
+
+Application should be client ready.
+
+Production ready.
+
+Scalable.
+
+Clean architecture.
+
+No placeholder code.
+
+No mock data.
+
+Everything connected to PostgreSQL.
