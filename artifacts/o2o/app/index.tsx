@@ -10,13 +10,16 @@ import {
 } from "react-native";
 import { useAuth } from "@/context/AuthContext";
 
-const { width, height } = Dimensions.get("window");
+const { width } = Dimensions.get("window");
+const MIN_SPLASH_MS = 2000;
 
 export default function SplashScreen() {
   const { user, isLoading } = useAuth();
   const fadeAnim = useRef(new Animated.Value(0)).current;
   const scaleAnim = useRef(new Animated.Value(0.8)).current;
   const progressAnim = useRef(new Animated.Value(0)).current;
+  const mountedAt = useRef(Date.now());
+  const navigated = useRef(false);
 
   useEffect(() => {
     Animated.parallel([
@@ -29,16 +32,24 @@ export default function SplashScreen() {
       duration: 2200,
       useNativeDriver: false,
     }).start();
+  }, []);
+
+  useEffect(() => {
+    if (isLoading) return;
+    if (navigated.current) return;
+
+    const elapsed = Date.now() - mountedAt.current;
+    const delay = Math.max(0, MIN_SPLASH_MS - elapsed);
 
     const timer = setTimeout(() => {
-      if (!isLoading) {
-        if (user) {
-          router.replace("/(tabs)");
-        } else {
-          router.replace("/welcome");
-        }
+      if (navigated.current) return;
+      navigated.current = true;
+      if (user) {
+        router.replace("/(tabs)");
+      } else {
+        router.replace("/welcome");
       }
-    }, 2500);
+    }, delay);
 
     return () => clearTimeout(timer);
   }, [isLoading, user]);

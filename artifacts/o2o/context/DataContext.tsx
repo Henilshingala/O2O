@@ -1,6 +1,7 @@
-import React, { createContext, useCallback, useContext, useMemo } from "react";
+import React, { createContext, useCallback, useContext } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { customFetch } from "@workspace/api-client-react";
+import { useAuth } from "@/context/AuthContext";
 import type {
   Bid, BidOffer, Channel, Chat, Group, Message, Order, Product, Review, WishlistItem
 } from "@/types";
@@ -64,16 +65,18 @@ const fetcher = (url: string) => customFetch<any>(url);
 
 export function DataProvider({ children }: { children: React.ReactNode }) {
   const queryClient = useQueryClient();
+  const { user } = useAuth();
+  const enabled = !!user;
 
-  const { data: channels = [], isLoading: loadingChannels } = useQuery<Channel[]>({ queryKey: ["channels"], queryFn: () => fetcher("/api/data/channels") });
-  const { data: chats = [], isLoading: loadingChats } = useQuery<Chat[]>({ queryKey: ["chats"], queryFn: () => fetcher("/api/data/chats") });
-  const { data: groups = [], isLoading: loadingGroups } = useQuery<Group[]>({ queryKey: ["groups"], queryFn: () => fetcher("/api/data/groups") });
-  const { data: bids = [], isLoading: loadingBids } = useQuery<Bid[]>({ queryKey: ["bids"], queryFn: () => fetcher("/api/data/bids") });
-  const { data: orders = [], isLoading: loadingOrders } = useQuery<Order[]>({ queryKey: ["orders"], queryFn: () => fetcher("/api/data/orders") });
-  const { data: reviews = [], isLoading: loadingReviews } = useQuery<Review[]>({ queryKey: ["reviews"], queryFn: () => fetcher("/api/data/reviews") });
-  const { data: wishlist = [], isLoading: loadingWishlist } = useQuery<WishlistItem[]>({ queryKey: ["wishlist"], queryFn: () => fetcher("/api/data/wishlist") });
+  const { data: channels = [], isLoading: loadingChannels } = useQuery<Channel[]>({ queryKey: ["channels"], queryFn: () => fetcher("/api/data/channels"), enabled });
+  const { data: chats = [], isLoading: loadingChats } = useQuery<Chat[]>({ queryKey: ["chats"], queryFn: () => fetcher("/api/data/chats"), enabled });
+  const { data: groups = [], isLoading: loadingGroups } = useQuery<Group[]>({ queryKey: ["groups"], queryFn: () => fetcher("/api/data/groups"), enabled });
+  const { data: bids = [], isLoading: loadingBids } = useQuery<Bid[]>({ queryKey: ["bids"], queryFn: () => fetcher("/api/data/bids"), enabled });
+  const { data: orders = [], isLoading: loadingOrders } = useQuery<Order[]>({ queryKey: ["orders"], queryFn: () => fetcher("/api/data/orders"), enabled });
+  const { data: reviews = [], isLoading: loadingReviews } = useQuery<Review[]>({ queryKey: ["reviews"], queryFn: () => fetcher("/api/data/reviews"), enabled });
+  const { data: wishlist = [], isLoading: loadingWishlist } = useQuery<WishlistItem[]>({ queryKey: ["wishlist"], queryFn: () => fetcher("/api/data/wishlist"), enabled });
 
-  const isLoading = loadingChannels || loadingChats || loadingGroups || loadingBids || loadingOrders || loadingReviews || loadingWishlist;
+  const isLoading = enabled && (loadingChannels || loadingChats || loadingGroups || loadingBids || loadingOrders || loadingReviews || loadingWishlist);
 
   const mutator = (url: string, method: string = "POST") => {
     return async (data: any) => {
@@ -104,7 +107,6 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
   const toggleWishlistMut = useMutation({ mutationFn: mutator("/api/data/wishlist"), onSuccess: () => queryClient.invalidateQueries({ queryKey: ["wishlist"] }) });
   const createReviewMut = useMutation({ mutationFn: mutator("/api/data/reviews"), onSuccess: () => queryClient.invalidateQueries({ queryKey: ["reviews"] }) });
 
-  // Getters
   const getChat = useCallback((id: string) => chats.find((c) => c.id === id), [chats]);
   const getChatWithUser = useCallback((myId: string, otherId: string) => chats.find((c) => c.participants.includes(myId) && c.participants.includes(otherId)), [chats]);
   const getGroup = useCallback((id: string) => groups.find((g) => g.id === id), [groups]);
@@ -127,7 +129,6 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
     return !reviews.some(r => r.orderId === orderId);
   }, [orders, reviews]);
 
-  // Actions
   const createChat = useCallback((myId: string, otherId: string) => { createChatMut.mutate({ myId, otherId }); return undefined; }, [createChatMut]);
   const sendChatMessage = useCallback((chatId: string, msg: Omit<Message, "id">) => { sendChatMsgMut.mutate({ id: chatId, data: msg }); }, [sendChatMsgMut]);
   
@@ -137,20 +138,20 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
   const createChannel = useCallback((c: Omit<Channel, "id" | "createdAt" | "messages" | "followers" | "products">) => { createChannelMut.mutate(c); return undefined; }, [createChannelMut]);
   const followChannel = useCallback((channelId: string, userId: string) => { followChannelMut.mutate(channelId); }, [followChannelMut]);
   const createProduct = useCallback((channelId: string, p: Omit<Product, "id" | "channelId" | "views" | "wishlisted" | "createdAt">) => { createProductMut.mutate({ id: channelId, data: p }); return undefined; }, [createProductMut]);
-  const repostProduct = useCallback((channelId: string, productId: string, updates: Partial<Product>) => { /* Not implemented on backend yet */ }, []);
-  const sendChannelMessage = useCallback((channelId: string, msg: Omit<Message, "id">) => { /* Not implemented yet */ }, []);
+  const repostProduct = useCallback((channelId: string, productId: string, updates: Partial<Product>) => { }, []);
+  const sendChannelMessage = useCallback((channelId: string, msg: Omit<Message, "id">) => { }, []);
 
   const toggleWishlist = useCallback((userId: string, product: Product, channel: Channel) => { toggleWishlistMut.mutate({ productId: product.id }); }, [toggleWishlistMut]);
 
   const createBid = useCallback((b: Omit<Bid, "id" | "offers" | "rejections" | "createdAt">) => { createBidMut.mutate(b); return undefined; }, [createBidMut]);
   const submitOffer = useCallback((bidId: string, offer: Omit<BidOffer, "id" | "timestamp">) => { submitOfferMut.mutate({ id: bidId, data: offer }); }, [submitOfferMut]);
-  const rejectBid = useCallback((bidId: string, rejection: { sellerId: string; channelId: string; reason: string }) => { /* Implement on backend */ }, []);
+  const rejectBid = useCallback((bidId: string, rejection: { sellerId: string; channelId: string; reason: string }) => { }, []);
   const selectWinner = useCallback((bidId: string, winnerId: string, winnerChannelId: string) => { selectWinnerMut.mutate({ id: bidId, data: { winnerId, winnerChannelId } }); }, [selectWinnerMut]);
-  const endBid = useCallback((bidId: string) => { /* Not implemented on backend yet */ }, []);
+  const endBid = useCallback((bidId: string) => { }, []);
 
   const createOrder = useCallback((o: Omit<Order, "id" | "messages" | "createdAt">) => { createOrderMut.mutate(o); return undefined; }, [createOrderMut]);
   const sendOrderMessage = useCallback((orderId: string, msg: Omit<Message, "id">) => { sendOrderMsgMut.mutate({ id: orderId, data: msg }); }, [sendOrderMsgMut]);
-  const updateOrderStatus = useCallback((orderId: string, status: Order["status"]) => { /* Implement on backend */ }, []);
+  const updateOrderStatus = useCallback((orderId: string, status: Order["status"]) => { }, []);
 
   const submitReview = useCallback((r: Omit<Review, "id" | "createdAt">) => { createReviewMut.mutate(r); }, [createReviewMut]);
 

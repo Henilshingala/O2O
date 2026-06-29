@@ -10,6 +10,7 @@ channel = "stable-25_05"
 
 [userenv.shared]
 API_PORT = "8000"
+JWT_SECRET = "o2o_jwt_secret_2026_secure_key_for_dev"
 
 [userenv.development]
 PORT = "8000"
