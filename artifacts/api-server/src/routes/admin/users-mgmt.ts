@@ -1,17 +1,12 @@
 import { Router } from "express";
 import { db, users, loginHistory, userActivityLogs, sellerAccounts, auditLogs } from "@workspace/db";
-import { eq, sql, or, ilike } from "drizzle-orm";
-import { scryptSync, randomBytes } from "crypto";
+import { eq, sql, count } from "drizzle-orm";
+import { hashPassword } from "../../lib/crypto";
 import { requireAdminAuth, requirePermission, type AdminRequest } from "../../middlewares/adminAuth";
+import { parseOffsetPagination } from "../../lib/pagination";
 
 const router = Router();
 router.use(requireAdminAuth);
-
-function hashPassword(password: string): string {
-  const salt = randomBytes(16).toString("hex");
-  const derivedKey = scryptSync(password, salt, 64).toString("hex");
-  return `${salt}:${derivedKey}`;
-}
 
 // List users with pagination and search
 router.get("/", requirePermission("users.view"), async (req: AdminRequest, res) => {
@@ -85,19 +80,36 @@ router.get("/:id", requirePermission("users.view"), async (req: AdminRequest, re
     const user = result[0];
     if (!user) return res.status(404).json({ error: "User not found" });
 
-    // Get login history
+    const loginPage = Math.max(1, parseInt(String(req.query.loginPage ?? 1), 10) || 1);
+    const loginLimit = Math.min(100, Math.max(1, parseInt(String(req.query.loginLimit ?? 25), 10) || 25));
+    const activityPage = Math.max(1, parseInt(String(req.query.activityPage ?? 1), 10) || 1);
+    const activityLimit = Math.min(100, Math.max(1, parseInt(String(req.query.activityLimit ?? 25), 10) || 25));
+
+    const loginCount = await db.select({ count: count() }).from(loginHistory).where(eq(loginHistory.userId, userId));
+    const activityCount = await db.select({ count: count() }).from(userActivityLogs).where(eq(userActivityLogs.userId, userId));
+
     const logins = await db.select().from(loginHistory)
       .where(eq(loginHistory.userId, userId))
       .orderBy(sql`${loginHistory.timestamp} desc`)
-      .limit(50);
+      .limit(loginLimit)
+      .offset((loginPage - 1) * loginLimit);
 
-    // Get activity logs
     const activity = await db.select().from(userActivityLogs)
       .where(eq(userActivityLogs.userId, userId))
       .orderBy(sql`${userActivityLogs.timestamp} desc`)
-      .limit(50);
+      .limit(activityLimit)
+      .offset((activityPage - 1) * activityLimit);
 
-    return res.json({ user, loginHistory: logins, activityLogs: activity });
+    const loginTotal = loginCount[0]?.count ?? 0;
+    const activityTotal = activityCount[0]?.count ?? 0;
+
+    return res.json({
+      user,
+      loginHistory: logins,
+      activityLogs: activity,
+      loginPagination: { page: loginPage, limit: loginLimit, total: loginTotal, totalPages: Math.ceil(loginTotal / loginLimit) },
+      activityPagination: { page: activityPage, limit: activityLimit, total: activityTotal, totalPages: Math.ceil(activityTotal / activityLimit) },
+    });
   } catch (error: unknown) {
     req.log.error(error);
     return res.status(500).json({ error: "Failed to get user" });
@@ -257,7 +269,7 @@ router.post("/:id/reset-password", requirePermission("users.edit"), async (req: 
       return res.status(400).json({ error: "Password must be at least 6 characters" });
     }
 
-    const hashed = hashPassword(newPassword);
+    const hashed = await hashPassword(newPassword);
     await db.update(users).set({ password: hashed }).where(eq(users.id, userId));
 
     await db.insert(auditLogs).values({

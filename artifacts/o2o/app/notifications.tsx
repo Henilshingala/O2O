@@ -32,12 +32,20 @@ export default function NotificationsScreen() {
 
   const markReadMut = useMutation({
     mutationFn: (id: string) => customFetch(`/api/notifications/${id}/read`, { method: "POST" }),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["notifications"] }),
+    onSuccess: (_data, id) => {
+      queryClient.setQueryData<Notification[]>(["notifications"], (old) =>
+        old?.map((n) => (n.id === id ? { ...n, isRead: true } : n)) ?? old
+      );
+    },
   });
 
   const markAllMut = useMutation({
     mutationFn: () => customFetch("/api/notifications/read-all", { method: "POST" }),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["notifications"] }),
+    onSuccess: () => {
+      queryClient.setQueryData<Notification[]>(["notifications"], (old) =>
+        old?.map((n) => ({ ...n, isRead: true })) ?? old
+      );
+    },
   });
 
   if (!user) return null;

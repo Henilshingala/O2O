@@ -1,0 +1,20 @@
+-- Production indexes for query performance
+CREATE INDEX IF NOT EXISTS idx_users_username ON users (username);
+CREATE INDEX IF NOT EXISTS idx_users_email ON users (email);
+CREATE INDEX IF NOT EXISTS idx_users_mobile ON users (mobile);
+CREATE INDEX IF NOT EXISTS idx_login_history_user_id ON login_history (user_id);
+CREATE INDEX IF NOT EXISTS idx_channel_followers_user_id ON channel_followers (user_id);
+CREATE INDEX IF NOT EXISTS idx_products_channel_id ON products (channel_id);
+CREATE INDEX IF NOT EXISTS idx_orders_status ON orders (status);
+CREATE INDEX IF NOT EXISTS idx_chat_participants_user_id ON chat_participants (user_id);
+CREATE INDEX IF NOT EXISTS idx_messages_sender_id ON messages (sender_id);
+CREATE INDEX IF NOT EXISTS idx_messages_order_id ON messages (order_id);
+CREATE INDEX IF NOT EXISTS idx_notifications_user_id_is_read ON notifications (user_id, is_read);
+CREATE INDEX IF NOT EXISTS idx_notifications_user_id_created_at ON notifications (user_id, created_at);
+CREATE INDEX IF NOT EXISTS idx_friends_contacts_user_id ON friends_contacts (user_id);
+CREATE INDEX IF NOT EXISTS idx_friends_contacts_contact_id ON friends_contacts (contact_id);
+CREATE INDEX IF NOT EXISTS idx_friends_contacts_status ON friends_contacts (status);
+CREATE INDEX IF NOT EXISTS idx_audit_logs_admin_id ON audit_logs (admin_id);
+CREATE INDEX IF NOT EXISTS idx_audit_logs_timestamp ON audit_logs (timestamp);
+CREATE INDEX IF NOT EXISTS idx_refresh_tokens_token_hash ON refresh_tokens (token_hash);
+CREATE INDEX IF NOT EXISTS idx_refresh_tokens_user_id ON refresh_tokens (user_id);

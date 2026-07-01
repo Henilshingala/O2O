@@ -16,7 +16,11 @@ export const users = pgTable("users", {
   isVerifiedSeller: boolean("is_verified_seller").default(false).notNull(),
   adminRole: text("admin_role", { enum: ["super_admin", "admin", "moderator", "support"] }),
   createdAt: timestamp("created_at").defaultNow().notNull(),
-});
+}, (t) => ({
+  usernameIdx: index("idx_users_username").on(t.username),
+  emailIdx: index("idx_users_email").on(t.email),
+  mobileIdx: index("idx_users_mobile").on(t.mobile),
+}));
 
 export const loginHistory = pgTable("login_history", {
   id: text("id").primaryKey(),
@@ -24,7 +28,9 @@ export const loginHistory = pgTable("login_history", {
   ipAddress: text("ip_address"),
   device: text("device"),
   timestamp: timestamp("timestamp").defaultNow().notNull(),
-});
+}, (t) => ({
+  userIdx: index("idx_login_history_user_id").on(t.userId),
+}));
 
 export const userProfiles = pgTable("user_profiles", {
   userId: text("user_id").references(() => users.id).primaryKey(),
@@ -74,7 +80,10 @@ export const channels = pgTable("channels", {
 export const channelFollowers = pgTable("channel_followers", {
   channelId: text("channel_id").references(() => channels.id).notNull(),
   userId: text("user_id").references(() => users.id).notNull(),
-}, (t) => ({ pk: primaryKey({ columns: [t.channelId, t.userId] }) }));
+}, (t) => ({
+  pk: primaryKey({ columns: [t.channelId, t.userId] }),
+  userIdx: index("idx_channel_followers_user_id").on(t.userId),
+}));
 
 export const channelAdmins = pgTable("channel_admins", {
   channelId: text("channel_id").references(() => channels.id).notNull(),
@@ -103,7 +112,9 @@ export const products = pgTable("products", {
   details: jsonb("details").default([]).notNull(), // Array of {name, value}
   views: integer("views").default(0).notNull(),
   createdAt: timestamp("created_at").defaultNow().notNull(),
-});
+}, (t) => ({
+  channelIdx: index("idx_products_channel_id").on(t.channelId),
+}));
 
 export const productImages = pgTable("product_images", {
   id: text("id").primaryKey(),
@@ -207,6 +218,7 @@ export const orders = pgTable("orders", {
 }, (t) => ({
   buyerIdx: index("idx_orders_buyer_id").on(t.buyerId),
   sellerIdx: index("idx_orders_seller_id").on(t.sellerId),
+  statusIdx: index("idx_orders_status").on(t.status),
 }));
 
 export const orderItems = pgTable("order_items", {
@@ -233,7 +245,10 @@ export const chats = pgTable("chats", {
 export const chatParticipants = pgTable("chat_participants", {
   chatId: text("chat_id").references(() => chats.id).notNull(),
   userId: text("user_id").references(() => users.id).notNull(),
-}, (t) => ({ pk: primaryKey({ columns: [t.chatId, t.userId] }) }));
+}, (t) => ({
+  pk: primaryKey({ columns: [t.chatId, t.userId] }),
+  userIdx: index("idx_chat_participants_user_id").on(t.userId),
+}));
 
 export const messages = pgTable("messages", {
   id: text("id").primaryKey(),
@@ -252,7 +267,9 @@ export const messages = pgTable("messages", {
 }, (t) => ({
   chatIdx: index("idx_messages_chat_id").on(t.chatId),
   channelIdx: index("idx_messages_channel_id").on(t.channelId),
-  groupId: index("idx_messages_group_id").on(t.groupId),
+  groupIdx: index("idx_messages_group_id").on(t.groupId),
+  senderIdx: index("idx_messages_sender_id").on(t.senderId),
+  orderIdx: index("idx_messages_order_id").on(t.orderId),
 }));
 
 export const chatAttachments = pgTable("chat_attachments", {
@@ -292,7 +309,10 @@ export const notifications = pgTable("notifications", {
   type: text("type").notNull(),
   isRead: boolean("is_read").default(false).notNull(),
   createdAt: timestamp("created_at").defaultNow().notNull(),
-});
+}, (t) => ({
+  userReadIdx: index("idx_notifications_user_id_is_read").on(t.userId, t.isRead),
+  userCreatedIdx: index("idx_notifications_user_id_created_at").on(t.userId, t.createdAt),
+}));
 
 export const reviews = pgTable("reviews", {
   id: text("id").primaryKey(),
@@ -347,7 +367,12 @@ export const friendsContacts = pgTable("friends_contacts", {
   userId: text("user_id").references(() => users.id).notNull(),
   contactId: text("contact_id").references(() => users.id).notNull(),
   status: text("status", { enum: ["pending", "accepted", "blocked"] }).default("pending").notNull(),
-}, (t) => ({ pk: primaryKey({ columns: [t.userId, t.contactId] }) }));
+}, (t) => ({
+  pk: primaryKey({ columns: [t.userId, t.contactId] }),
+  userIdx: index("idx_friends_contacts_user_id").on(t.userId),
+  contactIdx: index("idx_friends_contacts_contact_id").on(t.contactId),
+  statusIdx: index("idx_friends_contacts_status").on(t.status),
+}));
 
 export const userActivityLogs = pgTable("user_activity_logs", {
   id: text("id").primaryKey(),
@@ -383,7 +408,10 @@ export const auditLogs = pgTable("audit_logs", {
   browser: text("browser"),
   device: text("device"),
   timestamp: timestamp("timestamp").defaultNow().notNull(),
-});
+}, (t) => ({
+  adminIdx: index("idx_audit_logs_admin_id").on(t.adminId),
+  timestampIdx: index("idx_audit_logs_timestamp").on(t.timestamp),
+}));
 
 export const adminSessions = pgTable("admin_sessions", {
   id: text("id").primaryKey(),
@@ -411,4 +439,7 @@ export const refreshTokens = pgTable("refresh_tokens", {
   expiresAt: timestamp("expires_at").notNull(),
   revokedAt: timestamp("revoked_at"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
-});
+}, (t) => ({
+  tokenHashIdx: index("idx_refresh_tokens_token_hash").on(t.tokenHash),
+  userIdx: index("idx_refresh_tokens_user_id").on(t.userId),
+}));

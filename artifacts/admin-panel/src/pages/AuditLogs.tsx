@@ -4,8 +4,9 @@ import { api } from "../api/client";
 
 export default function AuditLogs() {
   const [page, setPage] = useState(1);
+  const [limit, setLimit] = useState(25);
   const [actionFilter, setActionFilter] = useState("");
-  const { data, isLoading } = useQuery({ queryKey: ["audit-logs", page, actionFilter], queryFn: () => api.get(`/audit-logs?page=${page}&limit=50&action=${actionFilter}`) });
+  const { data, isLoading } = useQuery({ queryKey: ["audit-logs", page, limit, actionFilter], queryFn: () => api.get(`/audit-logs?page=${page}&limit=${limit}&action=${actionFilter}`) });
   const { data: actions } = useQuery({ queryKey: ["audit-actions"], queryFn: () => api.get("/audit-logs/actions") });
 
   if (isLoading) return <div className="loading"><div className="spinner" /></div>;
@@ -21,6 +22,11 @@ export default function AuditLogs() {
         <select value={actionFilter} onChange={(e) => { setActionFilter(e.target.value); setPage(1); }} style={{ width: "auto" }}>
           <option value="">All Actions</option>
           {(actions || []).map((a: string) => <option key={a} value={a}>{a}</option>)}
+        </select>
+        <select value={limit} onChange={(e) => { setLimit(Number(e.target.value)); setPage(1); }} style={{ width: "auto" }}>
+          <option value={25}>25 per page</option>
+          <option value={50}>50 per page</option>
+          <option value={100}>100 per page</option>
         </select>
         <span style={{ color: "var(--text-muted)", alignSelf: "center" }}>{data?.total || 0} total logs</span>
       </div>

@@ -1,11 +1,13 @@
 import { Router } from "express";
 import { db } from "@workspace/db";
 import { friendsContacts, users } from "@workspace/db/schema";
-import { and, eq, or, ilike, ne } from "drizzle-orm";
+import { and, eq, or, ilike, ne, count, desc } from "drizzle-orm";
 import { requireAuth, type AuthRequest } from "../middlewares/auth";
 import { rateLimit } from "express-rate-limit";
 import { createNotification } from "./notifications";
 import { getIo } from "../socket/index";
+import { parseOffsetPagination, sendListResponse, buildOffsetMeta } from "../lib/pagination";
+import { validateBody, friendRequestSchema, friendActionSchema, friendRemoveSchema } from "../lib/validation";
 
 const router = Router();
 router.use(requireAuth);
@@ -14,6 +16,14 @@ router.use(requireAuth);
 router.get("/", async (req: AuthRequest, res) => {
   try {
     const myId = req.user!.userId;
+    const { page, limit, offset } = parseOffsetPagination(req.query as Record<string, unknown>, { limit: 50, maxLimit: 100 });
+
+    const countResult = await db
+      .select({ count: count() })
+      .from(friendsContacts)
+      .where(and(eq(friendsContacts.userId, myId), eq(friendsContacts.status, "accepted")));
+    const total = countResult[0]?.count ?? 0;
+
     const rows = await db
       .select({
         id: users.id,
@@ -26,10 +36,13 @@ router.get("/", async (req: AuthRequest, res) => {
       })
       .from(friendsContacts)
       .innerJoin(users, eq(users.id, friendsContacts.contactId))
-      .where(and(eq(friendsContacts.userId, myId), eq(friendsContacts.status, "accepted")));
-    return res.json(rows);
-  } catch (e: any) {
-    return res.status(500).json({ error: e.message });
+      .where(and(eq(friendsContacts.userId, myId), eq(friendsContacts.status, "accepted")))
+      .limit(limit)
+      .offset(offset);
+    return sendListResponse(res, req, rows, buildOffsetMeta(page, limit, total));
+  } catch (e: unknown) {
+    const message = e instanceof Error ? e.message : "Server error";
+    return res.status(500).json({ error: message });
   }
 });
 
@@ -37,6 +50,17 @@ router.get("/", async (req: AuthRequest, res) => {
 router.get("/requests", async (req: AuthRequest, res) => {
   try {
     const myId = req.user!.userId;
+    const { page, limit, offset } = parseOffsetPagination(req.query as Record<string, unknown>, { limit: 50, maxLimit: 100 });
+
+    const incomingCount = await db
+      .select({ count: count() })
+      .from(friendsContacts)
+      .where(and(eq(friendsContacts.contactId, myId), eq(friendsContacts.status, "pending")));
+    const outgoingCount = await db
+      .select({ count: count() })
+      .from(friendsContacts)
+      .where(and(eq(friendsContacts.userId, myId), eq(friendsContacts.status, "pending")));
+
     const incoming = await db
       .select({
         id: users.id,
@@ -49,7 +73,9 @@ router.get("/requests", async (req: AuthRequest, res) => {
       })
       .from(friendsContacts)
       .innerJoin(users, eq(users.id, friendsContacts.userId))
-      .where(and(eq(friendsContacts.contactId, myId), eq(friendsContacts.status, "pending")));
+      .where(and(eq(friendsContacts.contactId, myId), eq(friendsContacts.status, "pending")))
+      .limit(limit)
+      .offset(offset);
 
     const outgoing = await db
       .select({
@@ -63,11 +89,23 @@ router.get("/requests", async (req: AuthRequest, res) => {
       })
       .from(friendsContacts)
       .innerJoin(users, eq(users.id, friendsContacts.contactId))
-      .where(and(eq(friendsContacts.userId, myId), eq(friendsContacts.status, "pending")));
+      .where(and(eq(friendsContacts.userId, myId), eq(friendsContacts.status, "pending")))
+      .limit(limit)
+      .offset(offset);
 
-    return res.json({ incoming, outgoing });
-  } catch (e: any) {
-    return res.status(500).json({ error: e.message });
+    return res.json({
+      incoming,
+      outgoing,
+      pagination: {
+        incomingTotal: incomingCount[0]?.count ?? 0,
+        outgoingTotal: outgoingCount[0]?.count ?? 0,
+        page,
+        limit,
+      },
+    });
+  } catch (e: unknown) {
+    const message = e instanceof Error ? e.message : "Server error";
+    return res.status(500).json({ error: message });
   }
 });
 
@@ -80,7 +118,7 @@ const requestLimiter = rateLimit({
 });
 
 // POST /api/friends/request — send friend request
-router.post("/request", requestLimiter, async (req: AuthRequest, res) => {
+router.post("/request", requestLimiter, validateBody(friendRequestSchema), async (req: AuthRequest, res) => {
   try {
     const myId = req.user!.userId;
     const { contactId } = req.body;
@@ -123,32 +161,31 @@ router.post("/request", requestLimiter, async (req: AuthRequest, res) => {
 });
 
 // POST /api/friends/accept
-router.post("/accept", async (req: AuthRequest, res) => {
+router.post("/accept", validateBody(friendActionSchema), async (req: AuthRequest, res) => {
   try {
     const myId = req.user!.userId;
     const { requesterId } = req.body;
-    if (!requesterId) return res.status(400).json({ error: "requesterId required" });
 
-    // Update the original request to accepted
-    await db
-      .update(friendsContacts)
-      .set({ status: "accepted" })
-      .where(and(eq(friendsContacts.userId, requesterId), eq(friendsContacts.contactId, myId)));
-
-    // Insert reverse row so both sides can list each other as friends
-    const existing = await db
-      .select()
-      .from(friendsContacts)
-      .where(and(eq(friendsContacts.userId, myId), eq(friendsContacts.contactId, requesterId)));
-
-    if (existing.length === 0) {
-      await db.insert(friendsContacts).values({ userId: myId, contactId: requesterId, status: "accepted" });
-    } else {
-      await db
+    await db.transaction(async (tx) => {
+      await tx
         .update(friendsContacts)
         .set({ status: "accepted" })
+        .where(and(eq(friendsContacts.userId, requesterId), eq(friendsContacts.contactId, myId)));
+
+      const existing = await tx
+        .select()
+        .from(friendsContacts)
         .where(and(eq(friendsContacts.userId, myId), eq(friendsContacts.contactId, requesterId)));
-    }
+
+      if (existing.length === 0) {
+        await tx.insert(friendsContacts).values({ userId: myId, contactId: requesterId, status: "accepted" });
+      } else {
+        await tx
+          .update(friendsContacts)
+          .set({ status: "accepted" })
+          .where(and(eq(friendsContacts.userId, myId), eq(friendsContacts.contactId, requesterId)));
+      }
+    });
 
     const accepter = await db.select().from(users).where(eq(users.id, myId)).limit(1);
     if (accepter[0]) {
@@ -168,7 +205,7 @@ router.post("/accept", async (req: AuthRequest, res) => {
 });
 
 // POST /api/friends/reject
-router.post("/reject", async (req: AuthRequest, res) => {
+router.post("/reject", validateBody(friendActionSchema), async (req: AuthRequest, res) => {
   try {
     const myId = req.user!.userId;
     const { requesterId } = req.body;
@@ -185,7 +222,7 @@ router.post("/reject", async (req: AuthRequest, res) => {
 });
 
 // POST /api/friends/cancel
-router.post("/cancel", async (req: AuthRequest, res) => {
+router.post("/cancel", validateBody(friendRemoveSchema), async (req: AuthRequest, res) => {
   try {
     const myId = req.user!.userId;
     const { contactId } = req.body;
@@ -202,7 +239,7 @@ router.post("/cancel", async (req: AuthRequest, res) => {
 });
 
 // DELETE /api/friends/remove
-router.delete("/remove", async (req: AuthRequest, res) => {
+router.delete("/remove", validateBody(friendRemoveSchema), async (req: AuthRequest, res) => {
   try {
     const myId = req.user!.userId;
     const { contactId } = req.body;
@@ -230,9 +267,11 @@ router.get("/search", async (req: AuthRequest, res) => {
     const q = String(req.query.q || "").trim();
     if (!q || q.length < 2) return res.json([]);
 
+    const page = Math.max(1, parseInt(String(req.query.page ?? 1), 10) || 1);
+    const limit = Math.min(100, Math.max(1, parseInt(String(req.query.limit ?? 20), 10) || 20));
+    const offset = (page - 1) * limit;
     const lq = q.toLowerCase();
 
-    // Database-level search instead of loading all users into memory
     const matched = await db
       .select({
         id: users.id,
@@ -252,9 +291,9 @@ router.get("/search", async (req: AuthRequest, res) => {
           )
         )
       )
-      .limit(20);
+      .limit(limit)
+      .offset(offset);
 
-    // Attach relationship status
     const allRelations = await db
       .select()
       .from(friendsContacts)
@@ -276,8 +315,9 @@ router.get("/search", async (req: AuthRequest, res) => {
     });
 
     return res.json(withStatus);
-  } catch (e: any) {
-    return res.status(500).json({ error: e.message });
+  } catch (e: unknown) {
+    const message = e instanceof Error ? e.message : "Server error";
+    return res.status(500).json({ error: message });
   }
 });
 

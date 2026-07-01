@@ -4,7 +4,16 @@ import { createHash } from "crypto";
 import { db, adminSessions } from "@workspace/db";
 import { eq, and } from "drizzle-orm";
 
-const JWT_SECRET = process.env.JWT_SECRET || "fallback_secret_do_not_use_in_prod";
+export function getJwtSecret(): string {
+  const secret = process.env.JWT_SECRET;
+  if (!secret) {
+    if (process.env.NODE_ENV === "production") {
+      throw new Error("JWT_SECRET must be set in production");
+    }
+    return "dev_fallback_secret_change_in_prod";
+  }
+  return secret;
+}
 
 export interface AdminUser {
   userId: string;
@@ -88,7 +97,7 @@ export async function requireAdminAuth(req: AdminRequest, res: Response, next: N
   }
 
   try {
-    const payload = jwt.verify(token, JWT_SECRET) as AdminUser;
+    const payload = jwt.verify(token, getJwtSecret()) as AdminUser;
     if (!payload.adminRole) {
       return res.status(403).json({ error: "Not an admin user" });
     }
@@ -140,4 +149,4 @@ export function requireSuperAdmin(req: AdminRequest, res: Response, next: NextFu
   return next();
 }
 
-export { JWT_SECRET, ROLE_PERMISSIONS, ROLE_HIERARCHY };
+export { ROLE_PERMISSIONS, ROLE_HIERARCHY };

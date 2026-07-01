@@ -123,10 +123,18 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
   }, [chats]);
 
   const sendChatMessage = useCallback((chatId: string, msg: Omit<Message, "id">) => {
-    customFetch(`/api/data/chats/${chatId}/messages`, { method: "POST", body: JSON.stringify(msg) })
-      .then(() => invalidate.chats())
+    customFetch<Message>(`/api/data/chats/${chatId}/messages`, { method: "POST", body: JSON.stringify(msg) })
+      .then((newMsg) => {
+        queryClient.setQueryData<Chat[]>(["chats"], (old) =>
+          old?.map((c) =>
+            c.id === chatId
+              ? { ...c, messages: [...c.messages, { ...msg, id: newMsg?.id ?? `temp_${Date.now()}` }] }
+              : c
+          ) ?? old
+        );
+      })
       .catch((err) => console.error("Failed to send chat message:", err));
-  }, []);
+  }, [queryClient]);
 
   const createGroup = useCallback(async (g: Omit<Group, "id" | "createdAt" | "updatedAt" | "messages">): Promise<Group> => {
     const group = await customFetch<Group>("/api/data/groups", {

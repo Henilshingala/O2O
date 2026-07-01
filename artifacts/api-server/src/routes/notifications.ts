@@ -1,8 +1,9 @@
 import { Router } from "express";
 import { db } from "@workspace/db";
 import { notifications } from "@workspace/db/schema";
-import { eq, desc, and } from "drizzle-orm";
+import { eq, desc, and, count } from "drizzle-orm";
 import { requireAuth, type AuthRequest } from "../middlewares/auth";
+import { parseCursorPagination, sendListResponse, buildOffsetMeta, parseOffsetPagination } from "../lib/pagination";
 
 const router = Router();
 router.use(requireAuth);
@@ -27,12 +28,43 @@ export async function createNotification(
 
 router.get("/", async (req: AuthRequest, res) => {
   try {
+    const userId = req.user!.userId;
+    const cursorMode = typeof req.query.cursor === "string" && req.query.cursor.length > 0;
+
+    if (cursorMode || req.query.cursor === "") {
+      const { limit, cursor } = parseCursorPagination(req.query as Record<string, unknown>, { limit: 50, maxLimit: 100 });
+      let query = db
+        .select()
+        .from(notifications)
+        .where(eq(notifications.userId, userId))
+        .orderBy(desc(notifications.createdAt))
+        .limit(limit + 1);
+
+      const rows = await query;
+      let filtered = rows;
+      if (cursor) {
+        const cursorIdx = rows.findIndex((r) => r.id === cursor);
+        filtered = cursorIdx >= 0 ? rows.slice(cursorIdx + 1) : rows;
+      }
+      const hasMore = filtered.length > limit;
+      const page = hasMore ? filtered.slice(0, limit) : filtered;
+      const nextCursor = hasMore ? page[page.length - 1]?.id ?? null : null;
+      return res.json({ data: page, pagination: { limit, nextCursor, hasMore } });
+    }
+
+    const { page, limit, offset } = parseOffsetPagination(req.query as Record<string, unknown>, { limit: 50, maxLimit: 100 });
+    const countResult = await db.select({ count: count() }).from(notifications).where(eq(notifications.userId, userId));
+    const total = countResult[0]?.count ?? 0;
+
     const rows = await db
       .select()
       .from(notifications)
-      .where(eq(notifications.userId, req.user!.userId))
-      .orderBy(desc(notifications.createdAt));
-    return res.json(rows);
+      .where(eq(notifications.userId, userId))
+      .orderBy(desc(notifications.createdAt))
+      .limit(limit)
+      .offset(offset);
+
+    return sendListResponse(res, req, rows, buildOffsetMeta(page, limit, total));
   } catch (error) {
     return res.status(500).json({ error: "Server error" });
   }

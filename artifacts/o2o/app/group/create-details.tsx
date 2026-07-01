@@ -123,7 +123,14 @@ export default function CreateGroupStep2() {
       <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
         <View style={styles.imageContainer}>
           <TouchableOpacity 
-            style={[styles.logoPicker, { backgroundColor: colors.card, borderColor: previewUri ? colors.primary : colors.border }]} 
+            style={[
+              styles.logoPicker, 
+              { 
+                backgroundColor: colors.card, 
+                borderColor: previewUri ? colors.primary : colors.border,
+                borderStyle: previewUri ? "solid" : "dashed" 
+              }
+            ]} 
             onPress={handlePickImage}
             activeOpacity={0.7}
           >
@@ -200,7 +207,6 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
     borderWidth: 2,
-    borderStyle: "dashed",
     overflow: "hidden",
   },
   logoPlaceholder: { alignItems: "center", justifyContent: "center", gap: 4 },

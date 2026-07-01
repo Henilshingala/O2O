@@ -1,5 +1,9 @@
 import jwt from "jsonwebtoken";
-import { randomBytes, scryptSync, timingSafeEqual } from "crypto";
+import { randomBytes, createHash, timingSafeEqual } from "crypto";
+import { promisify } from "util";
+import { scrypt } from "crypto";
+
+const scryptAsync = promisify(scrypt);
 
 const ACCESS_EXPIRY = "15m";
 const REFRESH_EXPIRY_DAYS = 7;
@@ -15,26 +19,42 @@ export function getJwtSecret(): string {
   return secret;
 }
 
-export function hashToken(token: string): string {
-  const salt = randomBytes(16).toString("hex");
-  const derivedKey = scryptSync(token, salt, 64).toString("hex");
-  return `${salt}:${derivedKey}`;
+/** SHA-256 for refresh token lookup (high-entropy tokens; O(1) DB lookup). */
+export function hashRefreshToken(token: string): string {
+  return createHash("sha256").update(token).digest("hex");
 }
 
-export function verifyTokenHash(token: string, hash: string): boolean {
+export function verifyRefreshToken(token: string, storedHash: string): boolean {
+  const hash = hashRefreshToken(token);
+  try {
+    return timingSafeEqual(Buffer.from(hash, "hex"), Buffer.from(storedHash, "hex"));
+  } catch {
+    return false;
+  }
+}
+
+/** Async scrypt for OTP hashing (never blocks event loop). */
+export async function hashOtp(otp: string): Promise<string> {
+  const salt = randomBytes(16).toString("hex");
+  const derivedKey = (await scryptAsync(otp, salt, 64)) as Buffer;
+  return `${salt}:${derivedKey.toString("hex")}`;
+}
+
+export async function verifyOtpHash(otp: string, hash: string): Promise<boolean> {
   const [salt, key] = hash.split(":");
   if (!salt || !key) return false;
   const keyBuffer = Buffer.from(key, "hex");
-  const derivedKey = scryptSync(token, salt, 64);
+  const derivedKey = (await scryptAsync(otp, salt, 64)) as Buffer;
   return timingSafeEqual(keyBuffer, derivedKey);
 }
 
-export function hashOtp(otp: string): string {
-  return hashToken(otp);
-}
-
-export function verifyOtpHash(otp: string, hash: string): boolean {
-  return verifyTokenHash(otp, hash);
+/** @deprecated Use hashRefreshToken for new refresh tokens. Kept for legacy scrypt hashes. */
+export async function verifyLegacyTokenHash(token: string, hash: string): Promise<boolean> {
+  const [salt, key] = hash.split(":");
+  if (!salt || !key) return false;
+  const keyBuffer = Buffer.from(key, "hex");
+  const derivedKey = (await scryptAsync(token, salt, 64)) as Buffer;
+  return timingSafeEqual(keyBuffer, derivedKey);
 }
 
 export function signAccessToken(userId: string): string {
@@ -60,7 +80,7 @@ export function verifyAccessToken(token: string): { userId: string } | null {
 export function issueTokens(userId: string) {
   const accessToken = signAccessToken(userId);
   const refreshToken = signRefreshToken();
-  const refreshTokenHash = hashToken(refreshToken);
+  const refreshTokenHash = hashRefreshToken(refreshToken);
   const refreshExpiresAt = getRefreshExpiry();
   return { accessToken, refreshToken, refreshTokenHash, refreshExpiresAt };
 }

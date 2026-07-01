@@ -1,10 +1,24 @@
 import { Router } from "express";
 import { db } from "@workspace/db";
-import { eq, or, and, inArray, desc } from "drizzle-orm";
+import { eq, or, and, inArray, desc, asc, isNull, lt, count, sql } from "drizzle-orm";
 import * as schema from "@workspace/db";
 import { requireAuth, type AuthRequest } from "../middlewares/auth";
 import { createNotification } from "./notifications";
 import { emitToChat, emitToBid, emitToUser } from "../socket/index";
+import { parseOffsetPagination, parseCursorPagination, buildOffsetMeta, sendListResponse } from "../lib/pagination";
+import {
+  validateBody,
+  createChannelSchema,
+  createProductSchema,
+  createBidSchema,
+  createReviewSchema,
+  orderStatusSchema,
+  winnerSchema,
+  rejectBidSchema,
+  createChatSchema,
+  sendMessageSchema,
+  wishlistSchema,
+} from "../lib/validation";
 
 const router = Router();
 router.use(requireAuth);
@@ -33,22 +47,9 @@ async function areFriends(userId: string, otherId: string): Promise<boolean> {
   return rows.length > 0;
 }
 
-async function loadChannelMessages(channelIds: string[]) {
-  if (channelIds.length === 0) return [];
-  const results = await Promise.all(
-    channelIds.map(id =>
-      db.select().from(schema.messages)
-        .where(eq(schema.messages.channelId, id))
-        .orderBy(desc(schema.messages.timestamp))
-        .limit(50)
-    )
-  );
-  return results.flat();
-}
-
-async function loadProductsWithImages(channelIds: string[]) {
+async function loadProductsWithImages(channelIds: string[], productLimit = 50) {
   if (channelIds.length === 0) return new Map<string, Array<typeof schema.products.$inferSelect & { images: { id: string; url: string; isPrimary: boolean }[] }>>();
-  const prods = await db.select().from(schema.products).where(inArray(schema.products.channelId, channelIds));
+  const prods = await db.select().from(schema.products).where(inArray(schema.products.channelId, channelIds)).limit(productLimit * channelIds.length);
   const productIds = prods.map((p) => p.id);
   let images: typeof schema.productImages.$inferSelect[] = [];
   if (productIds.length > 0) {
@@ -84,12 +85,15 @@ router.get("/channels", async (req: AuthRequest, res) => {
       whereClause = or(whereClause, inArray(schema.channels.id, followedIds));
     }
 
-    const limit = Math.min(Number(req.query.limit) || 20, 50);
-    const offset = Number(req.query.offset) || 0;
+    const { page, limit, offset } = parseOffsetPagination(req.query as Record<string, unknown>, { limit: 20, maxLimit: 50 });
+
+    const countResult = await db.select({ count: count() }).from(schema.channels).where(whereClause!);
+    const total = countResult[0]?.count ?? 0;
 
     const allChannels = await db.select()
       .from(schema.channels)
       .where(whereClause)
+      .orderBy(desc(schema.channels.createdAt))
       .limit(limit)
       .offset(offset);
 
@@ -107,16 +111,18 @@ router.get("/channels", async (req: AuthRequest, res) => {
       followers: fols.filter((f) => f.channelId === c.id).map((f) => f.userId),
       messages: [], // Eager loading messages removed to prevent OOM
     }));
-    return res.json(channelsWithDetails);
+    return sendListResponse(res, req, channelsWithDetails, buildOffsetMeta(page, limit, total));
   } catch (error) { return res.status(500).json({ error: "Server error" }); }
 });
 
-router.post("/channels", async (req: AuthRequest, res) => {
+router.post("/channels", validateBody(createChannelSchema), async (req: AuthRequest, res) => {
   try {
     const id = genId("ch");
     const { image, ...rest } = req.body;
     const newChannel = { ...rest, id, ownerId: req.user!.userId, logo: image || null };
-    await db.insert(schema.channels).values(newChannel);
+    await db.transaction(async (tx) => {
+      await tx.insert(schema.channels).values(newChannel);
+    });
     return res.json({ ...newChannel, image: newChannel.logo, products: [], followers: [], messages: [] });
   } catch (error) { return res.status(500).json({ error: "Server error" }); }
 });
@@ -174,8 +180,25 @@ router.post("/channels/:id/follow", async (req: AuthRequest, res) => {
 router.get("/channels/:id/messages", async (req: AuthRequest, res) => {
   try {
     const channelId = req.params.id as string;
-    const msgs = await db.select().from(schema.messages).where(eq(schema.messages.channelId, channelId));
-    return res.json(msgs);
+    const { limit, cursor } = parseCursorPagination(req.query as Record<string, unknown>, { limit: 50, maxLimit: 100 });
+
+    let whereClause = and(eq(schema.messages.channelId, channelId), isNull(schema.messages.deletedAt));
+    if (cursor) {
+      const cursorRow = await db.select({ ts: schema.messages.timestamp }).from(schema.messages).where(eq(schema.messages.id, cursor)).limit(1);
+      if (cursorRow[0]) {
+        whereClause = and(whereClause, lt(schema.messages.timestamp, cursorRow[0].ts));
+      }
+    }
+
+    const msgs = await db.select().from(schema.messages)
+      .where(whereClause)
+      .orderBy(desc(schema.messages.timestamp))
+      .limit(limit + 1);
+
+    const hasMore = msgs.length > limit;
+    const page = hasMore ? msgs.slice(0, limit) : msgs;
+    const nextCursor = hasMore ? page[page.length - 1]?.id ?? null : null;
+    return res.json({ messages: page.reverse(), nextCursor });
   } catch (error) { return res.status(500).json({ error: "Server error" }); }
 });
 
@@ -239,12 +262,16 @@ router.post("/channels/:id/products/:productId/repost", async (req: AuthRequest,
 // --- WISHLIST ---
 router.get("/wishlist", async (req: AuthRequest, res) => {
   try {
-    const list = await db.select().from(schema.wishlist).where(eq(schema.wishlist.userId, req.user!.userId));
-    return res.json(list);
+    const { page, limit, offset } = parseOffsetPagination(req.query as Record<string, unknown>, { limit: 50, maxLimit: 100 });
+    const userId = req.user!.userId;
+    const countResult = await db.select({ count: count() }).from(schema.wishlist).where(eq(schema.wishlist.userId, userId));
+    const total = countResult[0]?.count ?? 0;
+    const list = await db.select().from(schema.wishlist).where(eq(schema.wishlist.userId, userId)).limit(limit).offset(offset);
+    return sendListResponse(res, req, list, buildOffsetMeta(page, limit, total));
   } catch (error) { return res.status(500).json({ error: "Server error" }); }
 });
 
-router.post("/wishlist", async (req: AuthRequest, res) => {
+router.post("/wishlist", validateBody(wishlistSchema), async (req: AuthRequest, res) => {
   try {
     const { productId } = req.body;
     const userId = req.user!.userId;
@@ -261,35 +288,39 @@ router.post("/wishlist", async (req: AuthRequest, res) => {
 // --- CHATS & GROUPS ---
 router.get("/chats", async (req: AuthRequest, res) => {
   try {
-    const parts = await db.select().from(schema.chatParticipants).where(eq(schema.chatParticipants.userId, req.user!.userId));
+    const userId = req.user!.userId;
+    const { page, limit, offset } = parseOffsetPagination(req.query as Record<string, unknown>, { limit: 50, maxLimit: 100 });
+    const parts = await db.select().from(schema.chatParticipants).where(eq(schema.chatParticipants.userId, userId));
     const chatIds = parts.map(p => p.chatId);
-    if (chatIds.length === 0) return res.json([]);
-    const myChats = await db.select().from(schema.chats).where(inArray(schema.chats.id, chatIds));
-    const allParts = await db.select().from(schema.chatParticipants).where(inArray(schema.chatParticipants.chatId, chatIds));
-    
-    // Fetch last 50 messages per chat concurrently
+    if (chatIds.length === 0) return sendListResponse(res, req, [], buildOffsetMeta(page, limit, 0));
+
+    const total = chatIds.length;
+    const paginatedChatIds = chatIds.slice(offset, offset + limit);
+    const myChats = await db.select().from(schema.chats).where(inArray(schema.chats.id, paginatedChatIds));
+    const allParts = await db.select().from(schema.chatParticipants).where(inArray(schema.chatParticipants.chatId, paginatedChatIds));
+
     const msgResults = await Promise.all(
-      chatIds.map(id => 
+      paginatedChatIds.map(id =>
         db.select().from(schema.messages)
-          .where(and(eq(schema.messages.chatId, id)))
+          .where(and(eq(schema.messages.chatId, id), isNull(schema.messages.deletedAt)))
           .orderBy(desc(schema.messages.timestamp))
           .limit(50)
       )
     );
     const allMsgs = msgResults.flat();
-    
+
     const enriched = myChats.map(c => ({
       ...c,
       participants: allParts.filter(p => p.chatId === c.id).map(p => p.userId),
       messages: allMsgs
-        .filter(m => m.chatId === c.id && !m.deletedAt)
+        .filter(m => m.chatId === c.id)
         .sort((a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime())
     }));
-    return res.json(enriched);
+    return sendListResponse(res, req, enriched, buildOffsetMeta(page, limit, total));
   } catch (error) { return res.status(500).json({ error: "Server error" }); }
 });
 
-router.post("/chats", async (req: AuthRequest, res) => {
+router.post("/chats", validateBody(createChatSchema), async (req: AuthRequest, res) => {
   try {
     const { myId, otherId } = req.body;
     const userId = req.user!.userId;
@@ -312,8 +343,10 @@ router.post("/chats", async (req: AuthRequest, res) => {
     }
 
     const id = genId("chat");
-    await db.insert(schema.chats).values({ id });
-    await db.insert(schema.chatParticipants).values([{ chatId: id, userId: myId }, { chatId: id, userId: otherId }]);
+    await db.transaction(async (tx) => {
+      await tx.insert(schema.chats).values({ id });
+      await tx.insert(schema.chatParticipants).values([{ chatId: id, userId: myId }, { chatId: id, userId: otherId }]);
+    });
     return res.json({ id, participants: [myId, otherId], messages: [] });
   } catch (error) { return res.status(500).json({ error: "Server error" }); }
 });
@@ -359,15 +392,24 @@ router.get("/chats/:id/messages", async (req: AuthRequest, res) => {
     if (!parts.some((p) => p.userId === req.user!.userId)) {
       return res.status(403).json({ error: "Not a chat participant" });
     }
-    const limit = Math.min(Number(req.query.limit) || 50, 100);
-    const cursor = req.query.cursor as string | undefined;
-    const msgs = await db.select().from(schema.messages).where(eq(schema.messages.chatId, chatId));
-    const filtered = msgs
-      .filter((m) => !m.deletedAt)
-      .sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
-    const startIdx = cursor ? filtered.findIndex((m) => m.id === cursor) + 1 : 0;
-    const page = filtered.slice(startIdx, startIdx + limit);
-    const nextCursor = startIdx + limit < filtered.length ? page[page.length - 1]?.id : null;
+    const { limit, cursor } = parseCursorPagination(req.query as Record<string, unknown>, { limit: 50, maxLimit: 100 });
+
+    let whereClause = and(eq(schema.messages.chatId, chatId), isNull(schema.messages.deletedAt));
+    if (cursor) {
+      const cursorRow = await db.select({ ts: schema.messages.timestamp }).from(schema.messages).where(eq(schema.messages.id, cursor)).limit(1);
+      if (cursorRow[0]) {
+        whereClause = and(whereClause, lt(schema.messages.timestamp, cursorRow[0].ts));
+      }
+    }
+
+    const msgs = await db.select().from(schema.messages)
+      .where(whereClause)
+      .orderBy(desc(schema.messages.timestamp))
+      .limit(limit + 1);
+
+    const hasMore = msgs.length > limit;
+    const page = hasMore ? msgs.slice(0, limit) : msgs;
+    const nextCursor = hasMore ? page[page.length - 1]?.id ?? null : null;
     return res.json({ messages: page.reverse(), nextCursor });
   } catch (error) { return res.status(500).json({ error: "Server error" }); }
 });
@@ -396,14 +438,19 @@ router.delete("/chats/:chatId/messages/:messageId", async (req: AuthRequest, res
 
 router.get("/groups", async (req: AuthRequest, res) => {
   try {
-    const parts = await db.select().from(schema.groupMembers).where(eq(schema.groupMembers.userId, req.user!.userId));
+    const userId = req.user!.userId;
+    const { page, limit, offset } = parseOffsetPagination(req.query as Record<string, unknown>, { limit: 50, maxLimit: 100 });
+    const parts = await db.select().from(schema.groupMembers).where(eq(schema.groupMembers.userId, userId));
     const groupIds = parts.map(p => p.groupId);
-    if (groupIds.length === 0) return res.json([]);
-    const myGroups = await db.select().from(schema.groups).where(inArray(schema.groups.id, groupIds));
-    const allParts = await db.select().from(schema.groupMembers).where(inArray(schema.groupMembers.groupId, groupIds));
-    
+    if (groupIds.length === 0) return sendListResponse(res, req, [], buildOffsetMeta(page, limit, 0));
+
+    const total = groupIds.length;
+    const paginatedGroupIds = groupIds.slice(offset, offset + limit);
+    const myGroups = await db.select().from(schema.groups).where(inArray(schema.groups.id, paginatedGroupIds));
+    const allParts = await db.select().from(schema.groupMembers).where(inArray(schema.groupMembers.groupId, paginatedGroupIds));
+
     const msgResults = await Promise.all(
-      groupIds.map(id => 
+      paginatedGroupIds.map(id =>
         db.select().from(schema.messages)
           .where(eq(schema.messages.groupId, id))
           .orderBy(desc(schema.messages.timestamp))
@@ -411,13 +458,13 @@ router.get("/groups", async (req: AuthRequest, res) => {
       )
     );
     const allMsgs = msgResults.flat();
-    
+
     const enriched = myGroups.map(g => ({
       ...g,
       members: allParts.filter(p => p.groupId === g.id).map(p => p.userId),
       messages: allMsgs.filter(m => m.groupId === g.id).sort((a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime())
     }));
-    return res.json(enriched);
+    return sendListResponse(res, req, enriched, buildOffsetMeta(page, limit, total));
   } catch (error) { return res.status(500).json({ error: "Server error" }); }
 });
 
@@ -426,11 +473,13 @@ router.post("/groups", async (req: AuthRequest, res) => {
     const id = genId("grp");
     const { members: memberList, ...groupBody } = req.body;
     const newGroup = { name: groupBody.name, description: groupBody.description, image: groupBody.image || null, id, createdBy: req.user!.userId };
-    await db.insert(schema.groups).values(newGroup);
-    
     const members = memberList || [req.user!.userId];
     const memberRows = members.map((m: string) => ({ groupId: id, userId: m }));
-    await db.insert(schema.groupMembers).values(memberRows);
+
+    await db.transaction(async (tx) => {
+      await tx.insert(schema.groups).values(newGroup);
+      await tx.insert(schema.groupMembers).values(memberRows);
+    });
     
     return res.json({ ...newGroup, members, messages: [] });
   } catch (error) { return res.status(500).json({ error: "Server error" }); }
@@ -506,7 +555,24 @@ router.delete("/groups/:id/members/:userId", async (req: AuthRequest, res) => {
 router.get("/bids", async (req: AuthRequest, res) => {
   try {
     const userId = req.user!.userId;
-    const allBids = await db.select().from(schema.bids);
+    const { page, limit, offset } = parseOffsetPagination(req.query as Record<string, unknown>, { limit: 50, maxLimit: 100 });
+
+    const sellerChannels = await db.select({ id: schema.channels.id }).from(schema.channels).where(eq(schema.channels.ownerId, userId));
+    const channelIds = sellerChannels.map((c) => c.id);
+
+    let bidWhere = eq(schema.bids.buyerId, userId);
+    if (channelIds.length > 0) {
+      bidWhere = or(
+        eq(schema.bids.buyerId, userId),
+        eq(schema.bids.allSellers, true),
+        sql`EXISTS (SELECT 1 FROM jsonb_array_elements_text(${schema.bids.selectedSellers}) elem WHERE elem = ANY(${channelIds}))`,
+      ) as typeof bidWhere;
+    }
+
+    const countResult = await db.select({ count: count() }).from(schema.bids).where(bidWhere);
+    const total = countResult[0]?.count ?? 0;
+
+    const allBids = await db.select().from(schema.bids).where(bidWhere).orderBy(desc(schema.bids.createdAt)).limit(limit).offset(offset);
     const bidIds = allBids.map(b => b.id);
     let offers: any[] = [];
     let rejs: any[] = [];
@@ -528,11 +594,11 @@ router.get("/bids", async (req: AuthRequest, res) => {
         rejections: rejs.filter(r => r.bidId === b.id),
       };
     });
-    return res.json(enriched);
+    return sendListResponse(res, req, enriched, buildOffsetMeta(page, limit, total));
   } catch (error) { return res.status(500).json({ error: "Server error" }); }
 });
 
-router.post("/bids", async (req: AuthRequest, res) => {
+router.post("/bids", validateBody(createBidSchema), async (req: AuthRequest, res) => {
   try {
     const id = genId("bid");
     const endTime = req.body.endTime ? new Date(req.body.endTime) : new Date(Date.now() + 30 * 60 * 1000);
@@ -557,7 +623,7 @@ router.post("/bids/:id/offers", async (req: AuthRequest, res) => {
   } catch (error) { return res.status(500).json({ error: "Server error" }); }
 });
 
-router.post("/bids/:id/winner", async (req: AuthRequest, res) => {
+router.post("/bids/:id/winner", validateBody(winnerSchema), async (req: AuthRequest, res) => {
   try {
     const bidId = req.params.id as string;
     const { winnerId, winnerChannelId } = req.body;
@@ -605,7 +671,7 @@ router.post("/bids/:id/winner", async (req: AuthRequest, res) => {
   } catch (error) { return res.status(500).json({ error: "Server error" }); }
 });
 
-router.post("/bids/:id/reject", async (req: AuthRequest, res) => {
+router.post("/bids/:id/reject", validateBody(rejectBidSchema), async (req: AuthRequest, res) => {
   try {
     const bidId = req.params.id as string;
     const { channelId, reason } = req.body;
@@ -633,7 +699,13 @@ router.post("/bids/:id/end", async (req: AuthRequest, res) => {
 router.get("/orders", async (req: AuthRequest, res) => {
   try {
     const userId = req.user!.userId;
-    const allOrders = await db.select().from(schema.orders).where(or(eq(schema.orders.buyerId, userId), eq(schema.orders.sellerId, userId)));
+    const { page, limit, offset } = parseOffsetPagination(req.query as Record<string, unknown>, { limit: 50, maxLimit: 100 });
+    const orderWhere = or(eq(schema.orders.buyerId, userId), eq(schema.orders.sellerId, userId));
+
+    const countResult = await db.select({ count: count() }).from(schema.orders).where(orderWhere);
+    const total = countResult[0]?.count ?? 0;
+
+    const allOrders = await db.select().from(schema.orders).where(orderWhere).orderBy(desc(schema.orders.createdAt)).limit(limit).offset(offset);
     const enrichedOrders = await enrichOrdersWithSellerName(allOrders);
     const orderIds = enrichedOrders.map(o => o.id);
     let msgs: any[] = [];
@@ -641,7 +713,7 @@ router.get("/orders", async (req: AuthRequest, res) => {
       msgs = await db.select().from(schema.messages).where(inArray(schema.messages.orderId, orderIds));
     }
     const enriched = enrichedOrders.map(o => ({ ...o, messages: msgs.filter(m => m.orderId === o.id) }));
-    return res.json(enriched);
+    return sendListResponse(res, req, enriched, buildOffsetMeta(page, limit, total));
   } catch (error) { return res.status(500).json({ error: "Server error" }); }
 });
 
@@ -666,7 +738,7 @@ router.post("/orders/:id/messages", async (req: AuthRequest, res) => {
   } catch (error) { return res.status(500).json({ error: "Server error" }); }
 });
 
-router.patch("/orders/:id/status", async (req: AuthRequest, res) => {
+router.patch("/orders/:id/status", validateBody(orderStatusSchema), async (req: AuthRequest, res) => {
   try {
     const orderId = req.params.id as string;
     const { status } = req.body;
@@ -677,12 +749,14 @@ router.patch("/orders/:id/status", async (req: AuthRequest, res) => {
     if (order[0].buyerId !== userId && order[0].sellerId !== userId) {
       return res.status(403).json({ error: "Forbidden" });
     }
-    await db.update(schema.orders).set({ status }).where(eq(schema.orders.id, orderId));
-    await db.insert(schema.orderStatusHistory).values({
-      id: genId("osh"),
-      orderId,
-      status,
-      note: `Updated by ${userId}`,
+    await db.transaction(async (tx) => {
+      await tx.update(schema.orders).set({ status }).where(eq(schema.orders.id, orderId));
+      await tx.insert(schema.orderStatusHistory).values({
+        id: genId("osh"),
+        orderId,
+        status,
+        note: `Updated by ${userId}`,
+      });
     });
     const updated = await db.select().from(schema.orders).where(eq(schema.orders.id, orderId)).limit(1);
     const msgs = await db.select().from(schema.messages).where(eq(schema.messages.orderId, orderId));
@@ -694,12 +768,15 @@ router.patch("/orders/:id/status", async (req: AuthRequest, res) => {
 // --- REVIEWS ---
 router.get("/reviews", async (req: AuthRequest, res) => {
   try {
-    const all = await db.select().from(schema.reviews);
-    return res.json(all);
+    const { page, limit, offset } = parseOffsetPagination(req.query as Record<string, unknown>, { limit: 50, maxLimit: 100 });
+    const countResult = await db.select({ count: count() }).from(schema.reviews);
+    const total = countResult[0]?.count ?? 0;
+    const all = await db.select().from(schema.reviews).orderBy(desc(schema.reviews.createdAt)).limit(limit).offset(offset);
+    return sendListResponse(res, req, all, buildOffsetMeta(page, limit, total));
   } catch (error) { return res.status(500).json({ error: "Server error" }); }
 });
 
-router.post("/reviews", async (req: AuthRequest, res) => {
+router.post("/reviews", validateBody(createReviewSchema), async (req: AuthRequest, res) => {
   try {
     const id = genId("rev");
     const newRev = { ...req.body, id, buyerId: req.user!.userId };

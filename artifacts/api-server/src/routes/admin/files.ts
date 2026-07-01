@@ -1,14 +1,23 @@
 import { Router } from "express";
 import { db, fileUploads, auditLogs } from "@workspace/db";
 import { eq, sql } from "drizzle-orm";
-import path from "path";
-import fs from "fs";
+import { v2 as cloudinary } from "cloudinary";
 import { requireAdminAuth, requirePermission, type AdminRequest } from "../../middlewares/adminAuth";
 
 const router = Router();
 router.use(requireAdminAuth);
 
-// List files
+cloudinary.config({
+  cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
+  api_key: process.env.CLOUDINARY_API_KEY,
+  api_secret: process.env.CLOUDINARY_API_SECRET,
+});
+
+function extractCloudinaryPublicId(url: string): string | null {
+  const match = url.match(/\/upload\/(?:v\d+\/)?(.+)\.\w+$/);
+  return match?.[1] ?? null;
+}
+
 router.get("/", requirePermission("files.view"), async (req: AdminRequest, res) => {
   try {
     const page = Math.max(1, parseInt(req.query.page as string) || 1);
@@ -23,7 +32,6 @@ router.get("/", requirePermission("files.view"), async (req: AdminRequest, res) 
       .limit(limit)
       .offset(offset);
 
-    // Calculate total storage
     const storageResult = await db.select({ total: sql<number>`coalesce(cast(sum(${fileUploads.size}) as integer), 0)` }).from(fileUploads);
 
     return res.json({
@@ -40,7 +48,6 @@ router.get("/", requirePermission("files.view"), async (req: AdminRequest, res) 
   }
 });
 
-// Delete file
 router.delete("/:id", requirePermission("files.delete"), async (req: AdminRequest, res) => {
   try {
     const fileId = req.params.id as string;
@@ -48,13 +55,18 @@ router.delete("/:id", requirePermission("files.delete"), async (req: AdminReques
     const file = await db.select().from(fileUploads).where(eq(fileUploads.id, fileId)).limit(1);
     if (file.length === 0) return res.status(404).json({ error: "File not found" });
 
-    // Try to delete from filesystem
-    const filePath = path.join(process.cwd(), file[0].url);
-    try {
-      if (fs.existsSync(filePath)) {
-        fs.unlinkSync(filePath);
+    const url = file[0]!.url;
+    if (url.includes("cloudinary.com")) {
+      const publicId = extractCloudinaryPublicId(url);
+      if (publicId) {
+        try {
+          const resourceType = file[0]!.type.startsWith("video/") ? "video" : "image";
+          await cloudinary.uploader.destroy(publicId, { resource_type: resourceType });
+        } catch (e) {
+          req.log.warn({ err: e, publicId }, "Cloudinary delete failed");
+        }
       }
-    } catch { /* file may not exist on disk */ }
+    }
 
     await db.delete(fileUploads).where(eq(fileUploads.id, fileId));
 
@@ -63,7 +75,7 @@ router.delete("/:id", requirePermission("files.delete"), async (req: AdminReques
       adminId: req.admin!.userId,
       action: "file_delete",
       target: `file:${fileId}`,
-      details: { url: file[0].url },
+      details: { url },
       ipAddress: (req.headers["x-forwarded-for"] as string) || req.ip || "unknown",
       browser: req.headers["user-agent"] || "unknown",
       device: "web",
@@ -76,7 +88,6 @@ router.delete("/:id", requirePermission("files.delete"), async (req: AdminReques
   }
 });
 
-// Storage stats
 router.get("/stats", requirePermission("files.view"), async (req: AdminRequest, res) => {
   try {
     const typeStats = await db.execute(sql`
@@ -85,17 +96,8 @@ router.get("/stats", requirePermission("files.view"), async (req: AdminRequest, 
       GROUP BY type
     `);
 
-    const uploadDir = path.join(process.cwd(), "uploads");
-    let diskFiles = 0;
-    try {
-      if (fs.existsSync(uploadDir)) {
-        diskFiles = fs.readdirSync(uploadDir).length;
-      }
-    } catch { /* ok */ }
-
     return res.json({
       typeStats: typeStats.rows,
-      diskFiles,
     });
   } catch (error: unknown) {
     req.log.error(error);

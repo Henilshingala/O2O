@@ -1,22 +1,36 @@
 import { Router } from "express";
 import { db, users, auditLogs } from "@workspace/db";
-import { eq, sql } from "drizzle-orm";
-import { scryptSync, randomBytes } from "crypto";
+import { eq, sql, count } from "drizzle-orm";
+import { hashPassword } from "../../lib/crypto";
 import { requireAdminAuth, requireSuperAdmin, type AdminRequest } from "../../middlewares/adminAuth";
+import { parseOffsetPagination } from "../../lib/pagination";
+import { z } from "zod";
+import { validateBody } from "../../lib/validation";
 
 const router = Router();
 router.use(requireAdminAuth);
 router.use(requireSuperAdmin);
 
-function hashPassword(password: string): string {
-  const salt = randomBytes(16).toString("hex");
-  const derivedKey = scryptSync(password, salt, 64).toString("hex");
-  return `${salt}:${derivedKey}`;
-}
+const createAdminSchema = z.object({
+  username: z.string().min(3),
+  fullName: z.string().min(1),
+  email: z.string().email(),
+  mobile: z.string().optional(),
+  city: z.string().optional(),
+  password: z.string().min(6),
+  adminRole: z.enum(["super_admin", "admin", "moderator", "support"]).optional(),
+});
 
-// List all admins
+const resetPasswordSchema = z.object({
+  newPassword: z.string().min(6),
+});
+
 router.get("/", async (req: AdminRequest, res) => {
   try {
+    const { page, limit, offset } = parseOffsetPagination(req.query as Record<string, unknown>, { limit: 25, maxLimit: 100 });
+    const countResult = await db.select({ count: count() }).from(users).where(eq(users.role, "admin"));
+    const total = countResult[0]?.count ?? 0;
+
     const admins = await db.select({
       id: users.id,
       username: users.username,
@@ -29,32 +43,26 @@ router.get("/", async (req: AdminRequest, res) => {
       adminRole: users.adminRole,
       isBanned: users.isBanned,
       createdAt: users.createdAt,
-    }).from(users).where(eq(users.role, "admin"));
+    }).from(users).where(eq(users.role, "admin")).orderBy(sql`${users.createdAt} desc`).limit(limit).offset(offset);
 
-    return res.json(admins);
+    return res.json({ admins, total, page, limit, totalPages: Math.ceil(total / limit) });
   } catch (error: unknown) {
     req.log.error(error);
     return res.status(500).json({ error: "Failed to list admins" });
   }
 });
 
-// Create admin
-router.post("/", async (req: AdminRequest, res) => {
+router.post("/", validateBody(createAdminSchema), async (req: AdminRequest, res) => {
   try {
     const { username, fullName, email, mobile, city, password, adminRole } = req.body;
 
-    if (!username || !fullName || !email || !password) {
-      return res.status(400).json({ error: "username, fullName, email, and password are required" });
-    }
-
-    // Check existing
     const existing = await db.select().from(users).where(eq(users.email, email)).limit(1);
     if (existing.length > 0) {
-      return res.status(400).json({ error: "Email already taken" });
+      return res.status(409).json({ error: "Email already taken" });
     }
 
     const id = `admin_${Date.now()}`;
-    const hashedPassword = hashPassword(password);
+    const hashedPassword = await hashPassword(password);
 
     await db.insert(users).values({
       id,
@@ -88,12 +96,10 @@ router.post("/", async (req: AdminRequest, res) => {
   }
 });
 
-// Disable admin
 router.put("/:id/disable", async (req: AdminRequest, res) => {
   try {
     const adminId = req.params.id as string;
 
-    // Prevent self-disable
     if (adminId === req.admin!.userId) {
       return res.status(400).json({ error: "Cannot disable yourself" });
     }
@@ -117,7 +123,6 @@ router.put("/:id/disable", async (req: AdminRequest, res) => {
   }
 });
 
-// Enable admin
 router.put("/:id/enable", async (req: AdminRequest, res) => {
   try {
     const adminId = req.params.id as string;
@@ -141,17 +146,12 @@ router.put("/:id/enable", async (req: AdminRequest, res) => {
   }
 });
 
-// Reset admin password
-router.post("/:id/reset-password", async (req: AdminRequest, res) => {
+router.post("/:id/reset-password", validateBody(resetPasswordSchema), async (req: AdminRequest, res) => {
   try {
     const adminId = req.params.id as string;
     const { newPassword } = req.body;
 
-    if (!newPassword || newPassword.length < 6) {
-      return res.status(400).json({ error: "Password must be at least 6 characters" });
-    }
-
-    const hashed = hashPassword(newPassword);
+    const hashed = await hashPassword(newPassword);
     await db.update(users).set({ password: hashed }).where(eq(users.id, adminId));
 
     await db.insert(auditLogs).values({
@@ -171,7 +171,6 @@ router.post("/:id/reset-password", async (req: AdminRequest, res) => {
   }
 });
 
-// Change admin role
 router.put("/:id/role", async (req: AdminRequest, res) => {
   try {
     const adminId = req.params.id as string;

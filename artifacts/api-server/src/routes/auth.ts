@@ -1,20 +1,28 @@
 import { Router } from "express";
 import rateLimit from "express-rate-limit";
-import { db, users } from "@workspace/db";
+import { db, users, loginHistory } from "@workspace/db";
 import { passwordResetOtps, refreshTokens } from "@workspace/db/schema";
 import { eq, and, isNull, gt } from "drizzle-orm";
-import { scrypt, randomBytes, timingSafeEqual } from "crypto";
-import { promisify } from "util";
-const scryptAsync = promisify(scrypt);
 import { requireAuth, type AuthRequest } from "../middlewares/auth";
 import { sendEmail } from "../lib/delivery";
+import { hashPassword, verifyPassword } from "../lib/crypto";
 import {
   issueTokens,
   hashOtp,
   verifyOtpHash,
-  verifyTokenHash,
-  hashToken,
+  verifyRefreshToken,
+  verifyLegacyTokenHash,
+  hashRefreshToken,
 } from "../lib/tokens";
+import {
+  validateBody,
+  signupSchema,
+  loginSchema,
+  refreshSchema,
+  sendOtpSchema,
+  verifyOtpSchema,
+  resetPasswordSchema,
+} from "../lib/validation";
 
 const router = Router();
 
@@ -24,87 +32,111 @@ const otpLimiter = rateLimit({
   message: { error: "Too many OTP requests. Try again later." },
 });
 
-async function hashPassword(password: string): Promise<string> {
-  const salt = randomBytes(16).toString("hex");
-  const derivedKey = (await scryptAsync(password, salt, 64)) as Buffer;
-  return `${salt}:${derivedKey.toString("hex")}`;
-}
-
-async function verifyPassword(password: string, hash: string): Promise<boolean> {
-  const [salt, key] = hash.split(":");
-  if (!salt || !key) return false;
-  const keyBuffer = Buffer.from(key, "hex");
-  const derivedKey = (await scryptAsync(password, salt, 64)) as Buffer;
-  return timingSafeEqual(keyBuffer, derivedKey);
-}
-
 const genId = (prefix: string) => `${prefix}_${Date.now()}`;
 
-async function persistRefreshToken(userId: string, refreshToken: string, refreshTokenHash: string, expiresAt: Date) {
+async function persistRefreshToken(userId: string, refreshTokenHash: string, expiresAt: Date) {
   await db.insert(refreshTokens).values({
     id: genId("rt"),
     userId,
     tokenHash: refreshTokenHash,
     expiresAt,
   });
-  return refreshToken;
 }
 
 async function issueAuthResponse(userId: string, userWithoutPassword: Record<string, unknown>) {
   const { accessToken, refreshToken, refreshTokenHash, refreshExpiresAt } = issueTokens(userId);
-  await persistRefreshToken(userId, refreshToken, refreshTokenHash, refreshExpiresAt);
+  await persistRefreshToken(userId, refreshTokenHash, refreshExpiresAt);
   return { token: accessToken, refreshToken, user: userWithoutPassword };
 }
 
-router.post("/signup", async (req, res) => {
+async function recordLogin(userId: string, req: { ip?: string; headers: Record<string, unknown> }) {
+  try {
+    await db.insert(loginHistory).values({
+      id: genId("login"),
+      userId,
+      ipAddress: (req.headers["x-forwarded-for"] as string) || req.ip || "unknown",
+      device: (req.headers["user-agent"] as string) || "unknown",
+    });
+  } catch {
+    // non-fatal
+  }
+}
+
+async function findRefreshTokenRecord(refreshToken: string) {
+  const tokenHash = hashRefreshToken(refreshToken);
+  const byHash = await db
+    .select()
+    .from(refreshTokens)
+    .where(
+      and(
+        eq(refreshTokens.tokenHash, tokenHash),
+        isNull(refreshTokens.revokedAt),
+        gt(refreshTokens.expiresAt, new Date()),
+      ),
+    )
+    .limit(1);
+
+  if (byHash[0]) return byHash[0];
+
+  // Legacy scrypt-hashed tokens (pre-migration)
+  const activeTokens = await db
+    .select()
+    .from(refreshTokens)
+    .where(and(isNull(refreshTokens.revokedAt), gt(refreshTokens.expiresAt, new Date())));
+
+  for (const t of activeTokens) {
+    if (t.tokenHash.includes(":") && (await verifyLegacyTokenHash(refreshToken, t.tokenHash))) {
+      return t;
+    }
+  }
+  return null;
+}
+
+router.post("/signup", validateBody(signupSchema), async (req, res) => {
   try {
     const { username, fullName, email, mobile, city, role, password } = req.body;
-    if (!username || !password || !email || !mobile || !fullName || !city) {
-      return res.status(400).json({ error: "Missing required fields" });
-    }
-    if (password.length < 6) {
-      return res.status(400).json({ error: "Password must be at least 6 characters long" });
-    }
 
     const existingUser = await db.select().from(users).where(eq(users.username, username)).limit(1);
     if (existingUser.length > 0) {
-      return res.status(400).json({ error: "Username already exists" });
+      return res.status(409).json({ error: "Username already exists" });
     }
 
     const existingEmail = await db.select().from(users).where(eq(users.email, email)).limit(1);
     if (existingEmail.length > 0) {
-      return res.status(400).json({ error: "Email already exists" });
+      return res.status(409).json({ error: "Email already exists" });
     }
 
     const existingMobile = await db.select().from(users).where(eq(users.mobile, mobile)).limit(1);
     if (existingMobile.length > 0) {
-      return res.status(400).json({ error: "Mobile number already exists" });
+      return res.status(409).json({ error: "Mobile number already exists" });
     }
 
     const id = genId("user");
     const hashedPassword = await hashPassword(password);
 
-    await db.insert(users).values({
-      id,
-      username,
-      fullName,
-      email,
-      mobile,
-      city,
-      role: role || "buyer",
-      password: hashedPassword,
+    await db.transaction(async (tx) => {
+      await tx.insert(users).values({
+        id,
+        username,
+        fullName,
+        email,
+        mobile,
+        city,
+        role: role || "buyer",
+        password: hashedPassword,
+      });
     });
 
     const user = { id, username, fullName, email, mobile, city, role: role || "buyer" };
     const auth = await issueAuthResponse(id, user);
     return res.json(auth);
-  } catch (error: any) {
+  } catch (error: unknown) {
     req.log.error(error);
-    return res.status(500).json({ error: "Internal server error", details: error.message });
+    return res.status(500).json({ error: "Internal server error" });
   }
 });
 
-router.post("/login", async (req, res) => {
+router.post("/login", validateBody(loginSchema), async (req, res) => {
   try {
     const { username, password } = req.body;
     const result = await db.select().from(users).where(eq(users.username, username)).limit(1);
@@ -114,10 +146,16 @@ router.post("/login", async (req, res) => {
       return res.status(401).json({ error: "Invalid username or password" });
     }
 
+    if (user.isBanned) {
+      return res.status(403).json({ error: "Account is banned" });
+    }
+
+    await recordLogin(user.id, req);
+
     const { password: _, ...userWithoutPassword } = user;
     const auth = await issueAuthResponse(user.id, userWithoutPassword);
     return res.json(auth);
-  } catch (error: any) {
+  } catch (error: unknown) {
     req.log.error(error);
     return res.status(500).json({ error: "Internal server error" });
   }
@@ -132,23 +170,17 @@ router.get("/me", requireAuth, async (req: AuthRequest, res) => {
 
     const { password: _, ...userWithoutPassword } = user;
     return res.json(userWithoutPassword);
-  } catch (error: any) {
+  } catch (error: unknown) {
     req.log.error(error);
     return res.status(500).json({ error: "Internal server error" });
   }
 });
 
-router.post("/refresh", async (req, res) => {
+router.post("/refresh", validateBody(refreshSchema), async (req, res) => {
   try {
     const { refreshToken } = req.body;
-    if (!refreshToken) return res.status(400).json({ error: "refreshToken required" });
 
-    const allTokens = await db
-      .select()
-      .from(refreshTokens)
-      .where(and(isNull(refreshTokens.revokedAt), gt(refreshTokens.expiresAt, new Date())));
-
-    const match = allTokens.find((t) => verifyTokenHash(refreshToken, t.tokenHash));
+    const match = await findRefreshTokenRecord(refreshToken);
     if (!match) return res.status(401).json({ error: "Invalid refresh token" });
 
     await db.update(refreshTokens).set({ revokedAt: new Date() }).where(eq(refreshTokens.id, match.id));
@@ -160,7 +192,7 @@ router.post("/refresh", async (req, res) => {
     const { password: _, ...userWithoutPassword } = user;
     const auth = await issueAuthResponse(user.id, userWithoutPassword);
     return res.json(auth);
-  } catch (error: any) {
+  } catch (error: unknown) {
     req.log.error(error);
     return res.status(500).json({ error: "Internal server error" });
   }
@@ -170,23 +202,21 @@ router.post("/logout", requireAuth, async (req: AuthRequest, res) => {
   try {
     const { refreshToken } = req.body;
     if (refreshToken) {
-      const allTokens = await db.select().from(refreshTokens).where(eq(refreshTokens.userId, req.user!.userId));
-      const match = allTokens.find((t) => verifyTokenHash(refreshToken, t.tokenHash));
-      if (match) {
+      const match = await findRefreshTokenRecord(refreshToken);
+      if (match && match.userId === req.user!.userId) {
         await db.update(refreshTokens).set({ revokedAt: new Date() }).where(eq(refreshTokens.id, match.id));
       }
     } else {
       await db.update(refreshTokens).set({ revokedAt: new Date() }).where(eq(refreshTokens.userId, req.user!.userId));
     }
     return res.json({ success: true });
-  } catch (error: any) {
+  } catch (error: unknown) {
     return res.status(500).json({ error: "Internal server error" });
   }
 });
 
-router.post("/send-otp", otpLimiter, async (req, res) => {
+router.post("/send-otp", otpLimiter, validateBody(sendOtpSchema), async (req, res) => {
   const { email } = req.body;
-  if (!email) return res.status(400).json({ error: "Email required" });
 
   const userResult = await db.select().from(users).where(eq(users.email, email)).limit(1);
   if (!userResult.length) {
@@ -194,7 +224,7 @@ router.post("/send-otp", otpLimiter, async (req, res) => {
   }
 
   const otp = Math.floor(100000 + Math.random() * 900000).toString();
-  const otpHash = hashOtp(otp);
+  const otpHash = await hashOtp(otp);
   const expiresAt = new Date(Date.now() + 10 * 60 * 1000);
 
   await db
@@ -211,13 +241,12 @@ router.post("/send-otp", otpLimiter, async (req, res) => {
   return res.json({ success: true, ...(isDev ? { otp } : {}) });
 });
 
-router.post("/verify-otp", otpLimiter, async (req, res) => {
+router.post("/verify-otp", otpLimiter, validateBody(verifyOtpSchema), async (req, res) => {
   const { email, otp } = req.body;
-  if (!email || !otp) return res.status(400).json({ error: "Email and OTP required" });
 
   const rows = await db.select().from(passwordResetOtps).where(eq(passwordResetOtps.email, email)).limit(1);
   const record = rows[0];
-  if (!record || record.expiresAt < new Date() || !verifyOtpHash(otp, record.otpHash)) {
+  if (!record || record.expiresAt < new Date() || !(await verifyOtpHash(otp, record.otpHash))) {
     return res.status(400).json({ error: "Invalid or expired OTP" });
   }
 
@@ -225,9 +254,8 @@ router.post("/verify-otp", otpLimiter, async (req, res) => {
   return res.json({ success: true });
 });
 
-router.post("/reset-password", otpLimiter, async (req, res) => {
+router.post("/reset-password", otpLimiter, validateBody(resetPasswordSchema), async (req, res) => {
   const { email, password } = req.body;
-  if (!email || !password) return res.status(400).json({ error: "Email and password required" });
 
   const otpRows = await db.select().from(passwordResetOtps).where(eq(passwordResetOtps.email, email)).limit(1);
   const otpRecord = otpRows[0];
@@ -239,8 +267,11 @@ router.post("/reset-password", otpLimiter, async (req, res) => {
   if (!result.length) return res.status(404).json({ error: "User not found" });
 
   const hashedPassword = await hashPassword(password);
-  await db.update(users).set({ password: hashedPassword }).where(eq(users.email, email));
-  await db.delete(passwordResetOtps).where(eq(passwordResetOtps.email, email));
+  await db.transaction(async (tx) => {
+    await tx.update(users).set({ password: hashedPassword }).where(eq(users.email, email));
+    await tx.delete(passwordResetOtps).where(eq(passwordResetOtps.email, email));
+    await tx.update(refreshTokens).set({ revokedAt: new Date() }).where(eq(refreshTokens.userId, result[0]!.id));
+  });
   return res.json({ success: true });
 });
 
