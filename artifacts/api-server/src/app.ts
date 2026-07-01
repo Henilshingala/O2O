@@ -98,20 +98,7 @@ if (fs.existsSync(adminDistPath)) {
 
 // ──── Root landing ────
 app.get("/", (_req, res) => {
-  const adminBuilt = fs.existsSync(adminDistPath);
-  res.send(`
-    <!DOCTYPE html>
-    <html><head><title>O2O API Server</title>
-    <style>body{font-family:system-ui;display:flex;align-items:center;justify-content:center;height:100vh;margin:0;background:#0f172a;color:#e2e8f0;}
-    .box{text-align:center;padding:40px;border-radius:16px;background:#1e293b;box-shadow:0 25px 50px -12px rgba(0,0,0,.5);max-width:420px;}
-    h1{font-size:2rem;margin:0 0 8px;background:linear-gradient(135deg,#6366f1,#8b5cf6);-webkit-background-clip:text;-webkit-text-fill-color:transparent;}
-    p{margin:8px 0;color:#94a3b8;} code{background:#334155;padding:4px 8px;border-radius:6px;color:#a5b4fc;}
-    a{color:#818cf8;text-decoration:none;font-weight:600;} a:hover{text-decoration:underline;}</style>
-    </head><body><div class="box"><h1>O2O API Server</h1>
-    <p>API is running at <code>/api/*</code></p>
-    ${adminBuilt ? '<p><a href="/admin/">Open Admin Panel →</a></p>' : '<p>Admin panel not built. Run: <code>pnpm --filter @workspace/admin-panel build</code></p>'}
-    </div></body></html>
-  `);
+  res.redirect("/admin/");
 });
 
 export default app;
