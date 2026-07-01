@@ -4,7 +4,7 @@ import { API_URL } from "@env";
 import { useAuth } from "@/context/AuthContext";
 import { connectSocket, disconnectSocket } from "@/lib/socket";
 
-const API_BASE_URL = API_URL || (__DEV__ ? "http://127.0.0.1:5000" : "http://192.168.0.101:5000");
+const API_BASE_URL = API_URL || "https://o2o-rphb.onrender.com";
 
 const SocketContext = createContext<null>(null);
 

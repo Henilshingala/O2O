@@ -55,12 +55,14 @@ export default defineConfig({
     allowedHosts: true,
     proxy: {
       "/api": {
-        target: "http://localhost:8000",
+        target: "https://o2o-rphb.onrender.com",
         changeOrigin: true,
+        secure: false,
       },
       "/uploads": {
-        target: "http://localhost:8000",
+        target: "https://o2o-rphb.onrender.com",
         changeOrigin: true,
+        secure: false,
       },
     },
   },

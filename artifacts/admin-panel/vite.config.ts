@@ -17,8 +17,16 @@ export default defineConfig({
   server: {
     port: 5173,
     proxy: {
-      "/api": "http://localhost:5000",
-      "/uploads": "http://localhost:5000",
+      "/api": {
+        target: "https://o2o-rphb.onrender.com",
+        changeOrigin: true,
+        secure: false,
+      },
+      "/uploads": {
+        target: "https://o2o-rphb.onrender.com",
+        changeOrigin: true,
+        secure: false,
+      },
     },
   },
 });

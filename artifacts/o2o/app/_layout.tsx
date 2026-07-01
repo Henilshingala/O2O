@@ -21,7 +21,7 @@ import { API_URL } from "@env";
 import { setBaseUrl } from "@workspace/api-client-react";
 
 // Configure the base URL for the API client
-const API_BASE_URL = API_URL || (__DEV__ ? "http://127.0.0.1:5000" : "http://192.168.0.101:5000");
+const API_BASE_URL = API_URL || "https://o2o-rphb.onrender.com";
 setBaseUrl(API_BASE_URL);
 
 // Import all screens
