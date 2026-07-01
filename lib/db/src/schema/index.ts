@@ -1,4 +1,4 @@
-import { pgTable, text, integer, boolean, timestamp, jsonb, primaryKey } from "drizzle-orm/pg-core";
+import { pgTable, text, integer, boolean, timestamp, jsonb, primaryKey, index } from "drizzle-orm/pg-core";
 
 export const users = pgTable("users", {
   id: text("id").primaryKey(),
@@ -164,7 +164,10 @@ export const bids = pgTable("bids", {
   winnerId: text("winner_id"),
   winnerChannelId: text("winner_channel_id"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
-});
+}, (t) => ({
+  statusIdx: index("idx_bids_status").on(t.status),
+  buyerIdx: index("idx_bids_buyer_id").on(t.buyerId),
+}));
 
 export const bidOffers = pgTable("bid_offers", {
   id: text("id").primaryKey(),
@@ -201,7 +204,10 @@ export const orders = pgTable("orders", {
   quantity: integer("quantity").notNull(),
   status: text("status", { enum: ["pending", "confirmed", "delivered"] }).default("pending").notNull(),
   createdAt: timestamp("created_at").defaultNow().notNull(),
-});
+}, (t) => ({
+  buyerIdx: index("idx_orders_buyer_id").on(t.buyerId),
+  sellerIdx: index("idx_orders_seller_id").on(t.sellerId),
+}));
 
 export const orderItems = pgTable("order_items", {
   id: text("id").primaryKey(),
@@ -243,7 +249,11 @@ export const messages = pgTable("messages", {
   deletedAt: timestamp("deleted_at"),
   metadata: jsonb("metadata").default({}).notNull(),
   timestamp: timestamp("timestamp").defaultNow().notNull(),
-});
+}, (t) => ({
+  chatIdx: index("idx_messages_chat_id").on(t.chatId),
+  channelIdx: index("idx_messages_channel_id").on(t.channelId),
+  groupId: index("idx_messages_group_id").on(t.groupId),
+}));
 
 export const chatAttachments = pgTable("chat_attachments", {
   id: text("id").primaryKey(),

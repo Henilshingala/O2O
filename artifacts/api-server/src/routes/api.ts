@@ -70,17 +70,42 @@ async function loadProductsWithImages(channelIds: string[]) {
 // --- CHANNELS & PRODUCTS ---
 router.get("/channels", async (req: AuthRequest, res) => {
   try {
-    const allChannels = await db.select().from(schema.channels);
+    const userId = req.user!.userId;
+    // Security: Only fetch public channels or channels the user owns/follows
+    // For simplicity with Drizzle without complex joins in this migration, we do it via a subquery or in two steps.
+    const userFollows = await db.select({ channelId: schema.channelFollowers.channelId }).from(schema.channelFollowers).where(eq(schema.channelFollowers.userId, userId));
+    const followedIds = userFollows.map(f => f.channelId);
+
+    let whereClause = or(
+      eq(schema.channels.visibility, "public"),
+      eq(schema.channels.ownerId, userId)
+    );
+    if (followedIds.length > 0) {
+      whereClause = or(whereClause, inArray(schema.channels.id, followedIds));
+    }
+
+    const limit = Math.min(Number(req.query.limit) || 20, 50);
+    const offset = Number(req.query.offset) || 0;
+
+    const allChannels = await db.select()
+      .from(schema.channels)
+      .where(whereClause)
+      .limit(limit)
+      .offset(offset);
+
     const channelIds = allChannels.map((c) => c.id);
-    const allChannelMsgs = await loadChannelMessages(channelIds);
     const productsByChannel = await loadProductsWithImages(channelIds);
-    const fols = await db.select().from(schema.channelFollowers).where(inArray(schema.channelFollowers.channelId, channelIds));
+    let fols: typeof schema.channelFollowers.$inferSelect[] = [];
+    if (channelIds.length > 0) {
+      fols = await db.select().from(schema.channelFollowers).where(inArray(schema.channelFollowers.channelId, channelIds));
+    }
+
     const channelsWithDetails = allChannels.map((c) => ({
       ...c,
       image: c.logo,
       products: productsByChannel.get(c.id) ?? [],
       followers: fols.filter((f) => f.channelId === c.id).map((f) => f.userId),
-      messages: allChannelMsgs.filter(m => m.channelId === c.id),
+      messages: [], // Eager loading messages removed to prevent OOM
     }));
     return res.json(channelsWithDetails);
   } catch (error) { return res.status(500).json({ error: "Server error" }); }
@@ -541,31 +566,36 @@ router.post("/bids/:id/winner", async (req: AuthRequest, res) => {
     if (!bid) return res.status(404).json({ error: "Bid not found" });
     if (bid.buyerId !== req.user!.userId) return res.status(403).json({ error: "Only bid owner can select winner" });
 
-    await db.update(schema.bids).set({ winnerId, winnerChannelId, status: "ended" }).where(eq(schema.bids.id, bidId));
-
-    const offers = await db.select().from(schema.bidOffers).where(
-      and(eq(schema.bidOffers.bidId, bidId), eq(schema.bidOffers.sellerId, winnerId), eq(schema.bidOffers.channelId, winnerChannelId))
-    );
-    const winningOffer = offers[0];
-    const sellerRows = await db.select().from(schema.users).where(eq(schema.users.id, winnerId)).limit(1);
-    const sellerName = sellerRows[0]?.fullName ?? "Seller";
-
     let order = null;
-    if (winningOffer) {
-      const orderId = genId("ord");
-      const orderRow = {
-        id: orderId,
-        bidId,
-        buyerId: bid.buyerId,
-        sellerId: winnerId,
-        sellerChannelId: winnerChannelId,
-        offerPrice: winningOffer.price,
-        productName: bid.productName,
-        quantity: bid.quantity,
-        status: "pending" as const,
-      };
-      await db.insert(schema.orders).values(orderRow);
-      order = { ...orderRow, sellerName, messages: [] };
+    await db.transaction(async (tx) => {
+      await tx.update(schema.bids).set({ winnerId, winnerChannelId, status: "ended" }).where(eq(schema.bids.id, bidId));
+
+      const offers = await tx.select().from(schema.bidOffers).where(
+        and(eq(schema.bidOffers.bidId, bidId), eq(schema.bidOffers.sellerId, winnerId), eq(schema.bidOffers.channelId, winnerChannelId))
+      );
+      const winningOffer = offers[0];
+      const sellerRows = await tx.select().from(schema.users).where(eq(schema.users.id, winnerId)).limit(1);
+      const sellerName = sellerRows[0]?.fullName ?? "Seller";
+
+      if (winningOffer) {
+        const orderId = genId("ord");
+        const orderRow = {
+          id: orderId,
+          bidId,
+          buyerId: bid.buyerId,
+          sellerId: winnerId,
+          sellerChannelId: winnerChannelId,
+          offerPrice: winningOffer.price,
+          productName: bid.productName,
+          quantity: bid.quantity,
+          status: "pending" as const,
+        };
+        await tx.insert(schema.orders).values(orderRow);
+        order = { ...orderRow, sellerName, messages: [] };
+      }
+    });
+
+    if (order) {
       await createNotification(winnerId, "Bid Won", `You won the bid for ${bid.productName}`, "bid_won", null);
       emitToUser(winnerId, "notification:new", { type: "bid_won" });
     }

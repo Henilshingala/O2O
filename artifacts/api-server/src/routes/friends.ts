@@ -1,8 +1,9 @@
 import { Router } from "express";
 import { db } from "@workspace/db";
 import { friendsContacts, users } from "@workspace/db/schema";
-import { and, eq, or } from "drizzle-orm";
+import { and, eq, or, ilike, ne } from "drizzle-orm";
 import { requireAuth, type AuthRequest } from "../middlewares/auth";
+import { rateLimit } from "express-rate-limit";
 import { createNotification } from "./notifications";
 import { getIo } from "../socket/index";
 
@@ -70,8 +71,16 @@ router.get("/requests", async (req: AuthRequest, res) => {
   }
 });
 
+const requestLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  limit: 10, // Limit each IP to 10 requests per window
+  message: { error: "Too many friend requests sent, please try again later" },
+  standardHeaders: true,
+  legacyHeaders: false,
+});
+
 // POST /api/friends/request — send friend request
-router.post("/request", async (req: AuthRequest, res) => {
+router.post("/request", requestLimiter, async (req: AuthRequest, res) => {
   try {
     const myId = req.user!.userId;
     const { contactId } = req.body;
@@ -223,8 +232,8 @@ router.get("/search", async (req: AuthRequest, res) => {
 
     const lq = q.toLowerCase();
 
-    // Fetch all users except self, then filter in JS to avoid drizzle ILIKE issues
-    const allUsers = await db
+    // Database-level search instead of loading all users into memory
+    const matched = await db
       .select({
         id: users.id,
         username: users.username,
@@ -233,12 +242,17 @@ router.get("/search", async (req: AuthRequest, res) => {
         city: users.city,
         role: users.role,
       })
-      .from(users);
-
-    const matched = allUsers
-      .filter(u => u.id !== myId &&
-        (u.username.toLowerCase().includes(lq) || u.fullName.toLowerCase().includes(lq)))
-      .slice(0, 20);
+      .from(users)
+      .where(
+        and(
+          ne(users.id, myId),
+          or(
+            ilike(users.username, `%${lq}%`),
+            ilike(users.fullName, `%${lq}%`)
+          )
+        )
+      )
+      .limit(20);
 
     // Attach relationship status
     const allRelations = await db

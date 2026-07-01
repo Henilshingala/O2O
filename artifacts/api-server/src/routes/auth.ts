@@ -3,7 +3,9 @@ import rateLimit from "express-rate-limit";
 import { db, users } from "@workspace/db";
 import { passwordResetOtps, refreshTokens } from "@workspace/db/schema";
 import { eq, and, isNull, gt } from "drizzle-orm";
-import { scryptSync, randomBytes, timingSafeEqual } from "crypto";
+import { scrypt, randomBytes, timingSafeEqual } from "crypto";
+import { promisify } from "util";
+const scryptAsync = promisify(scrypt);
 import { requireAuth, type AuthRequest } from "../middlewares/auth";
 import { sendEmail } from "../lib/delivery";
 import {
@@ -22,17 +24,17 @@ const otpLimiter = rateLimit({
   message: { error: "Too many OTP requests. Try again later." },
 });
 
-function hashPassword(password: string): string {
+async function hashPassword(password: string): Promise<string> {
   const salt = randomBytes(16).toString("hex");
-  const derivedKey = scryptSync(password, salt, 64).toString("hex");
-  return `${salt}:${derivedKey}`;
+  const derivedKey = (await scryptAsync(password, salt, 64)) as Buffer;
+  return `${salt}:${derivedKey.toString("hex")}`;
 }
 
-function verifyPassword(password: string, hash: string): boolean {
+async function verifyPassword(password: string, hash: string): Promise<boolean> {
   const [salt, key] = hash.split(":");
   if (!salt || !key) return false;
   const keyBuffer = Buffer.from(key, "hex");
-  const derivedKey = scryptSync(password, salt, 64);
+  const derivedKey = (await scryptAsync(password, salt, 64)) as Buffer;
   return timingSafeEqual(keyBuffer, derivedKey);
 }
 
@@ -80,7 +82,7 @@ router.post("/signup", async (req, res) => {
     }
 
     const id = genId("user");
-    const hashedPassword = hashPassword(password);
+    const hashedPassword = await hashPassword(password);
 
     await db.insert(users).values({
       id,
@@ -108,7 +110,7 @@ router.post("/login", async (req, res) => {
     const result = await db.select().from(users).where(eq(users.username, username)).limit(1);
     const user = result[0];
 
-    if (!user || !verifyPassword(password, user.password)) {
+    if (!user || !(await verifyPassword(password, user.password))) {
       return res.status(401).json({ error: "Invalid username or password" });
     }
 
@@ -236,7 +238,7 @@ router.post("/reset-password", otpLimiter, async (req, res) => {
   const result = await db.select().from(users).where(eq(users.email, email)).limit(1);
   if (!result.length) return res.status(404).json({ error: "User not found" });
 
-  const hashedPassword = hashPassword(password);
+  const hashedPassword = await hashPassword(password);
   await db.update(users).set({ password: hashedPassword }).where(eq(users.email, email));
   await db.delete(passwordResetOtps).where(eq(passwordResetOtps.email, email));
   return res.json({ success: true });

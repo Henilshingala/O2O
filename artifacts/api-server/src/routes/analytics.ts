@@ -16,9 +16,20 @@ router.post("/", async (req: AuthRequest, res) => {
         lowestOffer: 0, highestOffer: 0, rating: 0, reviews: []
       });
     }
-
     const userId = req.user!.userId;
     
+    // Security: Only allow querying channels the user actually owns
+    const ownedChannelsResult = await db.select({ id: schema.channels.id }).from(schema.channels).where(eq(schema.channels.ownerId, userId));
+    const ownedChannelIds = ownedChannelsResult.map(c => c.id);
+    const validChannelIds = channelIds.filter(id => ownedChannelIds.includes(id));
+
+    if (validChannelIds.length === 0) {
+      return res.json({
+        activeBids: 0, totalOffers: 0, winningRate: 0, avgPrice: 0,
+        lowestOffer: 0, highestOffer: 0, rating: 0, reviews: []
+      });
+    }
+
     // active bids for these channels
     const activeBids = await db.select().from(schema.bids).where(
       and(
@@ -26,11 +37,11 @@ router.post("/", async (req: AuthRequest, res) => {
       )
     );
     // Since selectedSellers is jsonb, filtering exactly in PG requires raw SQL or we filter in memory for simplicity in this migration
-    const relevantActiveBids = activeBids.filter(b => b.allSellers || channelIds.some(cid => (b.selectedSellers as string[]).includes(cid)));
+    const relevantActiveBids = activeBids.filter(b => b.allSellers || validChannelIds.some(cid => (b.selectedSellers as string[]).includes(cid)));
 
     // total offers made by this seller across these channels
     const totalOffers = await db.select().from(schema.bidOffers).where(
-      inArray(schema.bidOffers.channelId, channelIds)
+      inArray(schema.bidOffers.channelId, validChannelIds)
     );
 
     const prices = totalOffers.map(o => o.price);
@@ -40,7 +51,7 @@ router.post("/", async (req: AuthRequest, res) => {
 
     // winning rate
     const wonBids = await db.select().from(schema.bids).where(
-      inArray(schema.bids.winnerChannelId, channelIds)
+      inArray(schema.bids.winnerChannelId, validChannelIds)
     );
     const winningRate = totalOffers.length > 0 ? (wonBids.length / totalOffers.length) * 100 : 0;
 

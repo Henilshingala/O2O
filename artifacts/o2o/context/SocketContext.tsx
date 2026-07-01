@@ -6,6 +6,14 @@ import { connectSocket, disconnectSocket } from "@/lib/socket";
 
 const API_BASE_URL = API_URL || "https://o2o-rphb.onrender.com";
 
+function debounce<T extends (...args: any[]) => void>(fn: T, ms = 300) {
+  let timeoutId: ReturnType<typeof setTimeout>;
+  return function (this: any, ...args: Parameters<T>) {
+    clearTimeout(timeoutId);
+    timeoutId = setTimeout(() => fn.apply(this, args), ms);
+  };
+}
+
 const SocketContext = createContext<null>(null);
 
 export function SocketProvider({ children }: { children: React.ReactNode }) {
@@ -21,18 +29,26 @@ export function SocketProvider({ children }: { children: React.ReactNode }) {
     let mounted = true;
     connectSocket(API_BASE_URL).then((sock) => {
       if (!mounted) return;
+
+      const invalidateChats = debounce(() => queryClient.invalidateQueries({ queryKey: ["chats"] }));
+      const invalidateGroups = debounce(() => queryClient.invalidateQueries({ queryKey: ["groups"] }));
+      const invalidateChannels = debounce(() => queryClient.invalidateQueries({ queryKey: ["channels"] }));
+      const invalidateOrders = debounce(() => queryClient.invalidateQueries({ queryKey: ["orders"] }));
+      const invalidateBids = debounce(() => queryClient.invalidateQueries({ queryKey: ["bids"] }));
+      const invalidateNotifications = debounce(() => queryClient.invalidateQueries({ queryKey: ["notifications"] }));
+
       sock.on("message:new", () => {
-        queryClient.invalidateQueries({ queryKey: ["chats"] });
-        queryClient.invalidateQueries({ queryKey: ["groups"] });
-        queryClient.invalidateQueries({ queryKey: ["channels"] });
-        queryClient.invalidateQueries({ queryKey: ["orders"] });
+        invalidateChats();
+        invalidateGroups();
+        invalidateChannels();
+        invalidateOrders();
       });
-      sock.on("message:edit", () => queryClient.invalidateQueries({ queryKey: ["chats"] }));
-      sock.on("message:delete", () => queryClient.invalidateQueries({ queryKey: ["chats"] }));
-      sock.on("bid:offer", () => queryClient.invalidateQueries({ queryKey: ["bids"] }));
-      sock.on("bid:ended", () => queryClient.invalidateQueries({ queryKey: ["bids"] }));
-      sock.on("bid:winner", () => queryClient.invalidateQueries({ queryKey: ["bids"] }));
-      sock.on("notification:new", () => queryClient.invalidateQueries({ queryKey: ["notifications"] }));
+      sock.on("message:edit", invalidateChats);
+      sock.on("message:delete", invalidateChats);
+      sock.on("bid:offer", invalidateBids);
+      sock.on("bid:ended", invalidateBids);
+      sock.on("bid:winner", invalidateBids);
+      sock.on("notification:new", invalidateNotifications);
     });
 
     return () => {
