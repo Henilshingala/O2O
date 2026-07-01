@@ -43,7 +43,7 @@ export default function DataTable({ columns, data, total, page, totalPages, onPa
       </div>
 
       {loading ? <div className="loading"><div className="spinner" /></div> : (
-        <div style={{ overflowX: "auto" }}>
+        <div className="table-responsive">
           <table>
             <thead>
               <tr>

@@ -46,7 +46,8 @@ export default function FileManager() {
       )}
 
       <div className="card">
-        <table>
+        <div className="table-responsive">
+          <table>
           <thead><tr><th>URL</th><th>Type</th><th>Size</th><th>Uploader</th><th>Date</th><th>Actions</th></tr></thead>
           <tbody>
             {(data?.files || []).map((f: any) => (
@@ -67,6 +68,7 @@ export default function FileManager() {
             ))}
           </tbody>
         </table>
+        </div>
       </div>
     </div>
   );

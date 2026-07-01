@@ -89,7 +89,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
         <div className="page-content">{children}</div>
       </div>
 
-      {sidebarOpen && <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,.5)", zIndex: 45 }} onClick={() => setSidebarOpen(false)} />}
+      {sidebarOpen && <div className="sidebar-overlay" style={{ display: "block" }} onClick={() => setSidebarOpen(false)} />}
     </div>
   );
 }

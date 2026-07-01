@@ -26,7 +26,8 @@ export default function AuditLogs() {
       </div>
 
       <div className="card">
-        <table>
+        <div className="table-responsive">
+          <table>
           <thead><tr><th>Admin</th><th>Action</th><th>Target</th><th>IP</th><th>Browser</th><th>Time</th></tr></thead>
           <tbody>
             {(data?.logs || []).map((l: any) => (
@@ -41,6 +42,7 @@ export default function AuditLogs() {
             ))}
           </tbody>
         </table>
+        </div>
 
         {(data?.totalPages || 1) > 1 && (
           <div className="pagination">

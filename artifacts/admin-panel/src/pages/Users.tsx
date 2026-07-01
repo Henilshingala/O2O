@@ -122,9 +122,11 @@ export default function Users() {
             {detail.loginHistory?.length > 0 && (
               <div style={{ marginTop: 16 }}>
                 <h4>Login History</h4>
+                <div className="table-responsive">
                 <table><thead><tr><th>IP</th><th>Device</th><th>Time</th></tr></thead>
                   <tbody>{detail.loginHistory.slice(0, 10).map((l: any) => <tr key={l.id}><td>{l.ip_address || l.ipAddress}</td><td>{l.device}</td><td>{new Date(l.timestamp).toLocaleString()}</td></tr>)}</tbody>
                 </table>
+                </div>
               </div>
             )}
           </div>

@@ -47,7 +47,8 @@ export default function AdminManagement() {
       </div>
 
       <div className="card">
-        <table>
+        <div className="table-responsive">
+          <table>
           <thead><tr><th>Name</th><th>Email</th><th>Role</th><th>Status</th><th>Actions</th></tr></thead>
           <tbody>
             {(admins || []).map((a: any) => (
@@ -72,6 +73,7 @@ export default function AdminManagement() {
             ))}
           </tbody>
         </table>
+        </div>
       </div>
 
       <Modal open={createOpen} onClose={() => setCreateOpen(false)} title="Create Admin">

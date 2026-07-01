@@ -76,11 +76,13 @@ export default function Dashboard() {
       {activity?.recentUsers && activity.recentUsers.length > 0 && (
         <div className="card" style={{ marginBottom: 16 }}>
           <h3 style={{ marginBottom: 16 }}>Recent Users</h3>
+        <div className="table-responsive">
           <table><thead><tr><th>Username</th><th>Email</th><th>Role</th><th>Joined</th></tr></thead>
             <tbody>{activity.recentUsers.map((u: any) => (
               <tr key={u.id}><td>{u.username}</td><td>{u.email}</td><td><span className={`badge badge-${u.role === "admin" ? "purple" : u.role === "seller" ? "green" : "blue"}`}>{u.role}</span></td><td>{new Date(u.createdAt || u.created_at).toLocaleDateString()}</td></tr>
             ))}</tbody>
           </table>
+        </div>
         </div>
       )}
     </div>
