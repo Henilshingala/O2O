@@ -42,7 +42,10 @@ export default function NewChatScreen() {
         renderItem={({ item }) => (
           <TouchableOpacity
             style={[styles.row, { borderBottomColor: colors.border }]}
-            onPress={() => { const chat = createChat(user.id, item.id); if (chat) router.replace({ pathname: "/chat/[id]", params: { id: chat.id } }); }}
+            onPress={async () => {
+              const chat = await createChat(user.id, item.id);
+              router.replace({ pathname: "/chat/[id]", params: { id: chat.id } });
+            }}
           >
             <Avatar name={item.fullName} size={46} />
             <View style={styles.info}>

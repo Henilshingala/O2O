@@ -1,23 +1,29 @@
 import { router, useLocalSearchParams } from "@/compat/router";
-import React, { useRef, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import {
   FlatList,
+  Image,
   Platform,
   StyleSheet,
   Text,
   TextInput,
   TouchableOpacity,
   View,
+  ActivityIndicator,
 } from "react-native";
 import { KeyboardAvoidingView } from "react-native-keyboard-controller";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Feather } from "@/compat/vector-icons";
 import * as Haptics from "@/compat/haptics";
+import { launchImageLibrary } from "react-native-image-picker";
 import { Avatar } from "@/components/ui/Avatar";
 import { ChatBubble } from "@/components/ChatBubble";
 import { useAuth } from "@/context/AuthContext";
 import { useData } from "@/context/DataContext";
 import { useColors } from "@/hooks/useColors";
+import { customFetch } from "@workspace/api-client-react";
+import type { Chat, Message } from "@/types";
+import { resolveMediaUrl } from "@/lib/mediaUrl";
 
 export default function ChatScreen() {
   const colors = useColors();
@@ -26,16 +32,81 @@ export default function ChatScreen() {
   const { getChat, sendChatMessage, createChat } = useData();
   const params = useLocalSearchParams<{ id: string; otherId?: string }>();
   const [text, setText] = useState("");
+  const [chat, setChat] = useState<Chat | null>(null);
+  const [loading, setLoading] = useState(false);
+  const [olderMessages, setOlderMessages] = useState<Message[]>([]);
+  const [nextCursor, setNextCursor] = useState<string | null>(null);
+  const [loadingMore, setLoadingMore] = useState(false);
   const flatRef = useRef<FlatList>(null);
 
-  if (!user) return null;
+  const existingChat = getChat(params.id);
 
-  const chat = getChat(params.id) ?? (params.otherId ? createChat(user.id, params.otherId) : null);
-  if (!chat) return null;
+  useEffect(() => {
+    if (existingChat) {
+      setChat(existingChat);
+      return;
+    }
+    if (params.otherId && user) {
+      setLoading(true);
+      createChat(user.id, params.otherId)
+        .then(setChat)
+        .finally(() => setLoading(false));
+    }
+  }, [existingChat, params.id, params.otherId, user, createChat]);
+
+  useEffect(() => {
+    if (existingChat) setChat(existingChat);
+  }, [existingChat]);
+
+  useEffect(() => {
+    setOlderMessages([]);
+    if (!chat?.id) {
+      setNextCursor(null);
+      return;
+    }
+    if (chat.messages.length >= 50) {
+      const oldest = chat.messages[0];
+      setNextCursor(oldest?.id ?? null);
+    } else {
+      setNextCursor(null);
+    }
+  }, [chat?.id, chat?.messages.length]);
+
+  if (!user) return null;
+  if (loading || !chat) {
+    return (
+      <View style={[styles.root, styles.centered, { backgroundColor: colors.background }]}>
+        <ActivityIndicator color={colors.primary} />
+      </View>
+    );
+  }
 
   const otherId = chat.participants.find((p) => p !== user.id)!;
   const other = getUserById(otherId);
-  const messages = [...chat.messages].reverse();
+  const mergedMessages = [...chat.messages, ...olderMessages].reduce<Message[]>((acc, msg) => {
+    if (!acc.some((m) => m.id === msg.id)) acc.push(msg);
+    return acc;
+  }, []).sort((a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime());
+  const messages = [...mergedMessages].reverse();
+
+  const loadOlderMessages = async () => {
+    if (!chat || loadingMore || !nextCursor) return;
+    setLoadingMore(true);
+    try {
+      const data = await customFetch<{ messages: Message[]; nextCursor: string | null }>(
+        `/api/data/chats/${chat.id}/messages?limit=50&cursor=${nextCursor}`
+      );
+      setOlderMessages((prev) => {
+        const combined = [...data.messages, ...prev];
+        return combined.filter((msg, idx) => combined.findIndex((m) => m.id === msg.id) === idx);
+      });
+      setNextCursor(data.nextCursor);
+    } catch (e) {
+      console.error("Load older messages error", e);
+    } finally {
+      setLoadingMore(false);
+    }
+  };
 
   const send = () => {
     if (!text.trim()) return;
@@ -44,8 +115,33 @@ export default function ChatScreen() {
       senderId: user.id,
       text: text.trim(),
       timestamp: new Date().toISOString(),
-    });
+      type: "text",
+    } as any);
     setText("");
+  };
+
+  const sendImage = async () => {
+    try {
+      const response = await launchImageLibrary({ mediaType: "photo", quality: 0.8 });
+      if (!response.assets?.[0]) return;
+      const asset = response.assets[0];
+      const formData = new FormData();
+      formData.append("file", {
+        uri: Platform.OS === "android" && !asset.uri?.startsWith("file://") ? `file://${asset.uri}` : asset.uri,
+        type: asset.type || "image/jpeg",
+        name: asset.fileName || "upload.jpg",
+      } as any);
+      const data = await customFetch<any>("/api/upload", { method: "POST", body: formData });
+      sendChatMessage(chat.id, {
+        senderId: user.id,
+        text: data.url,
+        timestamp: new Date().toISOString(),
+        type: "image",
+        metadata: { url: data.url },
+      } as any);
+    } catch (e) {
+      console.error("Image send error", e);
+    }
   };
 
   return (
@@ -73,64 +169,57 @@ export default function ChatScreen() {
           <Text style={[styles.headerName, { color: colors.foreground }]}>
             {other?.fullName ?? "Unknown"}
           </Text>
-          <View style={styles.onlineRow}>
-            <View style={[styles.onlineDot, { backgroundColor: colors.success }]} />
-            <Text style={[styles.onlineText, { color: colors.mutedForeground }]}>Online</Text>
-          </View>
         </View>
-        <TouchableOpacity style={styles.moreBtn}>
-          <Feather name="more-vertical" size={20} color={colors.foreground} />
-        </TouchableOpacity>
       </View>
 
       <FlatList
         ref={flatRef}
         data={messages}
-        keyExtractor={(item) => item.id}
         inverted
-        contentContainerStyle={styles.messages}
-        keyboardDismissMode="interactive"
-        keyboardShouldPersistTaps="handled"
-        showsVerticalScrollIndicator={false}
+        keyExtractor={(item) => item.id}
+        contentContainerStyle={styles.messageList}
+        onEndReached={loadOlderMessages}
+        onEndReachedThreshold={0.2}
+        ListFooterComponent={loadingMore ? <ActivityIndicator color={colors.primary} style={{ padding: 12 }} /> : null}
         renderItem={({ item }) => (
-          <ChatBubble
-            text={item.text}
-            timestamp={item.timestamp}
-            isMine={item.senderId === user.id}
-          />
+          item.type === "image" ? (
+            <View style={[styles.imageMsg, item.senderId === user.id ? styles.imageMine : styles.imageTheirs]}>
+              <Image source={{ uri: resolveMediaUrl(String(item.metadata?.url || item.text)) }} style={styles.chatImage} />
+            </View>
+          ) : (
+            <ChatBubble
+              text={item.text}
+              timestamp={item.timestamp}
+              isMine={item.senderId === user.id}
+              senderName={item.senderId === user.id ? undefined : other?.fullName}
+            />
+          )
         )}
       />
 
-      {/* Input */}
       <View
         style={[
           styles.inputBar,
           {
             backgroundColor: colors.card,
             borderTopColor: colors.border,
-            paddingBottom: insets.bottom + (Platform.OS === "web" ? 34 : 8),
+            paddingBottom: Platform.OS === "web" ? 20 : insets.bottom + 8,
           },
         ]}
       >
-        <TouchableOpacity style={styles.attachBtn}>
-          <Feather name="plus" size={22} color={colors.mutedForeground} />
+        <TouchableOpacity onPress={sendImage} style={styles.attachBtn}>
+          <Feather name="image" size={20} color={colors.mutedForeground} />
         </TouchableOpacity>
         <TextInput
-          style={[styles.textInput, { backgroundColor: colors.muted, color: colors.foreground }]}
+          style={[styles.input, { color: colors.foreground, backgroundColor: colors.muted }]}
           value={text}
           onChangeText={setText}
           placeholder="Message..."
           placeholderTextColor={colors.mutedForeground}
           multiline
-          maxLength={1000}
-          onSubmitEditing={send}
         />
-        <TouchableOpacity
-          style={[styles.sendBtn, { backgroundColor: text.trim() ? colors.primary : colors.muted }]}
-          onPress={send}
-          disabled={!text.trim()}
-        >
-          <Feather name="send" size={18} color={text.trim() ? "#fff" : colors.mutedForeground} />
+        <TouchableOpacity onPress={send} style={[styles.sendBtn, { backgroundColor: colors.primary }]}>
+          <Feather name="send" size={18} color="#fff" />
         </TouchableOpacity>
       </View>
     </KeyboardAvoidingView>
@@ -139,22 +228,24 @@ export default function ChatScreen() {
 
 const styles = StyleSheet.create({
   root: { flex: 1 },
+  centered: { alignItems: "center", justifyContent: "center" },
   header: {
     flexDirection: "row",
     alignItems: "center",
-    paddingHorizontal: 12,
+    paddingHorizontal: 16,
     paddingBottom: 12,
     borderBottomWidth: 1,
     gap: 10,
   },
-  backBtn: { padding: 4 },
+  backBtn: { marginRight: 4 },
   headerInfo: { flex: 1 },
-  headerName: { fontSize: 15, fontWeight: "700" },
-  onlineRow: { flexDirection: "row", alignItems: "center", gap: 4, marginTop: 2 },
-  onlineDot: { width: 7, height: 7, borderRadius: 3.5 },
-  onlineText: { fontSize: 12 },
-  moreBtn: { padding: 4 },
-  messages: { paddingVertical: 12 },
+  headerName: { fontSize: 16, fontWeight: "700" },
+  messageList: { padding: 16, gap: 8 },
+  imageMsg: { marginVertical: 4, maxWidth: "75%" },
+  imageMine: { alignSelf: "flex-end" },
+  imageTheirs: { alignSelf: "flex-start" },
+  chatImage: { width: 200, height: 200, borderRadius: 12 },
+  attachBtn: { padding: 8 },
   inputBar: {
     flexDirection: "row",
     alignItems: "flex-end",
@@ -163,21 +254,20 @@ const styles = StyleSheet.create({
     borderTopWidth: 1,
     gap: 8,
   },
-  attachBtn: { padding: 4, marginBottom: 4 },
-  textInput: {
+  input: {
     flex: 1,
-    borderRadius: 22,
+    minHeight: 42,
+    maxHeight: 120,
+    borderRadius: 20,
     paddingHorizontal: 16,
     paddingVertical: 10,
     fontSize: 15,
-    maxHeight: 100,
   },
   sendBtn: {
-    width: 38,
-    height: 38,
-    borderRadius: 19,
+    width: 42,
+    height: 42,
+    borderRadius: 21,
     alignItems: "center",
     justifyContent: "center",
-    marginBottom: 2,
   },
 });

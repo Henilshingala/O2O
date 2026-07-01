@@ -18,22 +18,23 @@ interface DataContextType {
 
   getChat: (id: string) => Chat | undefined;
   getChatWithUser: (myId: string, otherId: string) => Chat | undefined;
-  createChat: (myId: string, otherId: string) => Chat | undefined;
+  createChat: (myId: string, otherId: string) => Promise<Chat>;
   sendChatMessage: (chatId: string, msg: Omit<Message, "id">) => void;
 
   getGroup: (id: string) => Group | undefined;
   getMyGroups: (userId: string) => Group[];
-  createGroup: (g: Omit<Group, "id" | "createdAt" | "updatedAt" | "messages">) => Group | undefined;
+  createGroup: (g: Omit<Group, "id" | "createdAt" | "updatedAt" | "messages">) => Promise<Group>;
   sendGroupMessage: (groupId: string, msg: Omit<Message, "id">) => void;
+  updateGroup: (groupId: string, updates: Partial<Pick<Group, "name" | "description" | "image">>) => Promise<void>;
 
   getChannel: (id: string) => Channel | undefined;
   getMyChannels: (userId: string) => Channel[];
   getFollowedChannels: (userId: string) => Channel[];
-  createChannel: (c: Omit<Channel, "id" | "createdAt" | "messages" | "followers" | "products">) => Channel | undefined;
+  createChannel: (c: Omit<Channel, "id" | "createdAt" | "messages" | "followers" | "products">) => Promise<Channel>;
   followChannel: (channelId: string, userId: string) => void;
   sendChannelMessage: (channelId: string, msg: Omit<Message, "id">) => void;
-  createProduct: (channelId: string, p: Omit<Product, "id" | "channelId" | "views" | "wishlisted" | "createdAt">) => Product | undefined;
-  repostProduct: (channelId: string, productId: string, updates: Partial<Product>) => void;
+  createProduct: (channelId: string, p: Omit<Product, "id" | "channelId" | "views" | "wishlisted" | "createdAt">) => Promise<Product>;
+  repostProduct: (channelId: string, productId: string, updates: Partial<Product>) => Promise<Product>;
   toggleWishlist: (userId: string, product: Product, channel: Channel) => void;
   isWishlisted: (userId: string, productId: string) => boolean;
   getWishlist: (userId: string) => WishlistItem[];
@@ -41,15 +42,15 @@ interface DataContextType {
   getBid: (id: string) => Bid | undefined;
   getMyBids: (userId: string) => Bid[];
   getBidsForSeller: (channelId: string) => Bid[];
-  createBid: (b: Omit<Bid, "id" | "offers" | "rejections" | "createdAt">) => Bid | undefined;
+  createBid: (b: Omit<Bid, "id" | "offers" | "rejections" | "createdAt">) => Promise<Bid>;
   submitOffer: (bidId: string, offer: Omit<BidOffer, "id" | "timestamp">) => void;
-  rejectBid: (bidId: string, rejection: { sellerId: string; channelId: string; reason: string }) => void;
+  rejectBid: (bidId: string, rejection: { sellerId: string; channelId: string; reason: string }) => Promise<void>;
   selectWinner: (bidId: string, winnerId: string, winnerChannelId: string) => void;
   endBid: (bidId: string) => void;
 
   getOrder: (id: string) => Order | undefined;
   getMyOrders: (userId: string, role: "buyer" | "seller") => Order[];
-  createOrder: (o: Omit<Order, "id" | "messages" | "createdAt">) => Order | undefined;
+  createOrder: (o: Omit<Order, "id" | "messages" | "createdAt">) => Promise<Order>;
   sendOrderMessage: (orderId: string, msg: Omit<Message, "id">) => void;
   updateOrderStatus: (orderId: string, status: Order["status"]) => void;
 
@@ -78,34 +79,15 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
 
   const isLoading = enabled && (loadingChannels || loadingChats || loadingGroups || loadingBids || loadingOrders || loadingReviews || loadingWishlist);
 
-  const mutator = (url: string, method: string = "POST") => {
-    return async (data: any) => {
-      return await customFetch<any>(url, {
-        method,
-        body: JSON.stringify(data),
-      });
-    };
+  const invalidate = {
+    channels: () => queryClient.invalidateQueries({ queryKey: ["channels"] }),
+    chats: () => queryClient.invalidateQueries({ queryKey: ["chats"] }),
+    groups: () => queryClient.invalidateQueries({ queryKey: ["groups"] }),
+    bids: () => queryClient.invalidateQueries({ queryKey: ["bids"] }),
+    orders: () => queryClient.invalidateQueries({ queryKey: ["orders"] }),
+    reviews: () => queryClient.invalidateQueries({ queryKey: ["reviews"] }),
+    wishlist: () => queryClient.invalidateQueries({ queryKey: ["wishlist"] }),
   };
-
-  const createChannelMut = useMutation({ mutationFn: mutator("/api/data/channels"), onSuccess: () => queryClient.invalidateQueries({ queryKey: ["channels"] }) });
-  const followChannelMut = useMutation({ mutationFn: (id: string) => customFetch(`/api/data/channels/${id}/follow`, { method: "POST" }), onSuccess: () => queryClient.invalidateQueries({ queryKey: ["channels"] }) });
-  const createProductMut = useMutation({ mutationFn: ({ id, data }: { id: string; data: any }) => customFetch(`/api/data/channels/${id}/products`, { method: "POST", body: JSON.stringify(data) }), onSuccess: () => queryClient.invalidateQueries({ queryKey: ["channels"] }) });
-  
-  const createChatMut = useMutation({ mutationFn: mutator("/api/data/chats"), onSuccess: () => queryClient.invalidateQueries({ queryKey: ["chats"] }) });
-  const sendChatMsgMut = useMutation({ mutationFn: ({ id, data }: { id: string; data: any }) => customFetch(`/api/data/chats/${id}/messages`, { method: "POST", body: JSON.stringify(data) }), onSuccess: () => queryClient.invalidateQueries({ queryKey: ["chats"] }) });
-
-  const createGroupMut = useMutation({ mutationFn: mutator("/api/data/groups"), onSuccess: () => queryClient.invalidateQueries({ queryKey: ["groups"] }) });
-  const sendGroupMsgMut = useMutation({ mutationFn: ({ id, data }: { id: string; data: any }) => customFetch(`/api/data/groups/${id}/messages`, { method: "POST", body: JSON.stringify(data) }), onSuccess: () => queryClient.invalidateQueries({ queryKey: ["groups"] }) });
-
-  const createBidMut = useMutation({ mutationFn: mutator("/api/data/bids"), onSuccess: () => queryClient.invalidateQueries({ queryKey: ["bids"] }) });
-  const submitOfferMut = useMutation({ mutationFn: ({ id, data }: { id: string; data: any }) => customFetch(`/api/data/bids/${id}/offers`, { method: "POST", body: JSON.stringify(data) }), onSuccess: () => queryClient.invalidateQueries({ queryKey: ["bids"] }) });
-  const selectWinnerMut = useMutation({ mutationFn: ({ id, data }: { id: string; data: any }) => customFetch(`/api/data/bids/${id}/winner`, { method: "POST", body: JSON.stringify(data) }), onSuccess: () => queryClient.invalidateQueries({ queryKey: ["bids"] }) });
-
-  const createOrderMut = useMutation({ mutationFn: mutator("/api/data/orders"), onSuccess: () => queryClient.invalidateQueries({ queryKey: ["orders"] }) });
-  const sendOrderMsgMut = useMutation({ mutationFn: ({ id, data }: { id: string; data: any }) => customFetch(`/api/data/orders/${id}/messages`, { method: "POST", body: JSON.stringify(data) }), onSuccess: () => queryClient.invalidateQueries({ queryKey: ["orders"] }) });
-
-  const toggleWishlistMut = useMutation({ mutationFn: mutator("/api/data/wishlist"), onSuccess: () => queryClient.invalidateQueries({ queryKey: ["wishlist"] }) });
-  const createReviewMut = useMutation({ mutationFn: mutator("/api/data/reviews"), onSuccess: () => queryClient.invalidateQueries({ queryKey: ["reviews"] }) });
 
   const getChat = useCallback((id: string) => chats.find((c) => c.id === id), [chats]);
   const getChatWithUser = useCallback((myId: string, otherId: string) => chats.find((c) => c.participants.includes(myId) && c.participants.includes(otherId)), [chats]);
@@ -129,38 +111,135 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
     return !reviews.some(r => r.orderId === orderId);
   }, [orders, reviews]);
 
-  const createChat = useCallback((myId: string, otherId: string) => { createChatMut.mutate({ myId, otherId }); return undefined; }, [createChatMut]);
-  const sendChatMessage = useCallback((chatId: string, msg: Omit<Message, "id">) => { sendChatMsgMut.mutate({ id: chatId, data: msg }); }, [sendChatMsgMut]);
-  
-  const createGroup = useCallback((g: Omit<Group, "id" | "createdAt" | "updatedAt" | "messages">) => { createGroupMut.mutate(g); return undefined; }, [createGroupMut]);
-  const sendGroupMessage = useCallback((groupId: string, msg: Omit<Message, "id">) => { sendGroupMsgMut.mutate({ id: groupId, data: msg }); }, [sendGroupMsgMut]);
+  const createChat = useCallback(async (myId: string, otherId: string): Promise<Chat> => {
+    const existing = chats.find((c) => c.participants.includes(myId) && c.participants.includes(otherId));
+    if (existing) return existing;
+    const chat = await customFetch<Chat>("/api/data/chats", {
+      method: "POST",
+      body: JSON.stringify({ myId, otherId }),
+    });
+    invalidate.chats();
+    return chat;
+  }, [chats]);
 
-  const createChannel = useCallback((c: Omit<Channel, "id" | "createdAt" | "messages" | "followers" | "products">) => { createChannelMut.mutate(c); return undefined; }, [createChannelMut]);
-  const followChannel = useCallback((channelId: string, userId: string) => { followChannelMut.mutate(channelId); }, [followChannelMut]);
-  const createProduct = useCallback((channelId: string, p: Omit<Product, "id" | "channelId" | "views" | "wishlisted" | "createdAt">) => { createProductMut.mutate({ id: channelId, data: p }); return undefined; }, [createProductMut]);
-  const repostProduct = useCallback((channelId: string, productId: string, updates: Partial<Product>) => { }, []);
-  const sendChannelMessage = useCallback((channelId: string, msg: Omit<Message, "id">) => { }, []);
+  const sendChatMessage = useCallback((chatId: string, msg: Omit<Message, "id">) => {
+    customFetch(`/api/data/chats/${chatId}/messages`, { method: "POST", body: JSON.stringify(msg) })
+      .then(() => invalidate.chats());
+  }, []);
 
-  const toggleWishlist = useCallback((userId: string, product: Product, channel: Channel) => { toggleWishlistMut.mutate({ productId: product.id }); }, [toggleWishlistMut]);
+  const createGroup = useCallback(async (g: Omit<Group, "id" | "createdAt" | "updatedAt" | "messages">): Promise<Group> => {
+    const group = await customFetch<Group>("/api/data/groups", {
+      method: "POST",
+      body: JSON.stringify(g),
+    });
+    invalidate.groups();
+    return group;
+  }, []);
 
-  const createBid = useCallback((b: Omit<Bid, "id" | "offers" | "rejections" | "createdAt">) => { createBidMut.mutate(b); return undefined; }, [createBidMut]);
-  const submitOffer = useCallback((bidId: string, offer: Omit<BidOffer, "id" | "timestamp">) => { submitOfferMut.mutate({ id: bidId, data: offer }); }, [submitOfferMut]);
-  const rejectBid = useCallback((bidId: string, rejection: { sellerId: string; channelId: string; reason: string }) => { }, []);
-  const selectWinner = useCallback((bidId: string, winnerId: string, winnerChannelId: string) => { selectWinnerMut.mutate({ id: bidId, data: { winnerId, winnerChannelId } }); }, [selectWinnerMut]);
-  const endBid = useCallback((bidId: string) => { }, []);
+  const sendGroupMessage = useCallback((groupId: string, msg: Omit<Message, "id">) => {
+    customFetch(`/api/data/groups/${groupId}/messages`, { method: "POST", body: JSON.stringify(msg) })
+      .then(() => invalidate.groups());
+  }, []);
 
-  const createOrder = useCallback((o: Omit<Order, "id" | "messages" | "createdAt">) => { createOrderMut.mutate(o); return undefined; }, [createOrderMut]);
-  const sendOrderMessage = useCallback((orderId: string, msg: Omit<Message, "id">) => { sendOrderMsgMut.mutate({ id: orderId, data: msg }); }, [sendOrderMsgMut]);
-  const updateOrderStatus = useCallback((orderId: string, status: Order["status"]) => { }, []);
+  const updateGroup = useCallback(async (groupId: string, updates: Partial<Pick<Group, "name" | "description" | "image">>) => {
+    await customFetch(`/api/data/groups/${groupId}`, { method: "PATCH", body: JSON.stringify(updates) });
+    invalidate.groups();
+  }, []);
 
-  const submitReview = useCallback((r: Omit<Review, "id" | "createdAt">) => { createReviewMut.mutate(r); }, [createReviewMut]);
+  const createChannel = useCallback(async (c: Omit<Channel, "id" | "createdAt" | "messages" | "followers" | "products">): Promise<Channel> => {
+    const channel = await customFetch<Channel>("/api/data/channels", { method: "POST", body: JSON.stringify(c) });
+    invalidate.channels();
+    return channel;
+  }, []);
+
+  const followChannel = useCallback((channelId: string, _userId: string) => {
+    customFetch(`/api/data/channels/${channelId}/follow`, { method: "POST" }).then(() => invalidate.channels());
+  }, []);
+
+  const createProduct = useCallback(async (channelId: string, p: Omit<Product, "id" | "channelId" | "views" | "wishlisted" | "createdAt">): Promise<Product> => {
+    const product = await customFetch<Product>(`/api/data/channels/${channelId}/products`, {
+      method: "POST",
+      body: JSON.stringify(p),
+    });
+    invalidate.channels();
+    return product;
+  }, []);
+
+  const repostProduct = useCallback(async (channelId: string, productId: string, updates: Partial<Product>): Promise<Product> => {
+    const product = await customFetch<Product>(`/api/data/channels/${channelId}/products/${productId}/repost`, {
+      method: "POST",
+      body: JSON.stringify(updates),
+    });
+    invalidate.channels();
+    return product;
+  }, []);
+
+  const sendChannelMessage = useCallback((channelId: string, msg: Omit<Message, "id">) => {
+    customFetch(`/api/data/channels/${channelId}/messages`, { method: "POST", body: JSON.stringify(msg) })
+      .then(() => invalidate.channels());
+  }, []);
+
+  const toggleWishlist = useCallback((_userId: string, _product: Product, _channel: Channel) => {
+    customFetch("/api/data/wishlist", { method: "POST", body: JSON.stringify({ productId: _product.id }) })
+      .then(() => invalidate.wishlist());
+  }, []);
+
+  const createBid = useCallback(async (b: Omit<Bid, "id" | "offers" | "rejections" | "createdAt">): Promise<Bid> => {
+    const bid = await customFetch<Bid>("/api/data/bids", { method: "POST", body: JSON.stringify(b) });
+    invalidate.bids();
+    return bid;
+  }, []);
+
+  const submitOffer = useCallback((bidId: string, offer: Omit<BidOffer, "id" | "timestamp">) => {
+    customFetch(`/api/data/bids/${bidId}/offers`, { method: "POST", body: JSON.stringify(offer) })
+      .then(() => invalidate.bids());
+  }, []);
+
+  const rejectBid = useCallback(async (bidId: string, rejection: { sellerId: string; channelId: string; reason: string }) => {
+    await customFetch(`/api/data/bids/${bidId}/reject`, { method: "POST", body: JSON.stringify(rejection) });
+    invalidate.bids();
+  }, []);
+
+  const selectWinner = useCallback((bidId: string, winnerId: string, winnerChannelId: string) => {
+    customFetch(`/api/data/bids/${bidId}/winner`, { method: "POST", body: JSON.stringify({ winnerId, winnerChannelId }) })
+      .then(() => {
+        invalidate.bids();
+        invalidate.orders();
+      });
+  }, []);
+
+  const endBid = useCallback((bidId: string) => {
+    customFetch(`/api/data/bids/${bidId}/end`, { method: "POST" })
+      .then(() => invalidate.bids());
+  }, []);
+
+  const createOrder = useCallback(async (o: Omit<Order, "id" | "messages" | "createdAt">): Promise<Order> => {
+    const order = await customFetch<Order>("/api/data/orders", { method: "POST", body: JSON.stringify(o) });
+    invalidate.orders();
+    return order;
+  }, []);
+
+  const sendOrderMessage = useCallback((orderId: string, msg: Omit<Message, "id">) => {
+    customFetch(`/api/data/orders/${orderId}/messages`, { method: "POST", body: JSON.stringify(msg) })
+      .then(() => invalidate.orders());
+  }, []);
+
+  const updateOrderStatus = useCallback((orderId: string, status: Order["status"]) => {
+    customFetch(`/api/data/orders/${orderId}/status`, { method: "PATCH", body: JSON.stringify({ status }) })
+      .then(() => invalidate.orders());
+  }, []);
+
+  const submitReview = useCallback((r: Omit<Review, "id" | "createdAt">) => {
+    customFetch("/api/data/reviews", { method: "POST", body: JSON.stringify(r) })
+      .then(() => invalidate.reviews());
+  }, []);
 
   return (
     <DataContext.Provider
       value={{
         chats, groups, channels, bids, orders, reviews, wishlist, isLoading,
         getChat, getChatWithUser, createChat, sendChatMessage,
-        getGroup, getMyGroups, createGroup, sendGroupMessage,
+        getGroup, getMyGroups, createGroup, sendGroupMessage, updateGroup,
         getChannel, getMyChannels, getFollowedChannels, createChannel, followChannel, sendChannelMessage, createProduct, repostProduct, toggleWishlist, isWishlisted, getWishlist,
         getBid, getMyBids, getBidsForSeller, createBid, submitOffer, rejectBid, selectWinner, endBid,
         getOrder, getMyOrders, createOrder, sendOrderMessage, updateOrderStatus,

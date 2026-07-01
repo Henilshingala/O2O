@@ -4,6 +4,7 @@ import {
   Platform,
   ScrollView,
   StyleSheet,
+  Switch,
   Text,
   TouchableOpacity,
   View,
@@ -16,6 +17,8 @@ import { Badge } from "@/components/ui/Badge";
 import { useAuth } from "@/context/AuthContext";
 import { useData } from "@/context/DataContext";
 import { useColors } from "@/hooks/useColors";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { customFetch } from "@workspace/api-client-react";
 
 function MenuItem({ icon, label, onPress, colors, danger = false }: {
   icon: string; label: string; onPress: () => void; colors: any; danger?: boolean;
@@ -39,6 +42,19 @@ export default function SettingsTab() {
   const insets = useSafeAreaInsets();
   const { user, logout } = useAuth();
   const { getMyOrders, getMyBids, channels } = useData();
+  const queryClient = useQueryClient();
+
+  const { data: settings } = useQuery({
+    queryKey: ["user-settings"],
+    queryFn: () => customFetch<any>("/api/users/me/settings"),
+    enabled: !!user,
+  });
+
+  const updateSettingsMut = useMutation({
+    mutationFn: (data: Record<string, unknown>) =>
+      customFetch("/api/users/me/settings", { method: "PATCH", body: JSON.stringify(data) }),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["user-settings"] }),
+  });
 
   if (!user) return null;
 
@@ -103,10 +119,29 @@ export default function SettingsTab() {
         )}
       </View>
 
+      {/* Preferences */}
+      <Text style={[styles.sectionLabel, { color: colors.mutedForeground }]}>PREFERENCES</Text>
+      <View style={[styles.menuGroup, { borderColor: colors.border }]}>
+        <View style={[styles.menuItem, { backgroundColor: colors.card, borderBottomColor: colors.border }]}>
+          <View style={[styles.menuIcon, { backgroundColor: colors.muted }]}>
+            <Feather name="bell" size={18} color={colors.foreground} />
+          </View>
+          <Text style={[styles.menuLabel, { color: colors.foreground }]}>Notifications</Text>
+          <Switch
+            value={settings?.notificationsEnabled ?? true}
+            onValueChange={(v) => updateSettingsMut.mutate({ notificationsEnabled: v })}
+          />
+        </View>
+        <MenuItem icon="shield" label={`Privacy: ${settings?.privacyLevel ?? "public"}`} onPress={() => {
+          const next = settings?.privacyLevel === "public" ? "friends" : settings?.privacyLevel === "friends" ? "private" : "public";
+          updateSettingsMut.mutate({ privacyLevel: next });
+        }} colors={colors} />
+      </View>
+
       {/* Account Section */}
       <Text style={[styles.sectionLabel, { color: colors.mutedForeground }]}>ACCOUNT</Text>
       <View style={[styles.menuGroup, { borderColor: colors.border }]}>
-        <MenuItem icon="mail" label={user.email} onPress={() => {}} colors={colors} />
+        <MenuItem icon="mail" label={user.email} onPress={() => router.push("/notifications")} colors={colors} />
         <MenuItem icon="phone" label={user.mobile} onPress={() => {}} colors={colors} />
         <MenuItem icon="map-pin" label={user.city} onPress={() => {}} colors={colors} />
       </View>

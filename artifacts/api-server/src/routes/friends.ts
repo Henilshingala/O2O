@@ -1,16 +1,18 @@
 import { Router } from "express";
-import { db, pool } from "@workspace/db";
+import { db } from "@workspace/db";
 import { friendsContacts, users } from "@workspace/db/schema";
 import { and, eq, or } from "drizzle-orm";
-import { requireAuth } from "../middlewares/auth";
+import { requireAuth, type AuthRequest } from "../middlewares/auth";
+import { createNotification } from "./notifications";
+import { getIo } from "../socket/index";
 
 const router = Router();
 router.use(requireAuth);
 
 // GET /api/friends — list accepted friends
-router.get("/", async (req: any, res) => {
+router.get("/", async (req: AuthRequest, res) => {
   try {
-    const myId = req.userId;
+    const myId = req.user!.userId;
     const rows = await db
       .select({
         id: users.id,
@@ -24,16 +26,16 @@ router.get("/", async (req: any, res) => {
       .from(friendsContacts)
       .innerJoin(users, eq(users.id, friendsContacts.contactId))
       .where(and(eq(friendsContacts.userId, myId), eq(friendsContacts.status, "accepted")));
-    res.json(rows);
+    return res.json(rows);
   } catch (e: any) {
-    res.status(500).json({ error: e.message });
+    return res.status(500).json({ error: e.message });
   }
 });
 
 // GET /api/friends/requests — pending incoming requests
-router.get("/requests", async (req: any, res) => {
+router.get("/requests", async (req: AuthRequest, res) => {
   try {
-    const myId = req.userId;
+    const myId = req.user!.userId;
     const incoming = await db
       .select({
         id: users.id,
@@ -62,16 +64,16 @@ router.get("/requests", async (req: any, res) => {
       .innerJoin(users, eq(users.id, friendsContacts.contactId))
       .where(and(eq(friendsContacts.userId, myId), eq(friendsContacts.status, "pending")));
 
-    res.json({ incoming, outgoing });
+    return res.json({ incoming, outgoing });
   } catch (e: any) {
-    res.status(500).json({ error: e.message });
+    return res.status(500).json({ error: e.message });
   }
 });
 
 // POST /api/friends/request — send friend request
-router.post("/request", async (req: any, res) => {
+router.post("/request", async (req: AuthRequest, res) => {
   try {
-    const myId = req.userId;
+    const myId = req.user!.userId;
     const { contactId } = req.body;
     if (!contactId) return res.status(400).json({ error: "contactId required" });
     if (contactId === myId) return res.status(400).json({ error: "Cannot add yourself" });
@@ -93,16 +95,28 @@ router.post("/request", async (req: any, res) => {
     }
 
     await db.insert(friendsContacts).values({ userId: myId, contactId, status: "pending" });
-    res.json({ success: true });
+
+    const requester = await db.select().from(users).where(eq(users.id, myId)).limit(1);
+    if (requester[0]) {
+      await createNotification(
+        contactId,
+        "Friend Request",
+        `${requester[0].fullName} sent you a friend request`,
+        "friend_request",
+        getIo()
+      );
+    }
+
+    return res.json({ success: true });
   } catch (e: any) {
-    res.status(500).json({ error: e.message });
+    return res.status(500).json({ error: e.message });
   }
 });
 
-// POST /api/friends/accept — accept a pending request
-router.post("/accept", async (req: any, res) => {
+// POST /api/friends/accept
+router.post("/accept", async (req: AuthRequest, res) => {
   try {
-    const myId = req.userId;
+    const myId = req.user!.userId;
     const { requesterId } = req.body;
     if (!requesterId) return res.status(400).json({ error: "requesterId required" });
 
@@ -127,16 +141,27 @@ router.post("/accept", async (req: any, res) => {
         .where(and(eq(friendsContacts.userId, myId), eq(friendsContacts.contactId, requesterId)));
     }
 
-    res.json({ success: true });
+    const accepter = await db.select().from(users).where(eq(users.id, myId)).limit(1);
+    if (accepter[0]) {
+      await createNotification(
+        requesterId,
+        "Friend Accepted",
+        `${accepter[0].fullName} accepted your friend request`,
+        "friend_accepted",
+        getIo()
+      );
+    }
+
+    return res.json({ success: true });
   } catch (e: any) {
-    res.status(500).json({ error: e.message });
+    return res.status(500).json({ error: e.message });
   }
 });
 
-// POST /api/friends/reject — reject a pending request
-router.post("/reject", async (req: any, res) => {
+// POST /api/friends/reject
+router.post("/reject", async (req: AuthRequest, res) => {
   try {
-    const myId = req.userId;
+    const myId = req.user!.userId;
     const { requesterId } = req.body;
     if (!requesterId) return res.status(400).json({ error: "requesterId required" });
 
@@ -144,16 +169,16 @@ router.post("/reject", async (req: any, res) => {
       .delete(friendsContacts)
       .where(and(eq(friendsContacts.userId, requesterId), eq(friendsContacts.contactId, myId)));
 
-    res.json({ success: true });
+    return res.json({ success: true });
   } catch (e: any) {
-    res.status(500).json({ error: e.message });
+    return res.status(500).json({ error: e.message });
   }
 });
 
-// POST /api/friends/cancel — cancel outgoing request
-router.post("/cancel", async (req: any, res) => {
+// POST /api/friends/cancel
+router.post("/cancel", async (req: AuthRequest, res) => {
   try {
-    const myId = req.userId;
+    const myId = req.user!.userId;
     const { contactId } = req.body;
     if (!contactId) return res.status(400).json({ error: "contactId required" });
 
@@ -161,16 +186,16 @@ router.post("/cancel", async (req: any, res) => {
       .delete(friendsContacts)
       .where(and(eq(friendsContacts.userId, myId), eq(friendsContacts.contactId, contactId)));
 
-    res.json({ success: true });
+    return res.json({ success: true });
   } catch (e: any) {
-    res.status(500).json({ error: e.message });
+    return res.status(500).json({ error: e.message });
   }
 });
 
-// DELETE /api/friends/remove — remove a friend
-router.delete("/remove", async (req: any, res) => {
+// DELETE /api/friends/remove
+router.delete("/remove", async (req: AuthRequest, res) => {
   try {
-    const myId = req.userId;
+    const myId = req.user!.userId;
     const { contactId } = req.body;
     if (!contactId) return res.status(400).json({ error: "contactId required" });
 
@@ -183,16 +208,16 @@ router.delete("/remove", async (req: any, res) => {
         )
       );
 
-    res.json({ success: true });
+    return res.json({ success: true });
   } catch (e: any) {
-    res.status(500).json({ error: e.message });
+    return res.status(500).json({ error: e.message });
   }
 });
 
-// GET /api/friends/search?q= — search users
-router.get("/search", async (req: any, res) => {
+// GET /api/friends/search
+router.get("/search", async (req: AuthRequest, res) => {
   try {
-    const myId = req.userId;
+    const myId = req.user!.userId;
     const q = String(req.query.q || "").trim();
     if (!q || q.length < 2) return res.json([]);
 
@@ -236,9 +261,9 @@ router.get("/search", async (req: any, res) => {
       return { ...u, relationship };
     });
 
-    res.json(withStatus);
+    return res.json(withStatus);
   } catch (e: any) {
-    res.status(500).json({ error: e.message });
+    return res.status(500).json({ error: e.message });
   }
 });
 

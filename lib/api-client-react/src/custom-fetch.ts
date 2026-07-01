@@ -18,6 +18,7 @@ const DEFAULT_JSON_ACCEPT = "application/json, application/problem+json";
 
 let _baseUrl: string | null = null;
 let _authTokenGetter: AuthTokenGetter | null = null;
+let _tokenRefreshHandler: (() => Promise<string | null>) | null = null;
 
 /**
  * Set a base URL that is prepended to every relative request URL
@@ -43,6 +44,10 @@ export function setBaseUrl(url: string | null): void {
  */
 export function setAuthTokenGetter(getter: AuthTokenGetter | null): void {
   _authTokenGetter = getter;
+}
+
+export function setTokenRefreshHandler(handler: (() => Promise<string | null>) | null): void {
+  _tokenRefreshHandler = handler;
 }
 
 function isRequest(input: RequestInfo | URL): input is Request {
@@ -383,6 +388,14 @@ export async function customFetch<T = unknown>(
   }
 
   if (!response.ok) {
+    if (response.status === 401 && _tokenRefreshHandler && !headers.has("x-retry")) {
+      const newToken = await _tokenRefreshHandler();
+      if (newToken) {
+        headers.set("authorization", `Bearer ${newToken}`);
+        headers.set("x-retry", "1");
+        return customFetch<T>(input, { ...options, headers });
+      }
+    }
     const errorData = await parseErrorBody(response, method);
     throw new ApiError(response, errorData, requestInfo);
   }

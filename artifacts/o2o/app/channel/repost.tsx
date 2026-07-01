@@ -45,15 +45,20 @@ export default function RepostProductScreen() {
 
   const set = (k: keyof typeof form) => (v: string) => setForm((f) => ({ ...f, [k]: v }));
 
-  const handleRepost = () => {
-    repostProduct(params.channelId, params.productId, {
-      name: form.name.trim(),
-      description: form.description.trim(),
-      price: Number(form.price),
-      details,
-    });
-    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-    router.back();
+  const handleRepost = async () => {
+    setLoading(true);
+    try {
+      await repostProduct(params.channelId, params.productId, {
+        name: form.name.trim(),
+        description: form.description.trim(),
+        price: Number(form.price),
+        details,
+      });
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+      router.back();
+    } finally {
+      setLoading(false);
+    }
   };
 
   const addDetail = () => {
@@ -65,7 +70,7 @@ export default function RepostProductScreen() {
   };
 
   return (
-    <KeyboardAvoidingView style={{ flex: 1, backgroundColor: colors.background }} behavior={Platform.OS === "ios" ? "padding" : "height"}>
+    <KeyboardAvoidingView style={{ flex: 1, backgroundColor: colors.background }} behavior={Platform.OS === "web" ? "padding" : "height"}>
       <View style={[styles.header, { backgroundColor: colors.card, borderBottomColor: colors.border, paddingTop: Platform.OS === "web" ? 67 : insets.top + 8 }]}>
         <TouchableOpacity onPress={() => router.back()}>
           <Feather name="arrow-left" size={22} color={colors.foreground} />

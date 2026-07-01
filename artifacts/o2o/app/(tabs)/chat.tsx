@@ -29,7 +29,7 @@ export default function ChatTab() {
   const insets = useSafeAreaInsets();
   const { user, getUserById } = useAuth();
   const { friends } = useFriends();
-  const { chats, createChat } = useData();
+  const { chats } = useData();
 
   if (!user) return null;
 
@@ -37,12 +37,6 @@ export default function ChatTab() {
     .filter((c) => c.participants.includes(user.id))
     .sort((a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime());
 
-  const handleNewChat = () => {
-    if (friends.length === 0) return;
-    const other = friends[0];
-    const chat = createChat(user.id, other.id);
-    if (chat) router.push({ pathname: "/chat/[id]", params: { id: chat.id } });
-  };
 
   return (
     <View style={[styles.root, { backgroundColor: colors.background }]}>

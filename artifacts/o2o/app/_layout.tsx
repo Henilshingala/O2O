@@ -16,6 +16,7 @@ import { ErrorBoundary } from "@/components/ErrorBoundary";
 import { AuthProvider } from "@/context/AuthContext";
 import { DataProvider } from "@/context/DataContext";
 import { FriendsProvider } from "@/context/FriendsContext";
+import { SocketProvider } from "@/context/SocketContext";
 import { API_URL } from "@env";
 import { setBaseUrl } from "@workspace/api-client-react";
 
@@ -56,6 +57,7 @@ import MyOrdersScreen from "./my-orders";
 import SellerBidsScreen from "./seller-bids";
 import NewChatScreen from "./new-chat";
 import PeopleSearchScreen from "./people-search";
+import NotificationsScreen from "./notifications";
 
 function RootLayoutNav() {
   return (
@@ -92,6 +94,7 @@ function RootLayoutNav() {
       <Stack.Screen name="seller-bids" component={SellerBidsScreen} />
       <Stack.Screen name="new-chat" component={NewChatScreen} />
       <Stack.Screen name="people-search" component={PeopleSearchScreen} />
+      <Stack.Screen name="notifications" component={NotificationsScreen} />
     </Stack>
   );
 }
@@ -117,6 +120,7 @@ export default function RootLayout() {
           <QueryClientProvider client={queryClient}>
             <DataProvider>
               <FriendsProvider>
+              <SocketProvider>
               <GestureHandlerRootView style={{ flex: 1 }}>
                 <KeyboardProvider>
                   <NavigationContainer ref={navigationRef}>
@@ -124,6 +128,7 @@ export default function RootLayout() {
                   </NavigationContainer>
                 </KeyboardProvider>
               </GestureHandlerRootView>
+              </SocketProvider>
               </FriendsProvider>
             </DataProvider>
           </QueryClientProvider>

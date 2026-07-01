@@ -1,5 +1,4 @@
 import { pgTable, text, integer, boolean, timestamp, jsonb, primaryKey } from "drizzle-orm/pg-core";
-import { createInsertSchema, createSelectSchema } from "drizzle-zod";
 
 export const users = pgTable("users", {
   id: text("id").primaryKey(),
@@ -232,12 +231,17 @@ export const chatParticipants = pgTable("chat_participants", {
 
 export const messages = pgTable("messages", {
   id: text("id").primaryKey(),
-  chatId: text("chat_id").references(() => chats.id), 
-  groupId: text("group_id"), 
-  channelId: text("channel_id"), 
-  orderId: text("order_id"), 
+  chatId: text("chat_id").references(() => chats.id),
+  groupId: text("group_id"),
+  channelId: text("channel_id"),
+  orderId: text("order_id"),
   senderId: text("sender_id").references(() => users.id).notNull(),
   text: text("text").notNull(),
+  type: text("type", { enum: ["text", "image", "video", "audio", "file", "location", "poll"] }).default("text").notNull(),
+  replyToId: text("reply_to_id"),
+  editedAt: timestamp("edited_at"),
+  deletedAt: timestamp("deleted_at"),
+  metadata: jsonb("metadata").default({}).notNull(),
   timestamp: timestamp("timestamp").defaultNow().notNull(),
 });
 
@@ -380,4 +384,21 @@ export const adminSessions = pgTable("admin_sessions", {
   createdAt: timestamp("created_at").defaultNow().notNull(),
   expiresAt: timestamp("expires_at").notNull(),
   isActive: boolean("is_active").default(true).notNull(),
+});
+
+export const passwordResetOtps = pgTable("password_reset_otps", {
+  email: text("email").primaryKey(),
+  otpHash: text("otp_hash").notNull(),
+  expiresAt: timestamp("expires_at").notNull(),
+  verifiedAt: timestamp("verified_at"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+export const refreshTokens = pgTable("refresh_tokens", {
+  id: text("id").primaryKey(),
+  userId: text("user_id").references(() => users.id).notNull(),
+  tokenHash: text("token_hash").notNull(),
+  expiresAt: timestamp("expires_at").notNull(),
+  revokedAt: timestamp("revoked_at"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
 });

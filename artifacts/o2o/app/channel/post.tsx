@@ -42,23 +42,26 @@ export default function CreateProductPost() {
 
   const set = (k: keyof typeof form) => (v: string) => setForm((f) => ({ ...f, [k]: v }));
 
-  const handlePost = () => {
+  const handlePost = async () => {
     const e: Record<string, string> = {};
     if (!form.name.trim()) e.name = "Product name is required";
     if (!form.description.trim()) e.description = "Description is required";
     if (!form.price.trim() || isNaN(Number(form.price))) e.price = "Valid price required";
     if (Object.keys(e).length > 0) { setErrors(e); return; }
     setLoading(true);
-    createProduct(params.channelId, {
-      name: form.name.trim(),
-      description: form.description.trim(),
-      price: Number(form.price),
-      details,
-      image: imageUrl || undefined,
-    });
-    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-    setLoading(false);
-    router.back();
+    try {
+      await createProduct(params.channelId, {
+        name: form.name.trim(),
+        description: form.description.trim(),
+        price: Number(form.price),
+        details,
+        image: imageUrl || undefined,
+      });
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+      router.back();
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handlePickImage = async () => {
@@ -91,7 +94,7 @@ export default function CreateProductPost() {
   return (
     <KeyboardAvoidingView
       style={{ flex: 1, backgroundColor: colors.background }}
-      behavior={Platform.OS === "ios" ? "padding" : "height"}
+      behavior={Platform.OS === "web" ? "padding" : "height"}
     >
       <View
         style={[

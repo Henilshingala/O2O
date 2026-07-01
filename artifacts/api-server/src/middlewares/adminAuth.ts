@@ -1,7 +1,8 @@
 import { type Request, type Response, type NextFunction } from "express";
 import jwt from "jsonwebtoken";
-import { db, users } from "@workspace/db";
-import { eq } from "drizzle-orm";
+import { createHash } from "crypto";
+import { db, adminSessions } from "@workspace/db";
+import { eq, and } from "drizzle-orm";
 
 const JWT_SECRET = process.env.JWT_SECRET || "fallback_secret_do_not_use_in_prod";
 
@@ -75,7 +76,7 @@ export function hasPermission(adminRole: string, permission: string): boolean {
   return perms.includes(permission);
 }
 
-export function requireAdminAuth(req: AdminRequest, res: Response, next: NextFunction) {
+export async function requireAdminAuth(req: AdminRequest, res: Response, next: NextFunction) {
   const authHeader = req.headers.authorization;
   if (!authHeader || !authHeader.startsWith("Bearer ")) {
     return res.status(401).json({ error: "Missing or invalid authorization header" });
@@ -91,6 +92,25 @@ export function requireAdminAuth(req: AdminRequest, res: Response, next: NextFun
     if (!payload.adminRole) {
       return res.status(403).json({ error: "Not an admin user" });
     }
+
+    const tokenHash = createHash("sha256").update(token).digest("hex");
+    const sessions = await db
+      .select()
+      .from(adminSessions)
+      .where(
+        and(
+          eq(adminSessions.adminId, payload.userId),
+          eq(adminSessions.tokenHash, tokenHash),
+          eq(adminSessions.isActive, true)
+        )
+      )
+      .limit(1);
+
+    const session = sessions[0];
+    if (!session || session.expiresAt < new Date()) {
+      return res.status(401).json({ error: "Session expired or invalidated" });
+    }
+
     req.admin = payload;
     return next();
   } catch {

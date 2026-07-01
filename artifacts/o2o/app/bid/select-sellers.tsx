@@ -33,25 +33,28 @@ export default function SelectSellersScreen() {
 
   const toggle = (id: string) => setSelected((prev) => prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]);
 
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
     if (selected.length === 0) return;
     setLoading(true);
-    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-    const now = new Date();
-    const bid = createBid({
-      buyerId: user.id,
-      productName: params.productName,
-      quantity: Number(params.quantity),
-      budget: Number(params.budget),
-      description: params.description ?? "",
-      selectedSellers: selected,
-      allSellers: params.sellerMode === "all",
-      status: "active",
-      startTime: now.toISOString(),
-      endTime: new Date(now.getTime() + 30 * 60 * 1000).toISOString(),
-    });
-    setLoading(false);
-    if (bid) router.replace({ pathname: "/bid/live/[id]", params: { id: bid.id } });
+    try {
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+      const now = new Date();
+      const bid = await createBid({
+        buyerId: user.id,
+        productName: params.productName,
+        quantity: Number(params.quantity),
+        budget: Number(params.budget),
+        description: params.description ?? "",
+        selectedSellers: selected,
+        allSellers: params.sellerMode === "all",
+        status: "active",
+        startTime: now.toISOString(),
+        endTime: new Date(now.getTime() + 30 * 60 * 1000).toISOString(),
+      });
+      router.replace({ pathname: "/bid/live/[id]", params: { id: bid.id } });
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (

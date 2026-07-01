@@ -1,20 +1,33 @@
 import { Router } from "express";
+import rateLimit from "express-rate-limit";
 import { db, users } from "@workspace/db";
-import { eq } from "drizzle-orm";
-import jwt from "jsonwebtoken";
+import { passwordResetOtps, refreshTokens } from "@workspace/db/schema";
+import { eq, and, isNull, gt } from "drizzle-orm";
 import { scryptSync, randomBytes, timingSafeEqual } from "crypto";
+import { requireAuth, type AuthRequest } from "../middlewares/auth";
+import { sendEmail } from "../lib/delivery";
+import {
+  issueTokens,
+  hashOtp,
+  verifyOtpHash,
+  verifyTokenHash,
+  hashToken,
+} from "../lib/tokens";
 
 const router = Router();
-const JWT_SECRET = process.env.JWT_SECRET || "fallback_secret_do_not_use_in_prod";
 
-// Helper for password hashing
+const otpLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 5,
+  message: { error: "Too many OTP requests. Try again later." },
+});
+
 function hashPassword(password: string): string {
   const salt = randomBytes(16).toString("hex");
   const derivedKey = scryptSync(password, salt, 64).toString("hex");
   return `${salt}:${derivedKey}`;
 }
 
-// Helper for password verification
 function verifyPassword(password: string, hash: string): boolean {
   const [salt, key] = hash.split(":");
   if (!salt || !key) return false;
@@ -23,17 +36,42 @@ function verifyPassword(password: string, hash: string): boolean {
   return timingSafeEqual(keyBuffer, derivedKey);
 }
 
+const genId = (prefix: string) => `${prefix}_${Date.now()}`;
+
+async function persistRefreshToken(userId: string, refreshToken: string, refreshTokenHash: string, expiresAt: Date) {
+  await db.insert(refreshTokens).values({
+    id: genId("rt"),
+    userId,
+    tokenHash: refreshTokenHash,
+    expiresAt,
+  });
+  return refreshToken;
+}
+
+async function issueAuthResponse(userId: string, userWithoutPassword: Record<string, unknown>) {
+  const { accessToken, refreshToken, refreshTokenHash, refreshExpiresAt } = issueTokens(userId);
+  await persistRefreshToken(userId, refreshToken, refreshTokenHash, refreshExpiresAt);
+  return { token: accessToken, refreshToken, user: userWithoutPassword };
+}
+
 router.post("/signup", async (req, res) => {
   try {
     const { username, fullName, email, mobile, city, role, password } = req.body;
-    
-    // Check existing
+    if (!username || !password || !email) {
+      return res.status(400).json({ error: "Missing required fields" });
+    }
+
     const existing = await db.select().from(users).where(eq(users.username, username)).limit(1);
     if (existing.length > 0) {
       return res.status(400).json({ error: "Username already taken" });
     }
 
-    const id = `user_${Date.now()}`;
+    const emailExists = await db.select().from(users).where(eq(users.email, email)).limit(1);
+    if (emailExists.length > 0) {
+      return res.status(400).json({ error: "Email already registered" });
+    }
+
+    const id = genId("user");
     const hashedPassword = hashPassword(password);
 
     await db.insert(users).values({
@@ -48,9 +86,8 @@ router.post("/signup", async (req, res) => {
     });
 
     const user = { id, username, fullName, email, mobile, city, role };
-    const token = jwt.sign({ userId: id }, JWT_SECRET, { expiresIn: "7d" });
-
-    return res.json({ token, user });
+    const auth = await issueAuthResponse(id, user);
+    return res.json(auth);
   } catch (error: any) {
     req.log.error(error);
     return res.status(500).json({ error: "Internal server error" });
@@ -67,17 +104,14 @@ router.post("/login", async (req, res) => {
       return res.status(401).json({ error: "Invalid username or password" });
     }
 
-    const token = jwt.sign({ userId: user.id }, JWT_SECRET, { expiresIn: "7d" });
     const { password: _, ...userWithoutPassword } = user;
-
-    return res.json({ token, user: userWithoutPassword });
+    const auth = await issueAuthResponse(user.id, userWithoutPassword);
+    return res.json(auth);
   } catch (error: any) {
     req.log.error(error);
     return res.status(500).json({ error: "Internal server error" });
   }
 });
-
-import { requireAuth, type AuthRequest } from "../middlewares/auth";
 
 router.get("/me", requireAuth, async (req: AuthRequest, res) => {
   try {
@@ -94,37 +128,109 @@ router.get("/me", requireAuth, async (req: AuthRequest, res) => {
   }
 });
 
-import { sendEmail } from "../lib/delivery";
-const otps: Record<string, string> = {}; // In-memory for now, could be redis/db
+router.post("/refresh", async (req, res) => {
+  try {
+    const { refreshToken } = req.body;
+    if (!refreshToken) return res.status(400).json({ error: "refreshToken required" });
 
-router.post("/send-otp", async (req, res) => {
+    const allTokens = await db
+      .select()
+      .from(refreshTokens)
+      .where(and(isNull(refreshTokens.revokedAt), gt(refreshTokens.expiresAt, new Date())));
+
+    const match = allTokens.find((t) => verifyTokenHash(refreshToken, t.tokenHash));
+    if (!match) return res.status(401).json({ error: "Invalid refresh token" });
+
+    await db.update(refreshTokens).set({ revokedAt: new Date() }).where(eq(refreshTokens.id, match.id));
+
+    const userResult = await db.select().from(users).where(eq(users.id, match.userId)).limit(1);
+    const user = userResult[0];
+    if (!user) return res.status(401).json({ error: "User not found" });
+
+    const { password: _, ...userWithoutPassword } = user;
+    const auth = await issueAuthResponse(user.id, userWithoutPassword);
+    return res.json(auth);
+  } catch (error: any) {
+    req.log.error(error);
+    return res.status(500).json({ error: "Internal server error" });
+  }
+});
+
+router.post("/logout", requireAuth, async (req: AuthRequest, res) => {
+  try {
+    const { refreshToken } = req.body;
+    if (refreshToken) {
+      const allTokens = await db.select().from(refreshTokens).where(eq(refreshTokens.userId, req.user!.userId));
+      const match = allTokens.find((t) => verifyTokenHash(refreshToken, t.tokenHash));
+      if (match) {
+        await db.update(refreshTokens).set({ revokedAt: new Date() }).where(eq(refreshTokens.id, match.id));
+      }
+    } else {
+      await db.update(refreshTokens).set({ revokedAt: new Date() }).where(eq(refreshTokens.userId, req.user!.userId));
+    }
+    return res.json({ success: true });
+  } catch (error: any) {
+    return res.status(500).json({ error: "Internal server error" });
+  }
+});
+
+router.post("/send-otp", otpLimiter, async (req, res) => {
   const { email } = req.body;
   if (!email) return res.status(400).json({ error: "Email required" });
-  const otp = Math.floor(100000 + Math.random() * 900000).toString();
-  otps[email] = otp;
-  await sendEmail(email, "Your O2O OTP Code", `Your verification code is: ${otp}`);
-  return res.json({ success: true, otp }); // Return otp for dev purposes since no real email sent
-});
 
-router.post("/verify-otp", async (req, res) => {
-  const { email, otp } = req.body;
-  if (otps[email] === otp) {
+  const userResult = await db.select().from(users).where(eq(users.email, email)).limit(1);
+  if (!userResult.length) {
     return res.json({ success: true });
   }
-  return res.status(400).json({ error: "Invalid or expired OTP" });
+
+  const otp = Math.floor(100000 + Math.random() * 900000).toString();
+  const otpHash = hashOtp(otp);
+  const expiresAt = new Date(Date.now() + 10 * 60 * 1000);
+
+  await db
+    .insert(passwordResetOtps)
+    .values({ email, otpHash, expiresAt })
+    .onConflictDoUpdate({
+      target: passwordResetOtps.email,
+      set: { otpHash, expiresAt, verifiedAt: null, createdAt: new Date() },
+    });
+
+  await sendEmail(email, "Your O2O OTP Code", `Your verification code is: ${otp}. It expires in 10 minutes.`);
+
+  const isDev = process.env.NODE_ENV !== "production" && !process.env.SMTP_HOST;
+  return res.json({ success: true, ...(isDev ? { otp } : {}) });
 });
 
-router.post("/reset-password", async (req, res) => {
+router.post("/verify-otp", otpLimiter, async (req, res) => {
+  const { email, otp } = req.body;
+  if (!email || !otp) return res.status(400).json({ error: "Email and OTP required" });
+
+  const rows = await db.select().from(passwordResetOtps).where(eq(passwordResetOtps.email, email)).limit(1);
+  const record = rows[0];
+  if (!record || record.expiresAt < new Date() || !verifyOtpHash(otp, record.otpHash)) {
+    return res.status(400).json({ error: "Invalid or expired OTP" });
+  }
+
+  await db.update(passwordResetOtps).set({ verifiedAt: new Date() }).where(eq(passwordResetOtps.email, email));
+  return res.json({ success: true });
+});
+
+router.post("/reset-password", otpLimiter, async (req, res) => {
   const { email, password } = req.body;
+  if (!email || !password) return res.status(400).json({ error: "Email and password required" });
+
+  const otpRows = await db.select().from(passwordResetOtps).where(eq(passwordResetOtps.email, email)).limit(1);
+  const otpRecord = otpRows[0];
+  if (!otpRecord?.verifiedAt || otpRecord.expiresAt < new Date()) {
+    return res.status(400).json({ error: "OTP verification required before reset" });
+  }
+
   const result = await db.select().from(users).where(eq(users.email, email)).limit(1);
   if (!result.length) return res.status(404).json({ error: "User not found" });
 
-  const salt = randomBytes(16).toString("hex");
-  const derivedKey = scryptSync(password, salt, 64).toString("hex");
-  const hashedPassword = `${salt}:${derivedKey}`;
-
+  const hashedPassword = hashPassword(password);
   await db.update(users).set({ password: hashedPassword }).where(eq(users.email, email));
-  delete otps[email];
+  await db.delete(passwordResetOtps).where(eq(passwordResetOtps.email, email));
   return res.json({ success: true });
 });
 

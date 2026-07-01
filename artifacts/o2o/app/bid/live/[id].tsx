@@ -50,6 +50,7 @@ export default function LiveBidScreen() {
   const handleEndEarly = () => {
     if (bid.offers.length === 0) return;
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    endBid(bid.id);
     router.push({ pathname: "/bid/winner/[id]", params: { id: bid.id } });
   };
 

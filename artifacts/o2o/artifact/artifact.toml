@@ -3,15 +3,15 @@ previewPath = "/"
 title = "O2O – Buy · Sell · Bid"
 version = "1.0.0"
 id = "artifacts/o2o"
-router = "expo-domain"
+router = "react-native"
 
 [[integratedSkills]]
-name = "expo"
+name = "react-native"
 version = "1.0.0"
 
 [[services]]
 ensurePreviewReachable = "/status"
-name = "expo"
+name = "react-native"
 paths = [ "/" ]
 localPort = 24186
 

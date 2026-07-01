@@ -42,11 +42,7 @@ export function ErrorFallback({ error, resetError }: ErrorFallbackProps) {
     return details;
   };
 
-  const monoFont = Platform.select({
-    ios: "Menlo",
-    android: "monospace",
-    default: "monospace",
-  });
+  const monoFont = Platform.OS === "web" ? "monospace" : "monospace";
 
   return (
     <View style={[styles.container, { backgroundColor: colors.background }]}>

@@ -41,7 +41,7 @@ export default function ForgotPasswordScreen() {
   return (
     <KeyboardAvoidingView
       style={{ flex: 1, backgroundColor: colors.background }}
-      behavior={Platform.OS === "ios" ? "padding" : "height"}
+      behavior={Platform.OS === "web" ? "padding" : "height"}
     >
       <View style={[styles.container, { paddingTop: insets.top + 16, paddingBottom: insets.bottom + 24 }]}>
         <TouchableOpacity style={styles.backBtn} onPress={() => router.back()}>

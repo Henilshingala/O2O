@@ -11,6 +11,9 @@ import uploadRouter from "./routes/upload";
 import analyticsRouter from "./routes/analytics";
 import extendedRouter from "./routes/extended";
 import friendsRouter from "./routes/friends";
+import usersRouter from "./routes/users";
+import notificationsRouter from "./routes/notifications";
+import healthRouter from "./routes/health";
 import adminRouter from "./routes/admin/index";
 import { logger } from "./lib/logger";
 
@@ -65,6 +68,9 @@ app.use("/api/upload", uploadRouter);
 app.use("/api/analytics", analyticsRouter);
 app.use("/api/extended", extendedRouter);
 app.use("/api/friends", friendsRouter);
+app.use("/api/users", usersRouter);
+app.use("/api/notifications", notificationsRouter);
+app.use("/api", healthRouter);
 app.use("/api/admin", adminRouter);
 
 // ──── Health check ────

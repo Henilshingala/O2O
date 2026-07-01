@@ -14,6 +14,8 @@ import { Avatar } from "@/components/ui/Avatar";
 import { useAuth } from "@/context/AuthContext";
 import { useData } from "@/context/DataContext";
 import { useColors } from "@/hooks/useColors";
+import { useQuery } from "@tanstack/react-query";
+import { customFetch } from "@workspace/api-client-react";
 
 function formatTime(ts: string) {
   const d = new Date(ts);
@@ -31,6 +33,14 @@ export default function HomeScreen() {
   const { user, getUserById } = useAuth();
   const { chats, groups, channels } = useData();
 
+  const { data: notifications = [] } = useQuery<{ isRead: boolean }[]>({
+    queryKey: ["notifications"],
+    queryFn: () => customFetch("/api/notifications"),
+    enabled: !!user,
+    refetchInterval: 30000,
+  });
+  const unreadNotifs = notifications.filter((n) => !n.isRead).length;
+
   if (!user) return null;
 
   const myChats = chats
@@ -47,7 +57,7 @@ export default function HomeScreen() {
     .filter((c) => c.followers.includes(user.id) || c.ownerId === user.id)
     .slice(0, 3);
 
-  const paddingBottom = Platform.OS === "ios" ? 90 : Platform.OS === "web" ? 100 : 90;
+  const paddingBottom = Platform.OS === "web" ? 100 : 90;
 
   return (
     <View style={[styles.root, { backgroundColor: colors.background }]}>
@@ -62,18 +72,26 @@ export default function HomeScreen() {
           },
         ]}
       >
-        <View style={styles.searchBar}>
+        <TouchableOpacity
+          style={[styles.searchBar, { backgroundColor: colors.muted }]}
+          onPress={() => router.push("/people-search")}
+        >
           <Feather name="search" size={16} color={colors.mutedForeground} />
           <Text style={[styles.searchPlaceholder, { color: colors.mutedForeground }]}>
-            Search...
+            Search users, friends...
           </Text>
-        </View>
+        </TouchableOpacity>
         <View style={styles.headerRight}>
           <TouchableOpacity
             style={[styles.iconBtn, { backgroundColor: colors.muted }]}
-            onPress={() => {}}
+            onPress={() => router.push("/notifications")}
           >
             <Feather name="bell" size={18} color={colors.foreground} />
+            {unreadNotifs > 0 && (
+              <View style={styles.badge}>
+                <Text style={styles.badgeText}>{unreadNotifs > 9 ? "9+" : unreadNotifs}</Text>
+              </View>
+            )}
           </TouchableOpacity>
           <TouchableOpacity onPress={() => router.push("/(tabs)/settings")}>
             <Avatar name={user.fullName} size={36} />
@@ -233,7 +251,9 @@ const styles = StyleSheet.create({
   },
   searchPlaceholder: { fontSize: 14 },
   headerRight: { flexDirection: "row", alignItems: "center", gap: 8 },
-  iconBtn: { width: 36, height: 36, borderRadius: 18, alignItems: "center", justifyContent: "center" },
+  iconBtn: { width: 36, height: 36, borderRadius: 18, alignItems: "center", justifyContent: "center", position: "relative" },
+  badge: { position: "absolute", top: -2, right: -2, backgroundColor: "#EF4444", minWidth: 16, height: 16, borderRadius: 8, alignItems: "center", justifyContent: "center", paddingHorizontal: 4 },
+  badgeText: { color: "#fff", fontSize: 9, fontWeight: "700" },
   greetingBox: { flexDirection: "row", alignItems: "center", gap: 10, paddingHorizontal: 16, paddingVertical: 16 },
   greeting: { fontSize: 20, fontWeight: "700" },
   roleBadge: { paddingHorizontal: 10, paddingVertical: 4, borderRadius: 20 },

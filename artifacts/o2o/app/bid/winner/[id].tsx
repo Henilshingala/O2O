@@ -8,33 +8,30 @@ import { AppButton } from "@/components/ui/AppButton";
 import { useAuth } from "@/context/AuthContext";
 import { useData } from "@/context/DataContext";
 import { useColors } from "@/hooks/useColors";
+import { customFetch } from "@workspace/api-client-react";
 
 export default function SelectWinnerScreen() {
   const colors = useColors();
   const insets = useSafeAreaInsets();
   const { user } = useAuth();
-  const { getBid, selectWinner, createOrder } = useData();
+  const { getBid } = useData();
   const params = useLocalSearchParams<{ id: string }>();
   const bid = getBid(params.id);
 
   if (!user || !bid) return null;
   const sortedOffers = [...bid.offers].sort((a, b) => a.price - b.price);
 
-  const handleSelect = (offer: typeof bid.offers[0]) => {
+  const handleSelect = async (offer: typeof bid.offers[0]) => {
     Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-    selectWinner(bid.id, offer.sellerId, offer.channelId);
-    const order = createOrder({
-      bidId: bid.id,
-      buyerId: user.id,
-      sellerId: offer.sellerId,
-      sellerName: offer.sellerName,
-      sellerChannelId: offer.channelId,
-      offerPrice: offer.price,
-      productName: bid.productName,
-      quantity: bid.quantity,
-      status: "pending",
+    const result = await customFetch<{ success: boolean; order?: { id: string } }>(`/api/data/bids/${bid.id}/winner`, {
+      method: "POST",
+      body: JSON.stringify({ winnerId: offer.sellerId, winnerChannelId: offer.channelId }),
     });
-    if (order) router.replace({ pathname: "/order/[id]", params: { id: order.id } });
+    if (result.order?.id) {
+      router.replace({ pathname: "/order/[id]", params: { id: result.order.id } });
+    } else {
+      router.replace("/(tabs)");
+    }
   };
 
   const handleRejectAll = () => {

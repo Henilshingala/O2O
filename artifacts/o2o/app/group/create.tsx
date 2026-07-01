@@ -14,17 +14,18 @@ import { Feather } from "@/compat/vector-icons";
 import { Avatar } from "@/components/ui/Avatar";
 import { AppButton } from "@/components/ui/AppButton";
 import { useAuth } from "@/context/AuthContext";
+import { useFriends } from "@/context/FriendsContext";
 import { useColors } from "@/hooks/useColors";
 
 export default function CreateGroupStep1() {
   const colors = useColors();
   const insets = useSafeAreaInsets();
-  const { user, getFriends } = useAuth();
+  const { user } = useAuth();
+  const { friends } = useFriends();
   const [search, setSearch] = useState("");
   const [selected, setSelected] = useState<string[]>([]);
 
   if (!user) return null;
-  const friends = getFriends();
   const filtered = friends.filter((f) =>
     f.fullName.toLowerCase().includes(search.toLowerCase()) ||
     f.username.toLowerCase().includes(search.toLowerCase())

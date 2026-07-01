@@ -55,7 +55,7 @@ export default function VerifyOtpScreen() {
   return (
     <KeyboardAvoidingView
       style={{ flex: 1, backgroundColor: colors.background }}
-      behavior={Platform.OS === "ios" ? "padding" : "height"}
+      behavior={Platform.OS === "web" ? "padding" : "height"}
     >
       <View style={[styles.container, { paddingTop: insets.top + 16, paddingBottom: insets.bottom + 24 }]}>
         <TouchableOpacity style={styles.backBtn} onPress={() => router.back()}>
@@ -68,7 +68,7 @@ export default function VerifyOtpScreen() {
           <Text style={{ color: colors.primary }}>{params.email}</Text>
         </Text>
 
-        {debugOtp ? (
+        {__DEV__ && debugOtp ? (
           <View style={[styles.debugBox, { backgroundColor: colors.secondary }]}>
             <Text style={[styles.debugText, { color: colors.mutedForeground }]}>
               Demo OTP: <Text style={{ color: colors.primary, fontWeight: "700" }}>{debugOtp}</Text>

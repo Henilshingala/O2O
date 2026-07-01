@@ -16,6 +16,11 @@ export interface Message {
   senderId: string;
   text: string;
   timestamp: string;
+  type?: "text" | "image" | "video" | "audio" | "file" | "location" | "poll";
+  metadata?: Record<string, unknown>;
+  replyToId?: string;
+  editedAt?: string;
+  deletedAt?: string;
 }
 
 export interface Chat {

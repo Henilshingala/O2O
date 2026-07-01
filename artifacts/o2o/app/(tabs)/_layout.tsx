@@ -1,8 +1,7 @@
-import { BlurView } from "@/compat/blur";
 import { Tabs } from "@/compat/router";
 import { Feather } from "@/compat/vector-icons";
 import React from "react";
-import { Platform, StyleSheet, View, useColorScheme } from "react-native";
+import { Platform, StyleSheet, View } from "react-native";
 import { useColors } from "@/hooks/useColors";
 import { useFriends } from "@/context/FriendsContext";
 
@@ -29,9 +28,6 @@ function FriendsTabIcon({ color }: { color: string }) {
 
 function ClassicTabLayout() {
   const colors = useColors();
-  const colorScheme = useColorScheme();
-  const isDark = colorScheme === "dark";
-  const isIOS = Platform.OS === "ios";
   const isWeb = Platform.OS === "web";
 
   return (
@@ -42,20 +38,12 @@ function ClassicTabLayout() {
         headerShown: false,
         tabBarStyle: {
           position: "absolute",
-          backgroundColor: isIOS ? "transparent" : colors.tabBar,
+          backgroundColor: colors.tabBar,
           borderTopWidth: 1,
           borderTopColor: colors.border,
           elevation: 0,
           ...(isWeb ? { height: 84 } : {}),
         },
-        tabBarBackground: () =>
-          isIOS ? (
-            <BlurView
-              intensity={100}
-              tint={isDark ? "dark" : "light"}
-              style={StyleSheet.absoluteFill}
-            />
-          ) : null,
         tabBarLabelStyle: { fontSize: 11, fontWeight: "600" },
       }}
     >

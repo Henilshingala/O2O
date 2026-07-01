@@ -1,7 +1,8 @@
-import React, { createContext, useCallback, useContext } from "react";
+import React, { createContext, useCallback, useContext, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { customFetch } from "@workspace/api-client-react";
 import { useAuth } from "@/context/AuthContext";
+import type { User } from "@/types";
 
 export interface FriendUser {
   id: string;
@@ -31,7 +32,7 @@ const FriendsContext = createContext<FriendsContextType | null>(null);
 
 export function FriendsProvider({ children }: { children: React.ReactNode }) {
   const queryClient = useQueryClient();
-  const { user } = useAuth();
+  const { user, cacheUser } = useAuth();
   const enabled = !!user;
 
   const { data: friends = [], isLoading: loadingFriends } = useQuery<FriendUser[]>({
@@ -48,6 +49,12 @@ export function FriendsProvider({ children }: { children: React.ReactNode }) {
   });
 
   const isLoading = enabled && (loadingFriends || loadingRequests);
+
+  useEffect(() => {
+    friends.forEach((f) => cacheUser(f as User));
+    requests?.incoming?.forEach((f) => cacheUser(f as User));
+    requests?.outgoing?.forEach((f) => cacheUser(f as User));
+  }, [friends, requests, cacheUser]);
 
   const invalidate = () => {
     queryClient.invalidateQueries({ queryKey: ["friends"] });

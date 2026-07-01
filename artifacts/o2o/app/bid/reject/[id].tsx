@@ -22,12 +22,19 @@ export default function RejectBidScreen() {
 
   if (!user) return null;
 
-  const handleReject = () => {
+  const handleReject = async () => {
     setLoading(true);
-    rejectBid(params.id, { sellerId: user.id, channelId: params.channelId, reason });
-    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
-    setLoading(false);
-    router.back();
+    try {
+      await rejectBid(params.id, {
+        sellerId: user.id,
+        channelId: params.channelId,
+        reason: reason || "Other",
+      });
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
+      router.back();
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (

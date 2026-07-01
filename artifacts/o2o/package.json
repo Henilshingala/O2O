@@ -6,10 +6,8 @@
   "scripts": {
     "dev": "react-native start",
     "android": "react-native run-android",
-    "ios": "react-native run-ios",
     "web": "vite",
     "build:android": "node scripts/build.js android",
-    "build:ios": "node scripts/build.js ios",
     "build:web": "vite build",
     "serve": "node server/serve.js",
     "typecheck": "tsc -p tsconfig.json --noEmit"
@@ -52,6 +50,7 @@
     "react-native-svg": "15.12.1",
     "react-native-vector-icons": "^10.3.0",
     "react-native-web": "^0.21.0",
+    "socket.io-client": "^4.8.3",
     "zod": "catalog:",
     "zod-validation-error": "^3.4.0"
   }

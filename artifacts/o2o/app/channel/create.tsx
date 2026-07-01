@@ -34,29 +34,32 @@ export default function CreateChannelScreen() {
 
   const set = (k: keyof typeof form) => (v: string) => setForm((f) => ({ ...f, [k]: v }));
 
-  const handleCreate = () => {
+  const handleCreate = async () => {
     const e: Record<string, string> = {};
     if (!form.name.trim()) e.name = "Channel name is required";
     if (!form.description.trim()) e.description = "Description is required";
     if (!form.category) e.category = "Please select a category";
     if (Object.keys(e).length > 0) { setErrors(e); return; }
     setLoading(true);
-    const channel = createChannel({
-      name: form.name.trim(),
-      description: form.description.trim(),
-      category: form.category,
-      visibility: form.visibility,
-      ownerId: user.id,
-    });
-    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-    setLoading(false);
-    if (channel) router.replace({ pathname: "/channel/[id]", params: { id: channel.id } });
+    try {
+      const channel = await createChannel({
+        name: form.name.trim(),
+        description: form.description.trim(),
+        category: form.category,
+        visibility: form.visibility,
+        ownerId: user.id,
+      });
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+      router.replace({ pathname: "/channel/[id]", params: { id: channel.id } });
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
     <KeyboardAvoidingView
       style={{ flex: 1, backgroundColor: colors.background }}
-      behavior={Platform.OS === "ios" ? "padding" : "height"}
+      behavior={Platform.OS === "web" ? "padding" : "height"}
     >
       <View
         style={[
