@@ -57,18 +57,26 @@ async function issueAuthResponse(userId: string, userWithoutPassword: Record<str
 router.post("/signup", async (req, res) => {
   try {
     const { username, fullName, email, mobile, city, role, password } = req.body;
-    if (!username || !password || !email) {
+    if (!username || !password || !email || !mobile || !fullName || !city) {
       return res.status(400).json({ error: "Missing required fields" });
     }
-
-    const existing = await db.select().from(users).where(eq(users.username, username)).limit(1);
-    if (existing.length > 0) {
-      return res.status(400).json({ error: "Username already taken" });
+    if (password.length < 6) {
+      return res.status(400).json({ error: "Password must be at least 6 characters long" });
     }
 
-    const emailExists = await db.select().from(users).where(eq(users.email, email)).limit(1);
-    if (emailExists.length > 0) {
-      return res.status(400).json({ error: "Email already registered" });
+    const existingUser = await db.select().from(users).where(eq(users.username, username)).limit(1);
+    if (existingUser.length > 0) {
+      return res.status(400).json({ error: "Username already exists" });
+    }
+
+    const existingEmail = await db.select().from(users).where(eq(users.email, email)).limit(1);
+    if (existingEmail.length > 0) {
+      return res.status(400).json({ error: "Email already exists" });
+    }
+
+    const existingMobile = await db.select().from(users).where(eq(users.mobile, mobile)).limit(1);
+    if (existingMobile.length > 0) {
+      return res.status(400).json({ error: "Mobile number already exists" });
     }
 
     const id = genId("user");
@@ -81,16 +89,16 @@ router.post("/signup", async (req, res) => {
       email,
       mobile,
       city,
-      role,
+      role: role || "buyer",
       password: hashedPassword,
     });
 
-    const user = { id, username, fullName, email, mobile, city, role };
+    const user = { id, username, fullName, email, mobile, city, role: role || "buyer" };
     const auth = await issueAuthResponse(id, user);
     return res.json(auth);
   } catch (error: any) {
     req.log.error(error);
-    return res.status(500).json({ error: "Internal server error" });
+    return res.status(500).json({ error: "Internal server error", details: error.message });
   }
 });
 

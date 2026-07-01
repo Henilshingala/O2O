@@ -41,6 +41,20 @@ export default function HomeScreen() {
   });
   const unreadNotifs = notifications.filter((n) => !n.isRead).length;
 
+  const { data: friendRequests = { incoming: [], outgoing: [] } } = useQuery<{ incoming: any[], outgoing: any[] }>({
+    queryKey: ["friendRequests"],
+    queryFn: () => customFetch("/api/friends/requests"),
+    enabled: !!user,
+    refetchInterval: 15000,
+  });
+
+  const { data: friends = [] } = useQuery<any[]>({
+    queryKey: ["friends"],
+    queryFn: () => customFetch("/api/friends"),
+    enabled: !!user,
+    refetchInterval: 15000,
+  });
+
   if (!user) return null;
 
   const myChats = chats
@@ -114,6 +128,41 @@ export default function HomeScreen() {
             </Text>
           </View>
         </View>
+
+        {/* Friend Requests */}
+        {friendRequests.incoming.length > 0 && (
+          <>
+            <SectionHeader title="Pending Requests" onView={() => router.push("/(tabs)/people-search")} colors={colors} />
+            <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ paddingHorizontal: 16, gap: 12 }}>
+              {friendRequests.incoming.map((req) => (
+                <View key={req.id} style={[styles.friendCard, { backgroundColor: colors.card, borderColor: colors.border }]}>
+                  <Avatar name={req.fullName} size={48} />
+                  <Text style={[styles.friendName, { color: colors.foreground }]} numberOfLines={1}>{req.fullName}</Text>
+                  <TouchableOpacity style={[styles.acceptBtn, { backgroundColor: colors.primary }]} onPress={() => {
+                    customFetch("/api/friends/accept", { method: "POST", body: JSON.stringify({ requesterId: req.id }) });
+                  }}>
+                    <Text style={styles.acceptText}>Accept</Text>
+                  </TouchableOpacity>
+                </View>
+              ))}
+            </ScrollView>
+          </>
+        )}
+
+        {/* Accepted Friends */}
+        {friends.length > 0 && (
+          <>
+            <SectionHeader title="Recently Accepted" onView={() => router.push("/(tabs)/people-search")} colors={colors} />
+            <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ paddingHorizontal: 16, gap: 12, paddingBottom: 16 }}>
+              {friends.slice(0, 5).map((friend) => (
+                <TouchableOpacity key={friend.id} style={{ alignItems: "center", width: 64 }} onPress={() => router.push({ pathname: "/chat/[id]", params: { otherId: friend.id } })}>
+                  <Avatar name={friend.fullName} size={56} />
+                  <Text style={[styles.friendListText, { color: colors.foreground }]} numberOfLines={1}>{friend.fullName.split(" ")[0]}</Text>
+                </TouchableOpacity>
+              ))}
+            </ScrollView>
+          </>
+        )}
 
         {/* Recent Chats */}
         <SectionHeader title="Recent Chats" onView={() => router.push("/(tabs)/chat")} colors={colors} />
@@ -281,6 +330,11 @@ const styles = StyleSheet.create({
   },
   ownerBadge: { paddingHorizontal: 8, paddingVertical: 3, borderRadius: 6 },
   ownerText: { fontSize: 10, fontWeight: "700", color: "#fff" },
+  friendCard: { padding: 12, borderRadius: 12, borderWidth: 1, alignItems: "center", width: 120, marginBottom: 12 },
+  friendName: { fontSize: 13, fontWeight: "600", marginTop: 8, marginBottom: 8, textAlign: "center" },
+  acceptBtn: { paddingHorizontal: 16, paddingVertical: 6, borderRadius: 16 },
+  acceptText: { color: "#fff", fontSize: 12, fontWeight: "600" },
+  friendListText: { fontSize: 12, fontWeight: "600", marginTop: 6, textAlign: "center" },
 });
 
 const shStyles = StyleSheet.create({

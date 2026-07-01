@@ -152,7 +152,8 @@ router.post("/channels/:id/messages", async (req: AuthRequest, res) => {
       return res.status(403).json({ error: "Only channel owner can post" });
     }
     const id = genId("msg");
-    const newMsg = { ...req.body, id, channelId, senderId: req.user!.userId };
+    const { timestamp, ...restBody } = req.body;
+    const newMsg = { ...restBody, id, channelId, senderId: req.user!.userId, timestamp: timestamp ? new Date(timestamp) : new Date() };
     await db.insert(schema.messages).values(newMsg);
     return res.json(newMsg);
   } catch (error) { return res.status(500).json({ error: "Server error" }); }
@@ -286,13 +287,15 @@ router.post("/chats/:id/messages", async (req: AuthRequest, res) => {
       return res.status(403).json({ error: "You can only chat with accepted friends" });
     }
     const id = genId("msg");
+    const { timestamp, ...restBody } = req.body;
     const newMsg = {
-      ...req.body,
+      ...restBody,
       id,
       chatId,
       senderId: req.user!.userId,
       type: req.body.type || "text",
       metadata: req.body.metadata || {},
+      timestamp: timestamp ? new Date(timestamp) : new Date(),
     };
     await db.insert(schema.messages).values(newMsg);
     await db.update(schema.chats).set({ updatedAt: new Date() }).where(eq(schema.chats.id, chatId));
@@ -382,7 +385,8 @@ router.post("/groups", async (req: AuthRequest, res) => {
 router.post("/groups/:id/messages", async (req: AuthRequest, res) => {
   try {
     const id = genId("msg");
-    const newMsg = { ...req.body, id, groupId: req.params.id as string, senderId: req.user!.userId };
+    const { timestamp, ...restBody } = req.body;
+    const newMsg = { ...restBody, id, groupId: req.params.id as string, senderId: req.user!.userId, timestamp: timestamp ? new Date(timestamp) : new Date() };
     await db.insert(schema.messages).values(newMsg);
     return res.json(newMsg);
   } catch (error) { return res.status(500).json({ error: "Server error" }); }
@@ -596,7 +600,8 @@ router.post("/orders", async (req: AuthRequest, res) => {
 router.post("/orders/:id/messages", async (req: AuthRequest, res) => {
   try {
     const id = genId("msg");
-    const newMsg = { ...req.body, id, orderId: req.params.id as string, senderId: req.user!.userId };
+    const { timestamp, ...restBody } = req.body;
+    const newMsg = { ...restBody, id, orderId: req.params.id as string, senderId: req.user!.userId, timestamp: timestamp ? new Date(timestamp) : new Date() };
     await db.insert(schema.messages).values(newMsg);
     return res.json(newMsg);
   } catch (error) { return res.status(500).json({ error: "Server error" }); }
