@@ -76,7 +76,7 @@ export function ProductCard({
           {product.description}
         </Text>
 
-        {product.details.length > 0 && (
+        {product.details && product.details.length > 0 && (
           <View style={styles.details}>
             {product.details.slice(0, 3).map((d) => (
               <Text key={d.name} style={[styles.detail, { color: colors.mutedForeground }]}>
@@ -95,7 +95,7 @@ export function ProductCard({
             </Text>
             <Feather name="heart" size={13} color={colors.mutedForeground} />
             <Text style={[styles.metaText, { color: colors.mutedForeground }]}>
-              {product.wishlisted.length}
+              {product.wishlisted?.length || 0}
             </Text>
           </View>
           {isOwner && (

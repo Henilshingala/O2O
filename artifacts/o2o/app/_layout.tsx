@@ -15,6 +15,13 @@ import { SafeAreaProvider } from "react-native-safe-area-context";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
 import { AuthProvider } from "@/context/AuthContext";
 import { DataProvider } from "@/context/DataContext";
+import { FriendsProvider } from "@/context/FriendsContext";
+import { API_URL } from "@env";
+import { setBaseUrl } from "@workspace/api-client-react";
+
+// Configure the base URL for the API client
+const API_BASE_URL = API_URL || (__DEV__ ? "http://127.0.0.1:5000" : "http://192.168.0.101:5000");
+setBaseUrl(API_BASE_URL);
 
 // Import all screens
 import IndexScreen from "./index";
@@ -48,6 +55,7 @@ import MyBidsScreen from "./my-bids";
 import MyOrdersScreen from "./my-orders";
 import SellerBidsScreen from "./seller-bids";
 import NewChatScreen from "./new-chat";
+import PeopleSearchScreen from "./people-search";
 
 function RootLayoutNav() {
   return (
@@ -83,6 +91,7 @@ function RootLayoutNav() {
       <Stack.Screen name="my-orders" component={MyOrdersScreen} />
       <Stack.Screen name="seller-bids" component={SellerBidsScreen} />
       <Stack.Screen name="new-chat" component={NewChatScreen} />
+      <Stack.Screen name="people-search" component={PeopleSearchScreen} />
     </Stack>
   );
 }
@@ -107,6 +116,7 @@ export default function RootLayout() {
         <AuthProvider>
           <QueryClientProvider client={queryClient}>
             <DataProvider>
+              <FriendsProvider>
               <GestureHandlerRootView style={{ flex: 1 }}>
                 <KeyboardProvider>
                   <NavigationContainer ref={navigationRef}>
@@ -114,6 +124,7 @@ export default function RootLayout() {
                   </NavigationContainer>
                 </KeyboardProvider>
               </GestureHandlerRootView>
+              </FriendsProvider>
             </DataProvider>
           </QueryClientProvider>
         </AuthProvider>

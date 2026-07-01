@@ -1,5 +1,6 @@
 export type CustomFetchOptions = RequestInit & {
   responseType?: "json" | "text" | "blob" | "auto";
+  timeoutMs?: number;
 };
 
 export type ErrorType<T = unknown> = ApiError<T>;
@@ -327,7 +328,7 @@ export async function customFetch<T = unknown>(
   options: CustomFetchOptions = {},
 ): Promise<T> {
   input = applyBaseUrl(input);
-  const { responseType = "auto", headers: headersInit, ...init } = options;
+  const { responseType = "auto", headers: headersInit, timeoutMs = 10000, ...init } = options;
 
   const method = resolveMethod(input, init.method);
 
@@ -360,7 +361,26 @@ export async function customFetch<T = unknown>(
 
   const requestInfo = { method, url: resolveUrl(input) };
 
-  const response = await fetch(input, { ...init, method, headers });
+  let controller: AbortController | undefined;
+  let timeoutId: ReturnType<typeof setTimeout> | undefined;
+
+  if (!init.signal && timeoutMs > 0) {
+    controller = new AbortController();
+    init.signal = controller.signal;
+    timeoutId = setTimeout(() => controller!.abort(), timeoutMs);
+  }
+
+  let response: Response;
+  try {
+    response = await fetch(input, { ...init, method, headers });
+  } catch (err: any) {
+    if (err.name === 'AbortError' || err.message === 'Aborted') {
+      throw new Error(`Network timeout: API request took longer than ${timeoutMs / 1000} seconds. Is your development server reachable?`);
+    }
+    throw err;
+  } finally {
+    if (timeoutId) clearTimeout(timeoutId);
+  }
 
   if (!response.ok) {
     const errorData = await parseErrorBody(response, method);

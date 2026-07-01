@@ -1,5 +1,5 @@
 import { LinearGradient } from "@/compat/linear-gradient";
-import { router } from "@/compat/router";
+import { router, navigationRef } from "@/compat/router";
 import React, { useEffect, useRef } from "react";
 import {
   Animated,
@@ -43,11 +43,26 @@ export default function SplashScreen() {
 
     const timer = setTimeout(() => {
       if (navigated.current) return;
-      navigated.current = true;
-      if (user) {
-        router.replace("/(tabs)");
+      
+      const navigate = () => {
+        if (navigated.current) return;
+        navigated.current = true;
+        if (user) {
+          router.replace("/(tabs)");
+        } else {
+          router.replace("/welcome");
+        }
+      };
+
+      if (!navigationRef.isReady()) {
+        const interval = setInterval(() => {
+          if (navigationRef.isReady()) {
+            clearInterval(interval);
+            navigate();
+          }
+        }, 50);
       } else {
-        router.replace("/welcome");
+        navigate();
       }
     }, delay);
 

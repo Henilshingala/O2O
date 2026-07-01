@@ -37,7 +37,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         setUser(userData);
       }
     } catch (err) {
-      console.error(err);
+      console.error("fetchCurrentUser error:", err);
     } finally {
       setIsLoading(false);
     }
@@ -58,7 +58,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setUser(data.user);
       return { success: true };
     } catch (err: any) {
-      return { success: false, error: err?.data?.error || "Network error" };
+      const msg = err?.data?.error || err?.message || "Network error";
+      return { success: false, error: msg };
     }
   }, []);
 
@@ -73,7 +74,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setUser(resData.user);
       return { success: true };
     } catch (err: any) {
-      return { success: false, error: err?.data?.error || "Network error" };
+      const msg = err?.data?.error || err?.message || "Network error";
+      return { success: false, error: msg };
     }
   }, []);
 

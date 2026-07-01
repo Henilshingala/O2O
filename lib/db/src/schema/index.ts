@@ -11,6 +11,11 @@ export const users = pgTable("users", {
   role: text("role", { enum: ["buyer", "seller", "admin"] }).notNull(),
   password: text("password").notNull(),
   avatar: text("avatar"),
+  isBanned: boolean("is_banned").default(false).notNull(),
+  bannedAt: timestamp("banned_at"),
+  bannedReason: text("banned_reason"),
+  isVerifiedSeller: boolean("is_verified_seller").default(false).notNull(),
+  adminRole: text("admin_role", { enum: ["super_admin", "admin", "moderator", "support"] }),
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
@@ -359,5 +364,20 @@ export const auditLogs = pgTable("audit_logs", {
   adminId: text("admin_id").references(() => users.id).notNull(),
   action: text("action").notNull(),
   target: text("target").notNull(),
+  details: jsonb("details").default({}),
+  ipAddress: text("ip_address"),
+  browser: text("browser"),
+  device: text("device"),
   timestamp: timestamp("timestamp").defaultNow().notNull(),
+});
+
+export const adminSessions = pgTable("admin_sessions", {
+  id: text("id").primaryKey(),
+  adminId: text("admin_id").references(() => users.id).notNull(),
+  tokenHash: text("token_hash").notNull(),
+  ipAddress: text("ip_address"),
+  userAgent: text("user_agent"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  expiresAt: timestamp("expires_at").notNull(),
+  isActive: boolean("is_active").default(true).notNull(),
 });

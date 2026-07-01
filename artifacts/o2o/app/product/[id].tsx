@@ -61,7 +61,7 @@ export default function ProductDetailScreen() {
           <Text style={[styles.sectionTitle, { color: colors.foreground }]}>Description</Text>
           <Text style={[styles.description, { color: colors.mutedForeground }]}>{product.description}</Text>
 
-          {product.details.length > 0 && (
+          {product.details && product.details.length > 0 && (
             <>
               <Text style={[styles.sectionTitle, { color: colors.foreground }]}>Details</Text>
               <View style={[styles.detailsTable, { backgroundColor: colors.card, borderColor: colors.border }]}>
@@ -82,7 +82,7 @@ export default function ProductDetailScreen() {
             </View>
             <View style={styles.metaItem}>
               <Feather name="heart" size={14} color={colors.mutedForeground} />
-              <Text style={[styles.metaText, { color: colors.mutedForeground }]}>{product.wishlisted.length} wishlisted</Text>
+              <Text style={[styles.metaText, { color: colors.mutedForeground }]}>{product.wishlisted?.length || 0} wishlisted</Text>
             </View>
           </View>
         </View>

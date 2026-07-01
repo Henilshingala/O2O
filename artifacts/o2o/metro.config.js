@@ -12,6 +12,7 @@ const config = {
       path.resolve(workspaceRoot, "node_modules"),
     ],
     disableHierarchicalLookup: false,
+    platforms: ['android', 'ios', 'native', 'web'],
   },
 };
 

@@ -13,6 +13,7 @@ import { Feather } from "@/compat/vector-icons";
 import { Avatar } from "@/components/ui/Avatar";
 import { useAuth } from "@/context/AuthContext";
 import { useData } from "@/context/DataContext";
+import { useFriends } from "@/context/FriendsContext";
 import { useColors } from "@/hooks/useColors";
 
 function formatTime(ts: string) {
@@ -26,7 +27,8 @@ function formatTime(ts: string) {
 export default function ChatTab() {
   const colors = useColors();
   const insets = useSafeAreaInsets();
-  const { user, getUserById, getFriends } = useAuth();
+  const { user, getUserById } = useAuth();
+  const { friends } = useFriends();
   const { chats, createChat } = useData();
 
   if (!user) return null;
@@ -36,7 +38,6 @@ export default function ChatTab() {
     .sort((a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime());
 
   const handleNewChat = () => {
-    const friends = getFriends();
     if (friends.length === 0) return;
     const other = friends[0];
     const chat = createChat(user.id, other.id);
@@ -81,7 +82,7 @@ export default function ChatTab() {
         }
         renderItem={({ item }) => {
           const otherId = item.participants.find((p) => p !== user.id)!;
-          const other = getUserById(otherId);
+          const other = friends.find((f) => f.id === otherId) || getUserById(otherId);
           const last = item.messages[item.messages.length - 1];
           return (
             <TouchableOpacity

@@ -6,17 +6,19 @@ import { Feather } from "@/compat/vector-icons";
 import { Avatar } from "@/components/ui/Avatar";
 import { useAuth } from "@/context/AuthContext";
 import { useData } from "@/context/DataContext";
+import { useFriends } from "@/context/FriendsContext";
 import { useColors } from "@/hooks/useColors";
 
 export default function NewChatScreen() {
   const colors = useColors();
   const insets = useSafeAreaInsets();
-  const { user, getFriends } = useAuth();
+  const { user } = useAuth();
+  const { friends: realFriends } = useFriends();
   const { createChat } = useData();
   const [search, setSearch] = useState("");
 
   if (!user) return null;
-  const friends = getFriends().filter((f: any) =>
+  const friends = realFriends.filter((f: any) =>
     f.fullName.toLowerCase().includes(search.toLowerCase()) ||
     f.username.toLowerCase().includes(search.toLowerCase())
   );

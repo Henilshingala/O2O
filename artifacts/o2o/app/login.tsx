@@ -33,14 +33,21 @@ export default function LoginScreen() {
     }
     setLoading(true);
     setError("");
-    const result = await login(username.trim(), password);
-    setLoading(false);
-    if (result.success) {
-      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-      router.replace("/(tabs)");
-    } else {
-      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
-      setError(result.error ?? "Login failed");
+    try {
+      const result = await login(username.trim(), password);
+      if (result.success) {
+        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+        router.replace("/(tabs)");
+      } else {
+        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
+        setError(result.error ?? "Login failed");
+        alert("Login Error: " + JSON.stringify(result.error));
+      }
+    } catch (e: any) {
+      setError("Fatal Error: " + e?.message);
+      alert("Fatal: " + e?.message);
+    } finally {
+      setLoading(false);
     }
   };
 

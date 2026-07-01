@@ -58,22 +58,29 @@ export default function SignupScreen() {
     }
     setLoading(true);
     setErrors({});
-    const result = await signup({
-      username: form.username.trim(),
-      fullName: form.fullName.trim(),
-      email: form.email.trim(),
-      mobile: form.mobile.trim(),
-      password: form.password,
-      city: form.city.trim(),
-      role: role as "buyer" | "seller",
-    });
-    setLoading(false);
-    if (result.success) {
-      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-      router.replace("/(tabs)");
-    } else {
-      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
-      setErrors({ general: result.error ?? "Signup failed" });
+    try {
+      const result = await signup({
+        username: form.username.trim(),
+        fullName: form.fullName.trim(),
+        email: form.email.trim(),
+        mobile: form.mobile.trim(),
+        password: form.password,
+        city: form.city.trim(),
+        role: role as "buyer" | "seller",
+      });
+      if (result.success) {
+        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+        router.replace("/(tabs)");
+      } else {
+        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
+        setErrors({ general: result.error ?? "Signup failed" });
+        alert("Signup Error: " + JSON.stringify(result.error));
+      }
+    } catch (err: any) {
+      setErrors({ general: "Fatal Error: " + err?.message });
+      alert("Fatal: " + err?.message);
+    } finally {
+      setLoading(false);
     }
   };
 
