@@ -18,6 +18,7 @@ import adminRouter from "./routes/admin/index";
 import { logger } from "./lib/logger";
 
 const app: Express = express();
+app.set('trust proxy', 1);
 
 // Helmet with relaxed CSP for admin SPA
 app.use(helmet({
@@ -85,11 +86,8 @@ if (fs.existsSync(adminDistPath)) {
   // Serve built admin SPA assets (JS, CSS, images) at /admin-assets/
   app.use("/admin-assets", express.static(adminDistPath));
 
-  // Admin SPA entry: redirect /admin to /admin/
-  app.get("/admin", (_req, res) => res.redirect("/admin/"));
-
-  // Admin SPA: serve index.html for all /admin/* routes (SPA client-side routing)
-  app.get("/admin/*", (_req, res) => {
+  // Admin SPA: serve index.html for all /admin routes (SPA client-side routing)
+  app.get(["/admin", /^\/admin\/.*/], (_req, res) => {
     const indexPath = path.join(adminDistPath, "index.html");
     if (fs.existsSync(indexPath)) {
       return res.sendFile(indexPath);
