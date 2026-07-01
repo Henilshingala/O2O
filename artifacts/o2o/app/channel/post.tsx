@@ -9,6 +9,7 @@ import {
   TouchableOpacity,
   View,
   Modal,
+  Image,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Feather } from "@/compat/vector-icons";
@@ -114,17 +115,24 @@ export default function CreateProductPost() {
       </View>
 
       <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
-        <TouchableOpacity style={[styles.imagePicker, { backgroundColor: colors.muted, borderColor: colors.border }]} onPress={handlePickImage}>
-          {imageUrl ? (
-            <Text style={[styles.imageLabel, { color: colors.foreground }]}>Image Selected</Text>
-          ) : (
-            <>
-              <Feather name="image" size={32} color={colors.mutedForeground} />
-              <Text style={[styles.imageLabel, { color: colors.mutedForeground }]}>Product Image</Text>
-              <Text style={[styles.imageHint, { color: colors.mutedForeground }]}>Tap to upload</Text>
-            </>
-          )}
-        </TouchableOpacity>
+        <View style={styles.imageContainer}>
+          <TouchableOpacity 
+            style={[styles.imagePicker, { backgroundColor: colors.card, borderColor: colors.primary }]} 
+            onPress={handlePickImage}
+          >
+            {imageUrl ? (
+              <Image source={{ uri: imageUrl }} style={styles.imagePreview} />
+            ) : (
+              <View style={styles.imagePlaceholder}>
+                <View style={[styles.iconWrapper, { backgroundColor: colors.primary + "20" }]}>
+                  <Feather name="image" size={32} color={colors.primary} />
+                </View>
+                <Text style={[styles.imageLabel, { color: colors.foreground }]}>Product Image</Text>
+                <Text style={[styles.imageHint, { color: colors.mutedForeground }]}>Tap to upload (optional)</Text>
+              </View>
+            )}
+          </TouchableOpacity>
+        </View>
 
         <AppInput label="Product Name" value={form.name} onChangeText={set("name")} placeholder="Enter product name" error={errors.name} />
         <AppInput label="Product Description" value={form.description} onChangeText={set("description")} placeholder="Describe your product" multiline style={{ height: 90, textAlignVertical: "top", paddingTop: 10 }} error={errors.description} />
@@ -175,10 +183,14 @@ export default function CreateProductPost() {
 const styles = StyleSheet.create({
   header: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", paddingHorizontal: 16, paddingBottom: 12, borderBottomWidth: 1 },
   title: { fontSize: 17, fontWeight: "700" },
-  content: { padding: 20, gap: 4 },
-  imagePicker: { height: 160, borderRadius: 14, alignItems: "center", justifyContent: "center", borderWidth: 2, borderStyle: "dashed", marginBottom: 20, gap: 8 },
+  content: { padding: 20, gap: 16 },
+  imageContainer: { alignItems: "center", marginBottom: 8 },
+  imagePicker: { width: "100%", height: 180, borderRadius: 14, alignItems: "center", justifyContent: "center", borderWidth: 2, borderStyle: "dashed", overflow: "hidden" },
+  imagePlaceholder: { alignItems: "center", justifyContent: "center", gap: 4 },
+  iconWrapper: { width: 56, height: 56, borderRadius: 28, alignItems: "center", justifyContent: "center", marginBottom: 8 },
   imageLabel: { fontSize: 13, fontWeight: "600" },
   imageHint: { fontSize: 12 },
+  imagePreview: { width: "100%", height: "100%", borderRadius: 12 },
   detailsLabel: { fontSize: 13, fontWeight: "700", marginBottom: 8, marginTop: 4 },
   detailRow: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", padding: 12, borderRadius: 10, borderWidth: 1, marginBottom: 8 },
   detailText: { fontSize: 13, flex: 1 },

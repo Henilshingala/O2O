@@ -62,7 +62,22 @@ export default function DataTable({ columns, data, total, page, totalPages, onPa
               ) : data.map((row, i) => (
                 <tr key={row[idKey] || i}>
                   {bulkActions && <td><input type="checkbox" checked={selected.has(row[idKey])} onChange={() => toggleOne(row[idKey])} /></td>}
-                  {columns.map((c) => <td key={c.key}>{c.render ? c.render(row[c.key], row) : (row[c.key] === null ? <span style={{ color: "var(--text-muted)" }}>null</span> : typeof row[c.key] === "object" ? JSON.stringify(row[c.key]).slice(0, 60) : String(row[c.key] ?? "").slice(0, 80))}</td>)}
+                  {columns.map((c) => {
+                    let val = row[c.key];
+                    let content;
+                    if (c.render) {
+                      content = c.render(val, row);
+                    } else if (val === null) {
+                      content = <span style={{ color: "var(--text-muted)" }}>null</span>;
+                    } else if (typeof val === "string" && (val.startsWith("http") && (c.key === "image" || c.key === "avatar" || c.key === "logo" || val.includes("cloudinary")))) {
+                      content = <img src={val} alt="" style={{ width: 40, height: 40, borderRadius: 8, objectFit: "cover" }} />;
+                    } else if (typeof val === "object") {
+                      content = JSON.stringify(val).slice(0, 60);
+                    } else {
+                      content = String(val ?? "").slice(0, 80);
+                    }
+                    return <td key={c.key}>{content}</td>;
+                  })}
                   {actions && <td>{actions(row)}</td>}
                 </tr>
               ))}

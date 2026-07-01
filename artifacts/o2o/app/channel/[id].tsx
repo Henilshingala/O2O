@@ -3,7 +3,7 @@ import React, { useRef, useState } from "react";
 import {
   FlatList,
   Platform,
-  ScrollView,
+  ScrollView,       
   StyleSheet,
   Text,
   TextInput,

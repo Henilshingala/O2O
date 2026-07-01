@@ -7,6 +7,7 @@ import {
   Text,
   TouchableOpacity,
   View,
+  Image,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Feather } from "@/compat/vector-icons";
@@ -41,10 +42,14 @@ export default function ProductDetailScreen() {
       </View>
 
       <ScrollView contentContainerStyle={{ paddingBottom: 100 }}>
-        <View style={[styles.imagePlaceholder, { backgroundColor: colors.muted }]}>
-          <Feather name="image" size={60} color={colors.mutedForeground} />
-          <Text style={[styles.imagePlaceholderText, { color: colors.mutedForeground }]}>Product Image</Text>
-        </View>
+        {product.image ? (
+          <Image source={{ uri: product.image }} style={styles.imagePreview} />
+        ) : (
+          <View style={[styles.imagePlaceholder, { backgroundColor: colors.muted }]}>
+            <Feather name="image" size={60} color={colors.mutedForeground} />
+            <Text style={[styles.imagePlaceholderText, { color: colors.mutedForeground }]}>Product Image</Text>
+          </View>
+        )}
 
         <View style={styles.content}>
           <Text style={[styles.productName, { color: colors.foreground }]}>{product.name}</Text>
@@ -112,6 +117,7 @@ const styles = StyleSheet.create({
   title: { flex: 1, fontSize: 16, fontWeight: "700" },
   imagePlaceholder: { height: 280, alignItems: "center", justifyContent: "center", gap: 8 },
   imagePlaceholderText: { fontSize: 13 },
+  imagePreview: { width: "100%", height: 320, resizeMode: "cover" },
   content: { padding: 20 },
   productName: { fontSize: 20, fontWeight: "800", marginBottom: 6 },
   price: { fontSize: 24, fontWeight: "900", marginBottom: 14 },
