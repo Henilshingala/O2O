@@ -12,6 +12,7 @@ import {
   ActivityIndicator,
   Modal,
   PermissionsAndroid,
+  Linking
 } from "react-native";
 import { KeyboardAvoidingView } from "react-native-keyboard-controller";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -72,7 +73,7 @@ export default function ChatScreen() {
     
     socket.emit("join:chat", chat.id);
     
-    const handleNewMessage = (msg: Message) => {
+    const handleNewMessage = (msg: any) => {
       if (msg.chatId === chat.id) {
         setChat((prev) => {
           if (!prev) return prev;
@@ -154,23 +155,56 @@ export default function ChatScreen() {
   };
 
   const uploadAndSend = async (asset: any, type: "image" | "video") => {
+    const tempId = `temp_${Date.now()}`;
+    const localUri = asset.uri;
+    const tempMsg: Message = {
+      id: tempId,
+      chatId: chat!.id,
+      senderId: user.id,
+      text: type === "video" ? "Video message" : "Photo message",
+      type: type,
+      timestamp: new Date().toISOString(),
+      metadata: { url: localUri },
+    } as any;
+    
+    // Optimistic UI update
+    setChat((prev) => {
+      if (!prev) return prev;
+      return { ...prev, messages: [tempMsg, ...prev.messages] };
+    });
+
     try {
       const formData = new FormData();
       formData.append("file", {
-        uri: Platform.OS === "android" && !asset.uri?.startsWith("file://") ? `file://${asset.uri}` : asset.uri,
+        uri: Platform.OS === "android" && !localUri?.startsWith("file://") ? `file://${localUri}` : localUri,
         type: asset.type || (type === "video" ? "video/mp4" : "image/jpeg"),
         name: asset.fileName || `upload.${type === "video" ? "mp4" : "jpg"}`,
       } as any);
       const data = await customFetch<any>("/api/upload", { method: "POST", body: formData });
-      sendChatMessage(chat.id, {
+      
+      // Update with actual URL by sending real message to API
+      sendChatMessage(chat!.id, {
         senderId: user.id,
         text: type === "video" ? "Video message" : "Photo message",
         timestamp: new Date().toISOString(),
         type: type,
         metadata: { url: data.url },
       } as any);
+      
+      // We remove the temp message shortly after to allow WebSocket to replace it
+      setTimeout(() => {
+        setChat((prev) => {
+          if (!prev) return prev;
+          return { ...prev, messages: prev.messages.filter(m => m.id !== tempId) };
+        });
+      }, 500);
     } catch (e) {
       console.error("Upload error", e);
+      // Remove temp message on failure
+      setChat((prev) => {
+        if (!prev) return prev;
+        return { ...prev, messages: prev.messages.filter(m => m.id !== tempId) };
+      });
     }
   }
 
@@ -206,6 +240,23 @@ export default function ChatScreen() {
     }
     Geolocation.getCurrentPosition(
       (position) => {
+        const tempId = `temp_${Date.now()}`;
+        const tempMsg: Message = {
+          id: tempId,
+          chatId: chat!.id,
+          senderId: user.id,
+          text: "📍 Shared Location",
+          timestamp: new Date().toISOString(),
+          type: "location",
+          metadata: { lat: position.coords.latitude, lng: position.coords.longitude },
+        } as any;
+        
+        // Optimistic UI Update
+        setChat((prev) => {
+          if (!prev) return prev;
+          return { ...prev, messages: [tempMsg, ...prev.messages] };
+        });
+
         sendChatMessage(chat.id, {
           senderId: user.id,
           text: "📍 Shared Location",
@@ -213,6 +264,13 @@ export default function ChatScreen() {
           type: "location",
           metadata: { lat: position.coords.latitude, lng: position.coords.longitude },
         } as any);
+        
+        setTimeout(() => {
+          setChat((prev) => {
+            if (!prev) return prev;
+            return { ...prev, messages: prev.messages.filter(m => m.id !== tempId) };
+          });
+        }, 500);
       },
       (error) => console.log(error.message),
       { enableHighAccuracy: true, timeout: 15000, maximumAge: 10000 }
@@ -246,18 +304,32 @@ export default function ChatScreen() {
     }
     if (item.type === "location") {
       return (
-        <View style={[styles.locationMsg, item.senderId === user.id ? styles.msgMine : styles.msgTheirs, { backgroundColor: colors.muted }]}>
+        <TouchableOpacity 
+          style={[styles.locationMsg, item.senderId === user.id ? styles.msgMine : styles.msgTheirs, { backgroundColor: colors.muted }]}
+          onPress={() => {
+            const lat = Number(item.metadata?.lat);
+            const lng = Number(item.metadata?.lng);
+            if (!isNaN(lat) && !isNaN(lng)) {
+              const url = Platform.select({
+                ios: `maps:0,0?q=${lat},${lng}`,
+                android: `geo:${lat},${lng}?q=${lat},${lng}`,
+                default: `https://www.google.com/maps/search/?api=1&query=${lat},${lng}`
+              });
+              Linking.openURL(url!).catch(err => console.error("Could not open map", err));
+            }
+          }}
+        >
           <Feather name="map-pin" size={24} color={colors.primary} />
           <Text style={{ color: colors.foreground, marginTop: 8 }}>{item.text}</Text>
-          <Text style={{ color: colors.mutedForeground, fontSize: 12 }}>{item.metadata?.lat?.toFixed(4)}, {item.metadata?.lng?.toFixed(4)}</Text>
-        </View>
+          <Text style={{ color: colors.mutedForeground, fontSize: 12 }}>{Number(item.metadata?.lat || 0).toFixed(4)}, {Number(item.metadata?.lng || 0).toFixed(4)}</Text>
+        </TouchableOpacity>
       );
     }
     if (item.type === "poll") {
       return (
         <View style={[styles.pollMsg, item.senderId === user.id ? styles.msgMine : styles.msgTheirs, { backgroundColor: colors.card, borderColor: colors.border, borderWidth: 1 }]}>
           <Text style={[styles.pollQuestion, { color: colors.foreground }]}>📊 {item.text}</Text>
-          {item.metadata?.options?.map((opt: any, idx: number) => (
+          {(item.metadata?.options as any[])?.map((opt: any, idx: number) => (
             <TouchableOpacity key={idx} style={[styles.pollOption, { backgroundColor: colors.muted }]}>
               <Text style={{ color: colors.foreground }}>{opt.text}</Text>
               <Text style={{ color: colors.mutedForeground, fontSize: 12 }}>{opt.votes?.length || 0} votes</Text>

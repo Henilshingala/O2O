@@ -35,7 +35,15 @@ async function areFriends(userId: string, otherId: string): Promise<boolean> {
 
 async function loadChannelMessages(channelIds: string[]) {
   if (channelIds.length === 0) return [];
-  return db.select().from(schema.messages).where(inArray(schema.messages.channelId, channelIds));
+  const results = await Promise.all(
+    channelIds.map(id =>
+      db.select().from(schema.messages)
+        .where(eq(schema.messages.channelId, id))
+        .orderBy(desc(schema.messages.timestamp))
+        .limit(50)
+    )
+  );
+  return results.flat();
 }
 
 async function loadProductsWithImages(channelIds: string[]) {
@@ -230,16 +238,24 @@ router.get("/chats", async (req: AuthRequest, res) => {
     if (chatIds.length === 0) return res.json([]);
     const myChats = await db.select().from(schema.chats).where(inArray(schema.chats.id, chatIds));
     const allParts = await db.select().from(schema.chatParticipants).where(inArray(schema.chatParticipants.chatId, chatIds));
-    const allMsgs = await db.select().from(schema.messages).where(inArray(schema.messages.chatId, chatIds));
+    
+    // Fetch last 50 messages per chat concurrently
+    const msgResults = await Promise.all(
+      chatIds.map(id => 
+        db.select().from(schema.messages)
+          .where(and(eq(schema.messages.chatId, id)))
+          .orderBy(desc(schema.messages.timestamp))
+          .limit(50)
+      )
+    );
+    const allMsgs = msgResults.flat();
     
     const enriched = myChats.map(c => ({
       ...c,
       participants: allParts.filter(p => p.chatId === c.id).map(p => p.userId),
       messages: allMsgs
         .filter(m => m.chatId === c.id && !m.deletedAt)
-        .sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime())
-        .slice(0, 50)
-        .reverse(),
+        .sort((a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime())
     }));
     return res.json(enriched);
   } catch (error) { return res.status(500).json({ error: "Server error" }); }
@@ -357,12 +373,21 @@ router.get("/groups", async (req: AuthRequest, res) => {
     if (groupIds.length === 0) return res.json([]);
     const myGroups = await db.select().from(schema.groups).where(inArray(schema.groups.id, groupIds));
     const allParts = await db.select().from(schema.groupMembers).where(inArray(schema.groupMembers.groupId, groupIds));
-    const allMsgs = await db.select().from(schema.messages).where(inArray(schema.messages.groupId, groupIds));
+    
+    const msgResults = await Promise.all(
+      groupIds.map(id => 
+        db.select().from(schema.messages)
+          .where(eq(schema.messages.groupId, id))
+          .orderBy(desc(schema.messages.timestamp))
+          .limit(50)
+      )
+    );
+    const allMsgs = msgResults.flat();
     
     const enriched = myGroups.map(g => ({
       ...g,
       members: allParts.filter(p => p.groupId === g.id).map(p => p.userId),
-      messages: allMsgs.filter(m => m.groupId === g.id)
+      messages: allMsgs.filter(m => m.groupId === g.id).sort((a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime())
     }));
     return res.json(enriched);
   } catch (error) { return res.status(500).json({ error: "Server error" }); }

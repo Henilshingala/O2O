@@ -1,6 +1,7 @@
 import { router } from "@/compat/router";
 import React, { useState } from "react";
 import {
+  Image,
   KeyboardAvoidingView,
   Platform,
   ScrollView,
@@ -12,6 +13,7 @@ import {
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Feather } from "@/compat/vector-icons";
 import * as Haptics from "@/compat/haptics";
+import { launchImageLibrary } from "react-native-image-picker";
 import { AppButton } from "@/components/ui/AppButton";
 import { AppInput } from "@/components/ui/AppInput";
 import { useAuth } from "@/context/AuthContext";
@@ -19,6 +21,8 @@ import { useData } from "@/context/DataContext";
 import { useColors } from "@/hooks/useColors";
 
 const CATEGORIES = ["Electronics", "Fashion", "Food", "Beauty", "Home", "Books", "Sports", "Automotive", "Other"];
+
+import { customFetch } from "@workspace/api-client-react";
 
 export default function CreateChannelScreen() {
   const colors = useColors();
@@ -29,6 +33,7 @@ export default function CreateChannelScreen() {
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [loading, setLoading] = useState(false);
   const [showCategories, setShowCategories] = useState(false);
+  const [imageUrl, setImageUrl] = useState("");
 
   if (!user || user.role !== "seller") return null;
 
@@ -48,7 +53,8 @@ export default function CreateChannelScreen() {
         category: form.category,
         visibility: form.visibility,
         ownerId: user.id,
-      });
+        image: imageUrl || undefined,
+      } as any);
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
       router.replace({ pathname: "/channel/[id]", params: { id: channel.id } });
     } finally {
@@ -79,11 +85,41 @@ export default function CreateChannelScreen() {
       </View>
 
       <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
-        <TouchableOpacity style={[styles.logoPicker, { backgroundColor: colors.muted, borderColor: colors.border }]}>
-          <Feather name="camera" size={28} color={colors.mutedForeground} />
-          <Text style={[styles.logoLabel, { color: colors.mutedForeground }]}>Channel Logo</Text>
-          <Text style={[styles.logoHint, { color: colors.mutedForeground }]}>Tap to upload</Text>
-        </TouchableOpacity>
+        <View style={styles.imageContainer}>
+          <TouchableOpacity 
+            style={[styles.logoPicker, { backgroundColor: colors.card, borderColor: colors.primary }]} 
+            onPress={async () => {
+              try {
+                const response = await launchImageLibrary({ mediaType: "photo", quality: 0.8 });
+                if (response.assets?.[0]) {
+                  const asset = response.assets[0];
+                  const formData = new FormData();
+                  formData.append("file", {
+                    uri: Platform.OS === "android" && !asset.uri?.startsWith("file://") ? `file://${asset.uri}` : asset.uri,
+                    type: asset.type || "image/jpeg",
+                    name: asset.fileName || "upload.jpg",
+                  } as any);
+                  const data = await customFetch<any>("/api/upload", { method: "POST", body: formData });
+                  setImageUrl(data.url);
+                }
+              } catch (e) {
+                console.error("Upload error", e);
+              }
+            }}
+          >
+            {imageUrl ? (
+              <Image source={{ uri: imageUrl }} style={styles.imagePreview} />
+            ) : (
+              <View style={styles.logoPlaceholder}>
+                <View style={[styles.iconWrapper, { backgroundColor: colors.primary + "20" }]}>
+                  <Feather name="image" size={28} color={colors.primary} />
+                </View>
+                <Text style={[styles.logoLabel, { color: colors.foreground }]}>Channel Logo</Text>
+                <Text style={[styles.logoHint, { color: colors.mutedForeground }]}>Tap to upload (optional)</Text>
+              </View>
+            )}
+          </TouchableOpacity>
+        </View>
 
         <AppInput label="Channel Name" value={form.name} onChangeText={set("name")} placeholder="Enter channel name" error={errors.name} />
         <AppInput label="Channel Description" value={form.description} onChangeText={set("description")} placeholder="Describe your channel" multiline style={{ height: 90, textAlignVertical: "top", paddingTop: 10 }} error={errors.description} />
@@ -139,11 +175,15 @@ export default function CreateChannelScreen() {
 const styles = StyleSheet.create({
   header: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", paddingHorizontal: 16, paddingBottom: 12, borderBottomWidth: 1 },
   title: { fontSize: 17, fontWeight: "700" },
-  content: { padding: 20, gap: 4 },
-  logoPicker: { alignSelf: "center", width: 100, height: 100, borderRadius: 50, alignItems: "center", justifyContent: "center", borderWidth: 2, borderStyle: "dashed", marginBottom: 24, gap: 4 },
-  logoLabel: { fontSize: 11, fontWeight: "600" },
+  content: { padding: 20, gap: 16 },
+  imageContainer: { alignItems: "center", marginBottom: 8 },
+  logoPicker: { width: 120, height: 120, borderRadius: 60, alignItems: "center", justifyContent: "center", borderWidth: 2, borderStyle: "dashed", overflow: "hidden" },
+  logoPlaceholder: { alignItems: "center", justifyContent: "center", gap: 4 },
+  iconWrapper: { width: 48, height: 48, borderRadius: 24, alignItems: "center", justifyContent: "center", marginBottom: 4 },
+  logoLabel: { fontSize: 12, fontWeight: "600" },
   logoHint: { fontSize: 10 },
-  label: { fontSize: 13, fontWeight: "600", marginBottom: 8, marginTop: 4 },
+  imagePreview: { width: 120, height: 120, borderRadius: 60 },
+  label: { fontSize: 13, fontWeight: "600", marginBottom: 8 },
   dropdown: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", borderWidth: 1.5, borderRadius: 10, paddingHorizontal: 14, height: 48, marginBottom: 4 },
   dropdownText: { fontSize: 15 },
   fieldError: { fontSize: 12, marginBottom: 8 },

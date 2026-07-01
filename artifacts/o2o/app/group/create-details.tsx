@@ -101,18 +101,24 @@ export default function CreateGroupStep2() {
       </View>
 
       <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
-        {/* Group Image Placeholder */}
-        <TouchableOpacity style={[styles.imagePicker, { backgroundColor: colors.muted, borderColor: colors.border }]} onPress={handlePickImage}>
-          {imageUrl ? (
-            <Image source={{ uri: imageUrl }} style={styles.imagePreview} />
-          ) : (
-            <>
-              <Feather name="camera" size={28} color={colors.mutedForeground} />
-              <Text style={[styles.imageLabel, { color: colors.mutedForeground }]}>Group Image</Text>
-              <Text style={[styles.imageHint, { color: colors.mutedForeground }]}>Tap to upload (optional)</Text>
-            </>
-          )}
-        </TouchableOpacity>
+        <View style={styles.imageContainer}>
+          <TouchableOpacity 
+            style={[styles.logoPicker, { backgroundColor: colors.card, borderColor: colors.primary }]} 
+            onPress={handlePickImage}
+          >
+            {imageUrl ? (
+              <Image source={{ uri: imageUrl }} style={styles.imagePreview} />
+            ) : (
+              <View style={styles.logoPlaceholder}>
+                <View style={[styles.iconWrapper, { backgroundColor: colors.primary + "20" }]}>
+                  <Feather name="image" size={28} color={colors.primary} />
+                </View>
+                <Text style={[styles.logoLabel, { color: colors.foreground }]}>Group Photo</Text>
+                <Text style={[styles.logoHint, { color: colors.mutedForeground }]}>Tap to upload (optional)</Text>
+              </View>
+            )}
+          </TouchableOpacity>
+        </View>
 
         <AppInput
           label="Group Name"
@@ -154,22 +160,14 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
   },
   title: { fontSize: 17, fontWeight: "700" },
-  content: { padding: 20, gap: 4 },
-  imagePicker: {
-    alignSelf: "center",
-    width: 100,
-    height: 100,
-    borderRadius: 50,
-    alignItems: "center",
-    justifyContent: "center",
-    borderWidth: 2,
-    borderStyle: "dashed",
-    marginBottom: 24,
-    gap: 4,
-  },
-  imageLabel: { fontSize: 11, fontWeight: "600" },
-  imageHint: { fontSize: 10 },
-  imagePreview: { width: 96, height: 96, borderRadius: 48 },
+  content: { padding: 20, gap: 16 },
+  imageContainer: { alignItems: "center", marginBottom: 8 },
+  logoPicker: { width: 120, height: 120, borderRadius: 60, alignItems: "center", justifyContent: "center", borderWidth: 2, borderStyle: "dashed", overflow: "hidden" },
+  logoPlaceholder: { alignItems: "center", justifyContent: "center", gap: 4 },
+  iconWrapper: { width: 48, height: 48, borderRadius: 24, alignItems: "center", justifyContent: "center", marginBottom: 4 },
+  logoLabel: { fontSize: 12, fontWeight: "600" },
+  logoHint: { fontSize: 10 },
+  imagePreview: { width: 120, height: 120, borderRadius: 60 },
   memberInfo: {
     flexDirection: "row",
     alignItems: "center",
