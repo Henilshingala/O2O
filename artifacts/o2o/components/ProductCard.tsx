@@ -46,8 +46,8 @@ export function ProductCard({
       }
     >
       <View style={styles.imageContainer}>
-        {product.image ? (
-          <Image source={{ uri: product.image }} style={styles.image} resizeMode="cover" />
+        {(product.image || (product as any).images?.[0]?.url) ? (
+          <Image source={{ uri: product.image || (product as any).images[0].url }} style={styles.image} resizeMode="cover" />
         ) : (
           <View style={[styles.imagePlaceholder, { backgroundColor: colors.muted }]}>
             <Feather name="image" size={40} color={colors.mutedForeground} />

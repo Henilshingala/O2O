@@ -1,6 +1,7 @@
 import { router, useLocalSearchParams } from "@/compat/router";
 import React, { useState } from "react";
 import {
+  ActivityIndicator,
   Image,
   KeyboardAvoidingView,
   Platform,
@@ -34,32 +35,51 @@ export default function CreateGroupStep2() {
   const [loading, setLoading] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [imageUrl, setImageUrl] = useState("");
+  const [localImageUri, setLocalImageUri] = useState("");
+  const [uploading, setUploading] = useState(false);
 
   if (!user) return null;
 
   const handlePickImage = async () => {
     try {
-      const response = await launchImageLibrary({ mediaType: "photo", quality: 0.8 });
-      if (response.assets?.[0]) {
-        const asset = response.assets[0];
-        const formData = new FormData();
-        formData.append("file", {
-          uri: Platform.OS === "android" && !asset.uri?.startsWith("file://") ? `file://${asset.uri}` : asset.uri,
-          type: asset.type || "image/jpeg",
-          name: asset.fileName || "upload.jpg",
-        } as any);
-        const data = await customFetch<any>("/api/upload", { method: "POST", body: formData });
-        setImageUrl(data.url);
-      }
+      const response = await launchImageLibrary({ mediaType: "photo", quality: 0.7 });
+      if (response.didCancel || !response.assets?.[0]) return;
+      const asset = response.assets[0];
+      if (!asset.uri) return;
+
+      // Show local preview immediately
+      setLocalImageUri(asset.uri);
+      setUploading(true);
+
+      const formData = new FormData();
+      formData.append("file", {
+        uri: Platform.OS === "android" && !asset.uri.startsWith("file://") ? `file://${asset.uri}` : asset.uri,
+        type: asset.type || "image/jpeg",
+        name: asset.fileName || "group_photo.jpg",
+      } as any);
+
+      const data = await customFetch<any>("/api/upload", {
+        method: "POST",
+        body: formData,
+        timeoutMs: 60000,
+      });
+      setImageUrl(data.url);
+      setUploading(false);
     } catch (e) {
       console.error("Upload error", e);
+      setUploading(false);
+      // Keep local preview but clear remote URL
+      setImageUrl("");
     }
   };
+
+  const previewUri = imageUrl || localImageUri;
 
   const handleCreate = async () => {
     const e: Record<string, string> = {};
     if (!name.trim()) e.name = "Group name is required";
     if (!description.trim()) e.description = "Description is required";
+    if (uploading) e.name = "Please wait for image upload to finish";
     if (Object.keys(e).length > 0) { setErrors(e); return; }
 
     setLoading(true);
@@ -103,18 +123,29 @@ export default function CreateGroupStep2() {
       <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
         <View style={styles.imageContainer}>
           <TouchableOpacity 
-            style={[styles.logoPicker, { backgroundColor: colors.card, borderColor: colors.primary }]} 
+            style={[styles.logoPicker, { backgroundColor: colors.card, borderColor: previewUri ? colors.primary : colors.border }]} 
             onPress={handlePickImage}
+            activeOpacity={0.7}
           >
-            {imageUrl ? (
-              <Image source={{ uri: imageUrl }} style={styles.imagePreview} />
+            {previewUri ? (
+              <View style={styles.previewWrapper}>
+                <Image source={{ uri: previewUri }} style={styles.imagePreview} />
+                {uploading && (
+                  <View style={styles.uploadOverlay}>
+                    <ActivityIndicator size="small" color="#fff" />
+                  </View>
+                )}
+                <View style={[styles.editBadge, { backgroundColor: colors.primary }]}>
+                  <Feather name="edit-2" size={12} color="#fff" />
+                </View>
+              </View>
             ) : (
               <View style={styles.logoPlaceholder}>
                 <View style={[styles.iconWrapper, { backgroundColor: colors.primary + "20" }]}>
-                  <Feather name="image" size={28} color={colors.primary} />
+                  <Feather name="camera" size={24} color={colors.primary} />
                 </View>
                 <Text style={[styles.logoLabel, { color: colors.foreground }]}>Group Photo</Text>
-                <Text style={[styles.logoHint, { color: colors.mutedForeground }]}>Tap to upload (optional)</Text>
+                <Text style={[styles.logoHint, { color: colors.mutedForeground }]}>Tap to upload</Text>
               </View>
             )}
           </TouchableOpacity>
@@ -162,20 +193,48 @@ const styles = StyleSheet.create({
   title: { fontSize: 17, fontWeight: "700" },
   content: { padding: 20, gap: 16 },
   imageContainer: { alignItems: "center", marginBottom: 8 },
-  logoPicker: { width: 120, height: 120, borderRadius: 60, alignItems: "center", justifyContent: "center", borderWidth: 2, borderStyle: "dashed", overflow: "hidden" },
+  logoPicker: {
+    width: 120,
+    height: 120,
+    borderRadius: 60,
+    alignItems: "center",
+    justifyContent: "center",
+    borderWidth: 2,
+    borderStyle: "dashed",
+    overflow: "hidden",
+  },
   logoPlaceholder: { alignItems: "center", justifyContent: "center", gap: 4 },
   iconWrapper: { width: 48, height: 48, borderRadius: 24, alignItems: "center", justifyContent: "center", marginBottom: 4 },
   logoLabel: { fontSize: 12, fontWeight: "600" },
   logoHint: { fontSize: 10 },
+  previewWrapper: { width: 120, height: 120, position: "relative" },
   imagePreview: { width: 120, height: 120, borderRadius: 60 },
+  uploadOverlay: {
+    ...StyleSheet.absoluteFillObject,
+    borderRadius: 60,
+    backgroundColor: "rgba(0,0,0,0.4)",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  editBadge: {
+    position: "absolute",
+    bottom: 4,
+    right: 4,
+    width: 28,
+    height: 28,
+    borderRadius: 14,
+    alignItems: "center",
+    justifyContent: "center",
+    borderWidth: 2,
+    borderColor: "#fff",
+  },
   memberInfo: {
     flexDirection: "row",
     alignItems: "center",
     gap: 8,
     padding: 14,
     borderRadius: 12,
-    marginBottom: 20,
   },
   memberText: { fontSize: 14, fontWeight: "600" },
-  btn: {},
+  btn: { marginTop: 8 },
 });

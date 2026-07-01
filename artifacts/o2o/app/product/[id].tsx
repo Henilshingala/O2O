@@ -42,8 +42,8 @@ export default function ProductDetailScreen() {
       </View>
 
       <ScrollView contentContainerStyle={{ paddingBottom: 100 }}>
-        {product.image ? (
-          <Image source={{ uri: product.image }} style={styles.imagePreview} />
+        {(product.image || (product as any).images?.[0]?.url) ? (
+          <Image source={{ uri: product.image || (product as any).images[0].url }} style={styles.imagePreview} />
         ) : (
           <View style={[styles.imagePlaceholder, { backgroundColor: colors.muted }]}>
             <Feather name="image" size={60} color={colors.mutedForeground} />

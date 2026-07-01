@@ -77,6 +77,7 @@ router.get("/channels", async (req: AuthRequest, res) => {
     const fols = await db.select().from(schema.channelFollowers).where(inArray(schema.channelFollowers.channelId, channelIds));
     const channelsWithDetails = allChannels.map((c) => ({
       ...c,
+      image: c.logo,
       products: productsByChannel.get(c.id) ?? [],
       followers: fols.filter((f) => f.channelId === c.id).map((f) => f.userId),
       messages: allChannelMsgs.filter(m => m.channelId === c.id),
@@ -88,9 +89,10 @@ router.get("/channels", async (req: AuthRequest, res) => {
 router.post("/channels", async (req: AuthRequest, res) => {
   try {
     const id = genId("ch");
-    const newChannel = { ...req.body, id, ownerId: req.user!.userId };
+    const { image, ...rest } = req.body;
+    const newChannel = { ...rest, id, ownerId: req.user!.userId, logo: image || null };
     await db.insert(schema.channels).values(newChannel);
-    return res.json({ ...newChannel, products: [], followers: [], messages: [] });
+    return res.json({ ...newChannel, image: newChannel.logo, products: [], followers: [], messages: [] });
   } catch (error) { return res.status(500).json({ error: "Server error" }); }
 });
 
@@ -98,13 +100,14 @@ router.post("/channels/:id/products", async (req: AuthRequest, res) => {
   try {
     const id = genId("prod");
     const { images, ...body } = req.body;
-    const newProduct = { ...body, id, channelId: req.params.id as string, details: body.details || [] };
+    const imageUrl = body.image || (Array.isArray(images) && images.length > 0 ? images[0] : null);
+    const newProduct = { ...body, id, channelId: req.params.id as string, details: body.details || [], image: imageUrl };
     await db.insert(schema.products).values(newProduct);
 
     const imageUrls: string[] = Array.isArray(images) && images.length > 0
       ? images
-      : newProduct.image
-        ? [newProduct.image]
+      : imageUrl
+        ? [imageUrl]
         : [];
 
     if (imageUrls.length > 0) {
@@ -396,10 +399,11 @@ router.get("/groups", async (req: AuthRequest, res) => {
 router.post("/groups", async (req: AuthRequest, res) => {
   try {
     const id = genId("grp");
-    const newGroup = { ...req.body, id, createdBy: req.user!.userId };
+    const { members: memberList, ...groupBody } = req.body;
+    const newGroup = { name: groupBody.name, description: groupBody.description, image: groupBody.image || null, id, createdBy: req.user!.userId };
     await db.insert(schema.groups).values(newGroup);
     
-    const members = req.body.members || [req.user!.userId];
+    const members = memberList || [req.user!.userId];
     const memberRows = members.map((m: string) => ({ groupId: id, userId: m }));
     await db.insert(schema.groupMembers).values(memberRows);
     
