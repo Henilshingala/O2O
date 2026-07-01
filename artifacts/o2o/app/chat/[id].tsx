@@ -70,6 +70,8 @@ export default function ChatScreen() {
     const socket = getSocket();
     if (!socket || !chat) return;
     
+    socket.emit("join:chat", chat.id);
+    
     const handleNewMessage = (msg: Message) => {
       if (msg.chatId === chat.id) {
         setChat((prev) => {
@@ -85,6 +87,7 @@ export default function ChatScreen() {
     socket.on("message:new", handleNewMessage);
     return () => {
       socket.off("message:new", handleNewMessage);
+      socket.emit("leave:chat", chat.id);
     };
   }, [chat?.id, queryClient]);
 
