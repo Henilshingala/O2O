@@ -1,919 +1,406 @@
-PROJECT NAME:
-O2O Marketplace Platform
+# O2O Master Refactor Prompt for Replit
 
-Tech Stack
+## Files to attach
 
-Frontend:
-React Native + Expo
+Attach **the full current project zip** of the O2O codebase. Use the archive that contains the existing monorepo with these folders:
 
-Backend:
-Node.js
-Express.js
+* `artifacts/o2o`
+* `artifacts/api-server`
+* `artifacts/admin-panel`
+* `lib/db`
+* any shared packages under `lib/`
+* `package.json`, `pnpm-workspace.yaml`, lockfiles, and all current source files
 
-Database:
-PostgreSQL
-
-ORM:
-Prisma ORM
-
-Realtime:
-Socket.IO
-
-Authentication:
-JWT
-
-Storage:
-Supabase Storage or AWS S3
-
-Push Notifications:
-Firebase Cloud Messaging
-
-Email:
-Nodemailer
-
-OTP:
-Email OTP verification
+If the file picker allows only one file, attach **the project zip**. Do not attach a trimmed export, screenshots, or a partial folder.
 
 ---
 
-CURRENT STATUS
+## Master prompt
 
-The application already exists.
+You are working inside an existing O2O monorepo. Your job is to **inspect the current codebase, verify what is already implemented, fix what is broken, improve what is incomplete, and deliver a production-ready result**.
 
-Many screens are implemented.
+This is **not a rewrite**. Do **not** rebuild the project from scratch.
 
-PostgreSQL tables were created successfully.
+### Non-negotiable goals
 
-Data is inserted.
+* Keep the **existing UI/design** unless a bug forces a minimal fix.
+* Work only with the **existing tech stack**.
+* Do **not** add new unrelated technologies.
+* Do **not** introduce Django, Python, AWS, Redis, or Expo.
+* Use **React Native CLI**, not Expo.
+* Remove any Expo-specific code, imports, config, scripts, or dependencies.
+* The app must work **perfectly on Android and Web**.
+* Remove or delete all iOS-specific code paths and files if they are present.
+* Do not write any iOS code.
+* Preserve current features, but make them actually work.
+* No mock data in production screens.
+* No placeholder handlers.
+* No fake UI flows.
+* No half-connected APIs.
 
-But signup and login are failing.
+### Current stack to keep
 
-I need a complete refactor and stabilization.
+* **Frontend mobile/web**: React Native CLI + React Native Web
+* **Backend**: Node.js + Express.js + TypeScript
+* **Database**: PostgreSQL
+* **ORM / schema**: Drizzle ORM + drizzle-kit
+* **Validation**: Zod / drizzle-zod
+* **Realtime**: Socket.IO
+* **Auth**: JWT
+* **File upload**: Multer and current upload flow already in the repo
+* **Logging / security**: existing pino / helmet / cors / rate limit stack already in the repo
+* **Monorepo tooling**: pnpm workspaces, strict TypeScript
 
-Do not redesign UI.
+### What to do first
 
-Keep existing design.
+1. Read the full repository structure.
+2. Inspect all existing screens, API clients, shared libraries, backend routes, DB schema, socket handlers, upload logic, and auth logic.
+3. Identify what is already implemented, what is partially implemented, and what is broken.
+4. Fix bugs in the current architecture before adding anything new.
+5. Only create new files when the existing codebase has no correct place for the fix.
+6. Prefer improving existing files over adding duplicates.
+7. Make sure every change works in the current architecture and does not break Android or Web.
 
-Improve backend architecture.
+### Core instruction
 
-Fix authentication.
+For **every screen, backend route, DB model, socket event, upload flow, and auth flow**:
 
-Fix database integration.
-
-Make it production ready.
-
----
-
-AUTHENTICATION
-
-Fix Signup
-
-Requirements:
-
-username unique
-
-email unique
-
-mobile unique
-
-role required
-
-buyer or seller
-
-password hashing with bcrypt
-
-JWT token generation
-
-store user inside PostgreSQL
-
-return proper errors
-
-duplicate username
-
-duplicate email
-
-duplicate mobile
-
-Fix Login
-
-Allow login using:
-
-username
-
-password
-
-Verify bcrypt password
-
-Return JWT
-
-Save refresh token
-
-Session support
-
-Fix current signup/login errors.
+* verify whether it is implemented
+* verify whether it works correctly
+* if implemented incorrectly, fix it properly
+* if missing, implement it using the existing architecture
+* if partly implemented, finish it cleanly
+* if duplicated, remove the duplicate and keep the real implementation
+* if mock data exists, replace it with real API-backed data
 
 ---
 
-FORGOT PASSWORD
+## Project goal
 
-Step 1
+Make the entire O2O application **stable, correct, production-ready, and scalable** while preserving the current UI and user experience.
 
-Enter email
+The final output must be a working app with:
 
-Generate OTP
-
-Save OTP
-
-Expiration 5 minutes
-
-Send email
-
-Step 2
-
-Verify OTP
-
-Validate expiration
-
-Step 3
-
-Reset Password
-
-Enter password
-
-Confirm password
-
-Hash password
-
-Update database
-
-Invalidate old password
-
-Login should work only with new password
+* real PostgreSQL integration
+* stable authentication
+* reliable screens
+* realtime updates
+* working uploads
+* clean API layer
+* clean DB layer
+* no mock data
+* no dead buttons
+* no placeholder screens
+* no broken navigation
+* no Expo dependencies
+* Android and Web support only
 
 ---
 
-HOME PAGE
+## What to verify and fix across the app
 
-Remove Dashboard
+### 1) Frontend screens
 
-Replace dashboard with Chat Home.
+For every screen in the repo:
 
-Chat Home should show:
+* check if it already exists
+* inspect whether the UI is functional or still placeholder code
+* confirm all buttons, forms, mutations, queries, and navigation routes work
+* replace mock data with real backend data
+* ensure loading states, error states, and empty states exist where needed
+* keep the design the same unless a bug fix requires a tiny correction
 
-Recent Chats
+### 2) Authentication
 
-Recent Groups
+Verify and fix:
 
-Recent Channels
+* signup
+* login
+* logout
+* JWT access token handling
+* refresh token flow
+* session persistence
+* forgot password
+* OTP generation, storage, expiry, and verification
+* password reset
+* duplicate username/email/mobile validation
+* role validation for buyer/seller
+* bcrypt password hashing
+* secure error messages
 
-Unread count
+### 3) Home and chat entry
 
-Search users
+Replace any dashboard-style placeholder home with the real chat home experience if that is what the current product expects. Fix:
 
-Search friends
+* recent chats
+* recent groups
+* recent channels
+* unread counts
+* search users/friends/groups/channels
+* notifications and friend requests entry points
 
-Search groups
+### 4) Friend system
 
-Search channels
+Verify and implement:
 
-Notifications
+* search users by username
+* send friend request
+* accept/reject request
+* notification creation
+* accepted-friends-only chat rule
+* correct realtime updates
 
-Friend requests
+### 5) Notifications
+
+Verify and implement a real notification system for:
+
+* friend request
+* friend accepted
+* friend rejected
+* new message
+* group invitation
+* channel updates
+* bid events
+* offer events
+* order events
+  Use Socket.IO and persist notifications in PostgreSQL.
+
+### 6) Private chat
+
+Verify and implement the existing chat system so it supports:
+
+* text
+* emoji
+* image
+* video
+* file
+* audio
+* poll
+* location
+* reply
+* edit
+* delete
+* typing indicator
+* online status
+* seen/delivered status
+* reactions
+* pagination and infinite scrolling
+* media gallery
+  Only friends can chat.
+
+### 7) Groups
+
+Verify and implement:
+
+* create group
+* group image upload
+* change image
+* remove image
+* rename group
+* edit description
+* add/remove members
+* leave group
+* delete group
+* admin permissions
+* realtime group chat
+  Fix any broken group upload or image handling.
+
+### 8) Channels and products
+
+Verify and implement:
+
+* buyer channel view is read-only
+* seller channel management works
+* seller-only posting rules are enforced
+* product posts support multiple images/videos where existing design expects it
+* repost flow creates a new product record, does not modify the old one
+* wishlist works
+* create bid from product works
+
+### 9) Bids
+
+Verify and implement:
+
+* bid creation
+* bid invitations
+* seller joins/rejects
+* offer submission and updates
+* live bidding via Socket.IO
+* buyer sees full seller identities
+* sellers do not see competitor identities
+* 30 minute countdown and automatic close
+* winner selection
+* bid history for buyer and seller
+* order creation from selected winner
+
+### 10) Orders and reviews
+
+Verify and implement:
+
+* order confirmation flow
+* private buyer/seller order chat
+* review submission
+* photo upload for review if already part of current product expectations
+* review screen is not placeholder
+* all order-related navigation works
+
+### 11) Profile and settings
+
+Verify and implement:
+
+* editable profile fields
+* read-only username/email/mobile where required
+* settings toggles
+* theme persistence
+* notifications settings
+* privacy settings
+* login sessions
+* logout
+* delete account if already intended in the current product
+
+### 12) Database integration
+
+Inspect the PostgreSQL schema and Drizzle setup.
+Make sure:
+
+* tables are correct
+* relations are correct
+* indexes are correct
+* unique constraints are correct
+* cascade behavior is correct
+* soft delete behavior is correct where needed
+* UUID IDs are used consistently if that is already the project standard
+* migrations are valid and reproducible
+* no schema drift exists between code and database
+
+### 13) Socket.IO
+
+Inspect and fix Socket.IO event flow so events are actually emitted and received where needed.
+Verify existing events and handlers, and implement missing ones using the current architecture.
+
+### 14) Storage and uploads
+
+Inspect and fix file upload flow so it works end-to-end for:
+
+* images
+* videos
+* documents
+* avatars
+* group images
+* review photos if applicable
+
+Use the existing storage approach already present in the repo. Do not introduce a new unrelated storage system.
+
+### 15) Performance and quality
+
+Verify and improve:
+
+* pagination
+* infinite scrolling
+* lazy loading
+* optimistic updates
+* query caching
+* database query efficiency
+* socket reconnection behavior
+* stable loading and error handling
+* no unnecessary re-renders
+* no stale cache bugs
+
+### 16) Security
+
+Verify and enforce:
+
+* JWT security
+* refresh token rotation or equivalent current project pattern
+* bcrypt hashing
+* input validation
+* sanitization
+* rate limiting
+* CORS
+* Helmet
+* SQL injection protection through Drizzle/parameterized access
+* proper authorization checks on every protected action
 
 ---
 
-FRIEND SYSTEM
+## Removal rules
 
-Search user by username.
+Remove or fix anything that violates the current stack or product goal:
 
-Send friend request.
-
-Notification created.
-
-Receiver sees notification.
-
-Accept request.
-
-Reject request.
-
-If accepted
-
-status = friends
-
-If rejected
-
-sender receives:
-
-Request rejected
-
-If accepted
-
-sender receives:
-
-You are now friends
-
-Only accepted friends can chat.
+* Expo dependencies
+* Expo configs
+* Expo scripts
+* Expo-specific imports
+* iOS-only code
+* dead placeholder code
+* duplicate screens
+* mock data providers
+* fake test data in production UI
+* unused duplicate components
+* broken imports from deleted files
 
 ---
 
-NOTIFICATION SYSTEM
+## Implementation standard
 
-friend request
+When you edit code:
 
-friend accepted
-
-friend rejected
-
-bid selected
-
-bid rejected
-
-offer accepted
-
-offer rejected
-
-order confirmed
-
-group invitation
-
-new message
-
-channel updates
-
-Use realtime sockets.
+* keep the structure clean
+* prefer existing naming conventions
+* do not create duplicate APIs for the same action
+* do not break current routes unless fixing a bug requires a precise correction
+* use the current API client and shared libs
+* keep frontend and backend aligned
+* make sure production builds still work
+* keep Android and Web as the only targets
 
 ---
 
-PRIVATE CHAT
+## Acceptance criteria
 
-Telegram-like experience.
+The final codebase must satisfy all of these:
 
-Features:
-
-text
-
-emoji
-
-image
-
-video
-
-file
-
-audio
-
-poll
-
-location
-
-reply
-
-delete message
-
-edit message
-
-typing indicator
-
-online status
-
-seen status
-
-delivered status
-
-message reactions
-
-pagination
-
-media gallery
-
-Only friends can message.
+* app runs without Expo
+* app works on Android and Web
+* no iOS-specific implementation remains
+* signup works
+* login works
+* JWT/session handling works
+* forgot password and OTP work
+* friend system works
+* notifications work
+* private chat works
+* group features work
+* channels work
+* product posts work
+* repost works
+* wishlist works
+* bids work
+* order flow works
+* reviews work
+* settings work
+* database integration is stable
+* Socket.IO events are stable
+* uploads work
+* no mock data remains in production screens
+* no placeholder screens remain
+* no duplicate broken files remain
+* the project is ready for production use
 
 ---
 
-GROUPS
-
-Create Group page.
-
-Show only accepted friends.
-
-Search friends.
-
-Multiple selection.
-
-Group image upload.
-
-Fix current issue:
-
-group image not uploading.
-
-Allow:
-
-change image
-
-remove image
-
-rename group
-
-description edit
-
-add members
-
-remove members
-
-leave group
-
-delete group
-
-Admin permissions.
-
-Group chat supports:
-
-text
-
-video
-
-image
-
-file
-
-audio
-
-poll
-
-location
-
-reactions
-
-replies
-
----
-
-CHANNELS
-
-BUYER VIEW
-
-Only read.
-
-Cannot post.
-
-Can wishlist products.
-
-Can follow channel.
-
-Can view products.
-
-Can create bid from product.
-
-SELLER VIEW
-
-See own channels.
-
-Create channel.
-
-Edit channel.
-
-Delete channel.
-
-Create posts.
-
-Text post
-
-Product post
-
-Only seller can post.
-
-Followers cannot post.
-
----
-
-PRODUCT POSTS
-
-Product supports:
-
-max 5 images
-
-max 5 videos
-
-images optional
-
-videos optional
-
-both allowed simultaneously
-
-name
-
-description
-
-price
-
-quantity
-
-category
-
-details
-
-specifications
-
-tags
-
-seller info
-
-views
-
-likes
-
-wishlist count
-
----
-
-REPOST
-
-Seller page should show:
-
-Repost
-
-Clicking repost:
-
-Auto-fill product.
-
-Seller can edit:
-
-images
-
-videos
-
-name
-
-price
-
-description
-
-details
-
-Delete media.
-
-Add media.
-
-Create NEW product.
-
-Do not modify old post.
-
-Old post remains unchanged.
-
-New row inserted.
-
----
-
-WISHLIST
-
-Buyer can save products.
-
-Buyer wishlist page shows:
-
-channel
-
-product
-
-price
-
-comparison
-
-Create Bid button
-
----
-
-BIDS
-
-BUYER
-
-Create Bid.
-
-Fields:
-
-image
-
-product name
-
-quantity
-
-budget per product
-
-description
-
-optional details
-
-Duration fixed:
-
-30 minutes
-
-Two modes:
-
-wishlist sellers
-
-all sellers
-
-If wishlist sellers selected
-
-Only wishlist channels receive bid invitation.
-
-If all sellers selected
-
-Bid becomes public.
-
-Visible only to sellers.
-
----
-
-SELLER BID SYSTEM
-
-Seller receives notification.
-
-Join Bid
-
-Reject Bid
-
-Reject reason optional
-
-Seller submits:
-
-offer price
-
-delivery duration
-
-message
-
-Can update price during bidding.
-
-Realtime updates.
-
----
-
-LIVE BIDDING
-
-Socket.IO required.
-
-Buyer sees:
-
-offers count
-
-highest
-
-lowest
-
-average
-
-remaining time
-
-seller names
-
-Seller sees:
-
-only prices
-
-seller identities hidden
-
-Seller cannot see competitors.
-
-Only buyer sees seller names.
-
-30 minute countdown.
-
-Auto close.
-
-Buyer selects winner.
-
-Winner receives:
-
-Order Request
-
-Others receive:
-
-Offer Rejected
-
-Buyer can reject everyone.
-
----
-
-BID HISTORY
-
-Buyer
-
-Current bids
-
-Past bids
-
-Accepted
-
-Rejected
-
-Winner
-
-Offers history
-
-Seller
-
-Running bids
-
-Invited bids
-
-Joined bids
-
-Won bids
-
-Lost bids
-
-Rejected bids
-
----
-
-ORDER FLOW
-
-Buyer selects seller.
-
-Seller gets request.
-
-Accept order.
-
-Order confirmed.
-
-Private order chat opens.
-
-Only buyer and seller can access.
-
----
-
-PROFILE
-
-Editable:
-
-profile picture
-
-name
-
-bio
-
-city
-
-description
-
-Not editable:
-
-username
-
-email
-
-mobile
-
----
-
-SETTINGS
-
-Dark mode
-
-language
-
-notifications
-
-privacy
-
-logout
-
----
-
-POSTGRESQL
-
-Migrate existing database.
-
-Use Prisma.
-
-Create schema.
-
-Tables:
-
-users
-
-sessions
-
-otp
-
-friends
-
-friend_requests
-
-notifications
-
-conversations
-
-messages
-
-message_media
-
-polls
-
-poll_votes
-
-groups
-
-group_members
-
-channels
-
-followers
-
-products
-
-product_media
-
-wishlist
-
-bids
-
-bid_participants
-
-offers
-
-orders
-
-reviews
-
-analytics
-
----
-
-DATABASE RULES
-
-Cascade delete.
-
-Indexes.
-
-Foreign keys.
-
-Unique constraints.
-
-created_at
-
-updated_at
-
-soft delete
-
-UUID ids
-
----
-
-SOCKET EVENTS
-
-friend_request
-
-friend_accepted
-
-friend_rejected
-
-message
-
-group_message
-
-channel_post
-
-bid_created
-
-bid_offer
-
-bid_selected
-
-bid_rejected
-
-notification
-
-typing
-
-seen
-
-online
-
----
-
-STORAGE
-
-Images
-
-Videos
-
-Documents
-
-Use Supabase Storage.
-
-Or AWS S3.
-
----
-
-PERFORMANCE
-
-Pagination
-
-Infinite scrolling
-
-Lazy loading
-
-Optimistic updates
-
-Caching
-
-Query optimization
-
-Indexes
-
----
-
-SECURITY
-
-JWT refresh tokens
-
-bcrypt
-
-rate limiting
-
-helmet
-
-cors
-
-validation
-
-sanitization
-
-SQL injection protection
-
----
-
-FIX EXISTING BUGS
-
-Signup not working
-
-Login not working
-
-PostgreSQL integration issues
-
-Friend requests
-
-Notifications
-
-Group image upload
-
-Realtime updates
-
-Media uploads
-
-Bid updates
-
-Socket disconnections
-
-OTP verification
-
-Password reset
-
-Repost issues
-
----
-
-DELIVERABLES
-
-Refactor current project.
-
-Do not rebuild from scratch.
-
-Preserve UI.
-
-Fix backend.
-
-Connect PostgreSQL properly.
-
-Generate Prisma schema.
-
-Generate migrations.
-
-Generate APIs.
-
-Generate socket handlers.
-
-Generate service layer.
-
-Generate repository layer.
-
-Generate controllers.
-
-Generate validation.
-
-Generate documentation.
-
-Application should be client ready.
-
-Production ready.
-
-Scalable.
-
-Clean architecture.
-
-No placeholder code.
-
-No mock data.
-
-Everything connected to PostgreSQL.
+## Final output required
+
+Return the fixed codebase as a production-ready result.
+Do not provide theory only.
+Do not provide a plan only.
+Actually inspect, fix, and complete the code.
+
+If something is already correct, leave it alone.
+If something is broken, fix it.
+If something is incomplete, complete it.
+If something is duplicated, remove the duplicate and keep the real version.
+If something is mock data, replace it with real data.
+If something belongs to Expo or iOS, remove it.
+
+End result: a clean, stable, Android-and-Web-only O2O app built on the existing stack.
