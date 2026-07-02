@@ -45,4 +45,10 @@ export function Feather({ name, size, color, style }: any) {
   return <Text style={[{ color, fontSize: size, fontFamily: "sans-serif" }, style]}>{emoji}</Text>;
 }
 
+export function Ionicons({ name, size, color, style }: any) {
+  const emoji = ICON_EMOJI[name] ?? "🔹";
+  return <Text style={[{ color, fontSize: size, fontFamily: "sans-serif" }, style]}>{emoji}</Text>;
+}
+
 Feather.glyphMap = {};
+Ionicons.glyphMap = {};

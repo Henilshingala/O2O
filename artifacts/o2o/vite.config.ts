@@ -5,15 +5,16 @@ import path from "path";
 export default defineConfig({
   plugins: [react()],
   resolve: {
-    alias: {
-      "react-native": "react-native-web",
-      "@/": path.resolve(__dirname, "./") + "/",
-      "@react-native-community/blur": path.resolve(__dirname, "./compat/empty-mock.js"),
-      "react-native-linear-gradient": path.resolve(__dirname, "./compat/empty-mock.js"),
-      "react-native-haptic-feedback": path.resolve(__dirname, "./compat/empty-mock.js"),
-      "react-native-image-picker": path.resolve(__dirname, "./compat/image-picker.web.ts"),
-      "react-native-keyboard-controller": path.resolve(__dirname, "./compat/empty-mock.js"),
-    },
+    alias: [
+      { find: /^react-native$/, replacement: path.resolve(__dirname, "./compat/react-native-web-compat.mjs") },
+      { find: /^@\//, replacement: path.resolve(__dirname, "./") + "/" },
+      { find: /^@env$/, replacement: path.resolve(__dirname, "./compat/env.ts") },
+      { find: /^@react-native-community\/blur$/, replacement: path.resolve(__dirname, "./compat/empty-mock.js") },
+      { find: /^react-native-linear-gradient$/, replacement: path.resolve(__dirname, "./compat/empty-mock.js") },
+      { find: /^react-native-haptic-feedback$/, replacement: path.resolve(__dirname, "./compat/empty-mock.js") },
+      { find: /^react-native-image-picker$/, replacement: path.resolve(__dirname, "./compat/image-picker.web.ts") },
+      { find: /^react-native-keyboard-controller$/, replacement: path.resolve(__dirname, "./compat/empty-mock.js") },
+    ],
     extensions: [
       ".web.tsx",
       ".web.ts",

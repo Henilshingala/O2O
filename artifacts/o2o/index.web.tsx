@@ -1,16 +1,10 @@
-import "react-native-gesture-handler";
-import { AppRegistry } from "react-native";
+import React from "react";
+import { createRoot } from "react-dom/client";
 import RootLayout from "./app/_layout";
 
-console.log("Registering RootLayout");
-AppRegistry.registerComponent("main", () => RootLayout);
-
-console.log("Running application...");
-try {
-  AppRegistry.runApplication("main", {
-    rootTag: document.getElementById("root"),
-  });
-  console.log("Application started");
-} catch (e) {
-  console.error("AppRegistry failed:", e);
-}
+const root = createRoot(document.getElementById("root")!);
+root.render(
+  <React.StrictMode>
+    <RootLayout />
+  </React.StrictMode>
+);
