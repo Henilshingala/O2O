@@ -19,20 +19,28 @@ interface DataContextType {
   getChat: (id: string) => Chat | undefined;
   getChatWithUser: (myId: string, otherId: string) => Chat | undefined;
   createChat: (myId: string, otherId: string) => Promise<Chat>;
-  sendChatMessage: (chatId: string, msg: Omit<Message, "id">) => void;
+  sendChatMessage: (chatId: string, msg: Omit<Message, "id">) => Promise<Message>;
 
   getGroup: (id: string) => Group | undefined;
   getMyGroups: (userId: string) => Group[];
   createGroup: (g: Omit<Group, "id" | "createdAt" | "updatedAt" | "messages">) => Promise<Group>;
-  sendGroupMessage: (groupId: string, msg: Omit<Message, "id">) => void;
+  sendGroupMessage: (groupId: string, msg: Omit<Message, "id">) => Promise<Message>;
   updateGroup: (groupId: string, updates: Partial<Pick<Group, "name" | "description" | "image">>) => Promise<void>;
+  addGroupMember: (groupId: string, userId: string) => Promise<void>;
+  removeGroupMember: (groupId: string, userId: string) => Promise<void>;
+  deleteGroup: (groupId: string) => Promise<void>;
+  transferGroupOwnership: (groupId: string, newOwnerId: string) => Promise<void>;
 
   getChannel: (id: string) => Channel | undefined;
   getMyChannels: (userId: string) => Channel[];
   getFollowedChannels: (userId: string) => Channel[];
   createChannel: (c: Omit<Channel, "id" | "createdAt" | "messages" | "followers" | "products">) => Promise<Channel>;
   followChannel: (channelId: string, userId: string) => void;
-  sendChannelMessage: (channelId: string, msg: Omit<Message, "id">) => void;
+  updateChannel: (channelId: string, updates: Partial<Pick<Channel, "name" | "description" | "logo">>) => Promise<void>;
+  deleteChannel: (channelId: string) => Promise<void>;
+  transferChannelOwnership: (channelId: string, newOwnerId: string) => Promise<void>;
+  removeChannelFollower: (channelId: string, userId: string) => Promise<void>;
+  sendChannelMessage: (channelId: string, msg: Omit<Message, "id">) => Promise<Message>;
   createProduct: (channelId: string, p: Omit<Product, "id" | "channelId" | "views" | "wishlisted" | "createdAt">) => Promise<Product>;
   repostProduct: (channelId: string, productId: string, updates: Partial<Product>) => Promise<Product>;
   toggleWishlist: (userId: string, product: Product, channel: Channel) => void;
@@ -46,6 +54,7 @@ interface DataContextType {
   submitOffer: (bidId: string, offer: Omit<BidOffer, "id" | "timestamp">) => void;
   rejectBid: (bidId: string, rejection: { sellerId: string; channelId: string; reason: string }) => Promise<void>;
   selectWinner: (bidId: string, winnerId: string, winnerChannelId: string) => void;
+  acceptBid: (bidId: string) => Promise<{ order?: Order }>;
   endBid: (bidId: string) => void;
 
   getOrder: (id: string) => Order | undefined;
@@ -69,13 +78,15 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
   const { user } = useAuth();
   const enabled = !!user;
 
-  const { data: channels = [], isLoading: loadingChannels } = useQuery<Channel[]>({ queryKey: ["channels"], queryFn: () => fetcher("/api/data/channels"), enabled });
-  const { data: chats = [], isLoading: loadingChats } = useQuery<Chat[]>({ queryKey: ["chats"], queryFn: () => fetcher("/api/data/chats"), enabled });
-  const { data: groups = [], isLoading: loadingGroups } = useQuery<Group[]>({ queryKey: ["groups"], queryFn: () => fetcher("/api/data/groups"), enabled });
-  const { data: bids = [], isLoading: loadingBids } = useQuery<Bid[]>({ queryKey: ["bids"], queryFn: () => fetcher("/api/data/bids"), enabled });
-  const { data: orders = [], isLoading: loadingOrders } = useQuery<Order[]>({ queryKey: ["orders"], queryFn: () => fetcher("/api/data/orders"), enabled });
-  const { data: reviews = [], isLoading: loadingReviews } = useQuery<Review[]>({ queryKey: ["reviews"], queryFn: () => fetcher("/api/data/reviews"), enabled });
-  const { data: wishlist = [], isLoading: loadingWishlist } = useQuery<WishlistItem[]>({ queryKey: ["wishlist"], queryFn: () => fetcher("/api/data/wishlist"), enabled });
+  const queryDefaults = { staleTime: 30_000, gcTime: 5 * 60_000 };
+
+  const { data: channels = [], isLoading: loadingChannels } = useQuery<Channel[]>({ queryKey: ["channels"], queryFn: () => fetcher("/api/data/channels"), enabled, ...queryDefaults });
+  const { data: chats = [], isLoading: loadingChats } = useQuery<Chat[]>({ queryKey: ["chats"], queryFn: () => fetcher("/api/data/chats"), enabled, ...queryDefaults });
+  const { data: groups = [], isLoading: loadingGroups } = useQuery<Group[]>({ queryKey: ["groups"], queryFn: () => fetcher("/api/data/groups"), enabled, ...queryDefaults });
+  const { data: bids = [], isLoading: loadingBids } = useQuery<Bid[]>({ queryKey: ["bids"], queryFn: () => fetcher("/api/data/bids"), enabled, ...queryDefaults });
+  const { data: orders = [], isLoading: loadingOrders } = useQuery<Order[]>({ queryKey: ["orders"], queryFn: () => fetcher("/api/data/orders"), enabled, ...queryDefaults });
+  const { data: reviews = [], isLoading: loadingReviews } = useQuery<Review[]>({ queryKey: ["reviews"], queryFn: () => fetcher("/api/data/reviews"), enabled, ...queryDefaults });
+  const { data: wishlist = [], isLoading: loadingWishlist } = useQuery<WishlistItem[]>({ queryKey: ["wishlist"], queryFn: () => fetcher("/api/data/wishlist"), enabled, ...queryDefaults });
 
   const isLoading = enabled && (loadingChannels || loadingChats || loadingGroups || loadingBids || loadingOrders || loadingReviews || loadingWishlist);
 
@@ -122,18 +133,19 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
     return chat;
   }, [chats]);
 
-  const sendChatMessage = useCallback((chatId: string, msg: Omit<Message, "id">) => {
-    customFetch<Message>(`/api/data/chats/${chatId}/messages`, { method: "POST", body: JSON.stringify(msg) })
-      .then((newMsg) => {
-        queryClient.setQueryData<Chat[]>(["chats"], (old) =>
-          old?.map((c) =>
-            c.id === chatId
-              ? { ...c, messages: [...c.messages, { ...msg, id: newMsg?.id ?? `temp_${Date.now()}` }] }
-              : c
-          ) ?? old
-        );
-      })
-      .catch((err) => console.error("Failed to send chat message:", err));
+  const sendChatMessage = useCallback(async (chatId: string, msg: Omit<Message, "id">): Promise<Message> => {
+    const newMsg = await customFetch<Message>(`/api/data/chats/${chatId}/messages`, {
+      method: "POST",
+      body: JSON.stringify(msg),
+    });
+    queryClient.setQueryData<Chat[]>(["chats"], (old) =>
+      old?.map((c) =>
+        c.id === chatId
+          ? { ...c, messages: c.messages.some((m) => m.id === newMsg.id) ? c.messages : [...c.messages, newMsg] }
+          : c
+      ) ?? old
+    );
+    return newMsg;
   }, [queryClient]);
 
   const createGroup = useCallback(async (g: Omit<Group, "id" | "createdAt" | "updatedAt" | "messages">): Promise<Group> => {
@@ -145,13 +157,43 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
     return group;
   }, []);
 
-  const sendGroupMessage = useCallback((groupId: string, msg: Omit<Message, "id">) => {
-    customFetch(`/api/data/groups/${groupId}/messages`, { method: "POST", body: JSON.stringify(msg) })
-      .then(() => invalidate.groups());
-  }, []);
+  const sendGroupMessage = useCallback(async (groupId: string, msg: Omit<Message, "id">): Promise<Message> => {
+    const newMsg = await customFetch<Message>(`/api/data/groups/${groupId}/messages`, {
+      method: "POST",
+      body: JSON.stringify(msg),
+    });
+    queryClient.setQueryData<Group[]>(["groups"], (old) =>
+      old?.map((g) =>
+        g.id === groupId
+          ? { ...g, messages: g.messages.some((m) => m.id === newMsg.id) ? g.messages : [...g.messages, newMsg] }
+          : g
+      ) ?? old
+    );
+    return newMsg;
+  }, [queryClient]);
 
   const updateGroup = useCallback(async (groupId: string, updates: Partial<Pick<Group, "name" | "description" | "image">>) => {
     await customFetch(`/api/data/groups/${groupId}`, { method: "PATCH", body: JSON.stringify(updates) });
+    invalidate.groups();
+  }, []);
+
+  const addGroupMember = useCallback(async (groupId: string, userId: string) => {
+    await customFetch(`/api/data/groups/${groupId}/members`, { method: "POST", body: JSON.stringify({ userId }) });
+    invalidate.groups();
+  }, []);
+
+  const removeGroupMember = useCallback(async (groupId: string, userId: string) => {
+    await customFetch(`/api/data/groups/${groupId}/members/${userId}`, { method: "DELETE" });
+    invalidate.groups();
+  }, []);
+
+  const deleteGroup = useCallback(async (groupId: string) => {
+    await customFetch(`/api/data/groups/${groupId}`, { method: "DELETE" });
+    invalidate.groups();
+  }, []);
+
+  const transferGroupOwnership = useCallback(async (groupId: string, newOwnerId: string) => {
+    await customFetch(`/api/data/groups/${groupId}/transfer`, { method: "POST", body: JSON.stringify({ newOwnerId }) });
     invalidate.groups();
   }, []);
 
@@ -183,9 +225,45 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
     return product;
   }, []);
 
-  const sendChannelMessage = useCallback((channelId: string, msg: Omit<Message, "id">) => {
-    customFetch(`/api/data/channels/${channelId}/messages`, { method: "POST", body: JSON.stringify(msg) })
-      .then(() => invalidate.channels());
+  const sendChannelMessage = useCallback(async (channelId: string, msg: Omit<Message, "id">): Promise<Message> => {
+    const newMsg = await customFetch<Message>(`/api/data/channels/${channelId}/messages`, {
+      method: "POST",
+      body: JSON.stringify(msg),
+    });
+    queryClient.setQueryData<Channel[]>(["channels"], (old) =>
+      old?.map((c) =>
+        c.id === channelId
+          ? { ...c, messages: c.messages.some((m) => m.id === newMsg.id) ? c.messages : [...c.messages, newMsg] }
+          : c
+      ) ?? old
+    );
+    return newMsg;
+  }, [queryClient]);
+
+  const updateChannel = useCallback(async (channelId: string, updates: Partial<Pick<Channel, "name" | "description" | "logo">>) => {
+    await customFetch(`/api/data/channels/${channelId}`, {
+      method: "PATCH",
+      body: JSON.stringify({ ...updates, image: updates.logo }),
+    });
+    invalidate.channels();
+  }, []);
+
+  const deleteChannel = useCallback(async (channelId: string) => {
+    await customFetch(`/api/data/channels/${channelId}`, { method: "DELETE" });
+    invalidate.channels();
+  }, []);
+
+  const transferChannelOwnership = useCallback(async (channelId: string, newOwnerId: string) => {
+    await customFetch(`/api/data/channels/${channelId}/transfer`, {
+      method: "POST",
+      body: JSON.stringify({ newOwnerId }),
+    });
+    invalidate.channels();
+  }, []);
+
+  const removeChannelFollower = useCallback(async (channelId: string, userId: string) => {
+    await customFetch(`/api/data/channels/${channelId}/followers/${userId}`, { method: "DELETE" });
+    invalidate.channels();
   }, []);
 
   const toggleWishlist = useCallback((_userId: string, _product: Product, _channel: Channel) => {
@@ -200,8 +278,30 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   const submitOffer = useCallback((bidId: string, offer: Omit<BidOffer, "id" | "timestamp">) => {
-    customFetch(`/api/data/bids/${bidId}/offers`, { method: "POST", body: JSON.stringify(offer) })
-      .then(() => invalidate.bids());
+    return customFetch(`/api/data/bids/${bidId}/offers`, { method: "POST", body: JSON.stringify(offer) })
+      .then((updated) => {
+        queryClient.setQueryData<Bid[]>(["bids"], (old) =>
+          old?.map((b) => {
+            if (b.id !== bidId) return b;
+            const exists = b.offers.find((o) => o.sellerId === offer.sellerId && o.channelId === offer.channelId);
+            const offers = exists
+              ? b.offers.map((o) =>
+                  o.sellerId === offer.sellerId && o.channelId === offer.channelId
+                    ? { ...o, ...(updated as BidOffer) }
+                    : o
+                )
+              : [...b.offers, updated as BidOffer];
+            return { ...b, offers };
+          }) ?? old
+        );
+      });
+  }, [queryClient]);
+
+  const acceptBid = useCallback(async (bidId: string) => {
+    const result = await customFetch<{ order?: Order }>(`/api/data/bids/${bidId}/accept`, { method: "POST" });
+    invalidate.bids();
+    invalidate.orders();
+    return result;
   }, []);
 
   const rejectBid = useCallback(async (bidId: string, rejection: { sellerId: string; channelId: string; reason: string }) => {
@@ -249,8 +349,11 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
         chats, groups, channels, bids, orders, reviews, wishlist, isLoading,
         getChat, getChatWithUser, createChat, sendChatMessage,
         getGroup, getMyGroups, createGroup, sendGroupMessage, updateGroup,
-        getChannel, getMyChannels, getFollowedChannels, createChannel, followChannel, sendChannelMessage, createProduct, repostProduct, toggleWishlist, isWishlisted, getWishlist,
-        getBid, getMyBids, getBidsForSeller, createBid, submitOffer, rejectBid, selectWinner, endBid,
+        addGroupMember, removeGroupMember, deleteGroup, transferGroupOwnership,
+        getChannel, getMyChannels, getFollowedChannels, createChannel, followChannel,
+        updateChannel, deleteChannel, transferChannelOwnership, removeChannelFollower,
+        sendChannelMessage, createProduct, repostProduct, toggleWishlist, isWishlisted, getWishlist,
+        getBid, getMyBids, getBidsForSeller, createBid, submitOffer, rejectBid, selectWinner, acceptBid, endBid,
         getOrder, getMyOrders, createOrder, sendOrderMessage, updateOrderStatus,
         getReviews, getSellerReviews, canReview, submitReview
       }}

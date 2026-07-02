@@ -20,8 +20,8 @@ import { AppInput } from "@/components/ui/AppInput";
 import { useAuth } from "@/context/AuthContext";
 import { useData } from "@/context/DataContext";
 import { useColors } from "@/hooks/useColors";
-import { customFetch } from "@workspace/api-client-react";
 import { launchImageLibrary } from "react-native-image-picker";
+import { uploadFile, uploadFiles } from "@/lib/uploadMedia";
 import type { ProductDetail } from "@/types";
 
 export default function CreateProductPost() {
@@ -38,8 +38,10 @@ export default function CreateProductPost() {
   const [showDetailModal, setShowDetailModal] = useState(false);
   const [detailName, setDetailName] = useState("");
   const [detailValue, setDetailValue] = useState("");
-  const [imageUrl, setImageUrl] = useState("");
-  const [localImageUri, setLocalImageUri] = useState("");
+  const [imageUrls, setImageUrls] = useState<string[]>([]);
+  const [localPreviews, setLocalPreviews] = useState<string[]>([]);
+  const [videoUrl, setVideoUrl] = useState("");
+  const [localVideoUri, setLocalVideoUri] = useState("");
   const [uploading, setUploading] = useState(false);
 
   if (!user) return null;
@@ -60,8 +62,10 @@ export default function CreateProductPost() {
         description: form.description.trim(),
         price: Number(form.price),
         details,
-        image: imageUrl || undefined,
-      });
+        image: imageUrls[0] || undefined,
+        images: imageUrls,
+        videoUrl: videoUrl || undefined,
+      } as any);
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
       router.back();
     } finally {
@@ -69,39 +73,41 @@ export default function CreateProductPost() {
     }
   };
 
-  const handlePickImage = async () => {
+  const handlePickImages = async () => {
     try {
-      const response = await launchImageLibrary({ mediaType: "photo", quality: 0.7 });
-      if (response.didCancel || !response.assets?.[0]) return;
-      const asset = response.assets[0];
-      if (!asset.uri) return;
-
-      // Show local preview immediately
-      setLocalImageUri(asset.uri);
+      const response = await launchImageLibrary({ mediaType: "photo", quality: 0.7, selectionLimit: 10 });
+      if (response.didCancel || !response.assets?.length) return;
       setUploading(true);
-
-      const formData = new FormData();
-      formData.append("file", {
-        uri: Platform.OS === "android" && !asset.uri.startsWith("file://") ? `file://${asset.uri}` : asset.uri,
-        type: asset.type || "image/jpeg",
-        name: asset.fileName || "product_image.jpg",
-      } as any);
-
-      const data = await customFetch<any>("/api/upload", {
-        method: "POST",
-        body: formData,
-        timeoutMs: 60000,
-      });
-      setImageUrl(data.url);
-      setUploading(false);
+      const previews = response.assets.map((a) => a.uri!).filter(Boolean);
+      setLocalPreviews((prev) => [...prev, ...previews]);
+      const urls = await uploadFiles(response.assets.map((a) => ({ uri: a.uri!, type: a.type, fileName: a.fileName })));
+      setImageUrls((prev) => [...prev, ...urls]);
     } catch (e) {
       console.error("Upload error", e);
+    } finally {
       setUploading(false);
-      setImageUrl("");
     }
   };
 
-  const previewUri = imageUrl || localImageUri;
+  const handlePickVideo = async () => {
+    try {
+      const response = await launchImageLibrary({ mediaType: "video", quality: 0.8 });
+      if (response.didCancel || !response.assets?.[0]?.uri) return;
+      const asset = response.assets[0];
+      setLocalVideoUri(asset.uri!);
+      setUploading(true);
+      const url = await uploadFile(asset, "product_video.mp4");
+      setVideoUrl(url);
+    } catch (e) {
+      console.error("Video upload error", e);
+      setVideoUrl("");
+    } finally {
+      setUploading(false);
+    }
+  };
+
+  const previews = imageUrls.length > 0 ? imageUrls : localPreviews;
+  const videoPreview = videoUrl || localVideoUri;
 
   const addDetail = () => {
     if (!detailName.trim() || !detailValue.trim()) return;
@@ -137,40 +143,35 @@ export default function CreateProductPost() {
 
       <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
         <View style={styles.imageContainer}>
-          <TouchableOpacity 
-            style={[
-              styles.imagePicker, 
-              { 
-                backgroundColor: colors.card, 
-                borderColor: previewUri ? colors.primary : colors.border,
-                borderStyle: previewUri ? "solid" : "dashed" 
-              }
-            ]} 
-            onPress={handlePickImage}
-            activeOpacity={0.7}
+          <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginBottom: 12 }}>
+            {previews.map((uri, idx) => (
+              <Image key={idx} source={{ uri }} style={styles.thumbImage} resizeMode="cover" />
+            ))}
+            <TouchableOpacity
+              style={[styles.addImageBtn, { borderColor: colors.primary, backgroundColor: colors.card }]}
+              onPress={handlePickImages}
+            >
+              <Feather name="plus" size={28} color={colors.primary} />
+              <Text style={{ color: colors.primary, fontSize: 11, marginTop: 4 }}>Add Images</Text>
+            </TouchableOpacity>
+          </ScrollView>
+
+          <TouchableOpacity
+            style={[styles.videoPicker, { backgroundColor: colors.card, borderColor: videoPreview ? colors.primary : colors.border }]}
+            onPress={handlePickVideo}
           >
-            {previewUri ? (
-              <View style={styles.previewWrapper}>
-                <Image source={{ uri: previewUri }} style={styles.imagePreview} resizeMode="cover" />
-                {uploading && (
-                  <View style={styles.uploadOverlay}>
-                    <ActivityIndicator size="large" color="#fff" />
-                    <Text style={styles.uploadText}>Uploading...</Text>
-                  </View>
-                )}
-                <View style={[styles.editBadge, { backgroundColor: colors.primary }]}>
-                  <Feather name="edit-2" size={14} color="#fff" />
-                </View>
+            {videoPreview ? (
+              <View style={styles.videoPreview}>
+                <Feather name="play-circle" size={40} color={colors.primary} />
+                <Text style={{ color: colors.foreground, marginTop: 8 }}>Video selected</Text>
               </View>
             ) : (
-              <View style={styles.imagePlaceholder}>
-                <View style={[styles.iconWrapper, { backgroundColor: colors.primary + "20" }]}>
-                  <Feather name="camera" size={28} color={colors.primary} />
-                </View>
-                <Text style={[styles.imageLabel, { color: colors.foreground }]}>Product Image</Text>
-                <Text style={[styles.imageHint, { color: colors.mutedForeground }]}>Tap to upload (optional)</Text>
-              </View>
+              <>
+                <Feather name="video" size={28} color={colors.primary} />
+                <Text style={[styles.imageLabel, { color: colors.foreground }]}>Add Product Video (optional)</Text>
+              </>
             )}
+            {uploading && <ActivityIndicator style={{ marginTop: 8 }} color={colors.primary} />}
           </TouchableOpacity>
         </View>
 
@@ -225,42 +226,11 @@ const styles = StyleSheet.create({
   title: { fontSize: 17, fontWeight: "700" },
   content: { padding: 20, gap: 16 },
   imageContainer: { marginBottom: 4 },
-  imagePicker: {
-    width: "100%",
-    height: 180,
-    borderRadius: 14,
-    alignItems: "center",
-    justifyContent: "center",
-    borderWidth: 2,
-    overflow: "hidden",
-  },
-  imagePlaceholder: { alignItems: "center", justifyContent: "center", gap: 4 },
-  iconWrapper: { width: 56, height: 56, borderRadius: 28, alignItems: "center", justifyContent: "center", marginBottom: 8 },
+  thumbImage: { width: 100, height: 100, borderRadius: 10, marginRight: 10 },
+  addImageBtn: { width: 100, height: 100, borderRadius: 10, borderWidth: 2, borderStyle: "dashed", alignItems: "center", justifyContent: "center" },
+  videoPicker: { width: "100%", height: 100, borderRadius: 12, borderWidth: 2, borderStyle: "dashed", alignItems: "center", justifyContent: "center" },
+  videoPreview: { alignItems: "center", justifyContent: "center" },
   imageLabel: { fontSize: 13, fontWeight: "600" },
-  imageHint: { fontSize: 12 },
-  previewWrapper: { width: "100%", height: "100%", position: "relative" },
-  imagePreview: { width: "100%", height: "100%", borderRadius: 12 },
-  uploadOverlay: {
-    ...StyleSheet.absoluteFillObject,
-    borderRadius: 12,
-    backgroundColor: "rgba(0,0,0,0.45)",
-    alignItems: "center",
-    justifyContent: "center",
-    gap: 8,
-  },
-  uploadText: { color: "#fff", fontSize: 13, fontWeight: "600" },
-  editBadge: {
-    position: "absolute",
-    top: 8,
-    right: 8,
-    width: 32,
-    height: 32,
-    borderRadius: 16,
-    alignItems: "center",
-    justifyContent: "center",
-    borderWidth: 2,
-    borderColor: "#fff",
-  },
   detailsLabel: { fontSize: 13, fontWeight: "700", marginBottom: 4 },
   detailRow: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", padding: 12, borderRadius: 10, borderWidth: 1, marginBottom: 8 },
   detailText: { fontSize: 13, flex: 1 },

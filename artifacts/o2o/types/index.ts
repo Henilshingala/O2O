@@ -11,6 +11,8 @@ export interface User {
   createdAt: string;
 }
 
+export type MessageStatus = "sending" | "sent" | "delivered" | "failed";
+
 export interface Message {
   id: string;
   senderId: string;
@@ -21,6 +23,17 @@ export interface Message {
   replyToId?: string;
   editedAt?: string;
   deletedAt?: string;
+  status?: MessageStatus;
+  chatId?: string;
+  groupId?: string;
+  channelId?: string;
+  orderId?: string;
+}
+
+export interface ProductImage {
+  id: string;
+  url: string;
+  isPrimary: boolean;
 }
 
 export interface Chat {
@@ -54,6 +67,8 @@ export interface Product {
   description: string;
   price: number;
   image?: string;
+  images?: ProductImage[];
+  videoUrl?: string;
   details: ProductDetail[];
   views: number;
   wishlisted: string[];

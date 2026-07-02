@@ -11,7 +11,7 @@ export default defineConfig({
       "@react-native-community/blur": path.resolve(__dirname, "./compat/empty-mock.js"),
       "react-native-linear-gradient": path.resolve(__dirname, "./compat/empty-mock.js"),
       "react-native-haptic-feedback": path.resolve(__dirname, "./compat/empty-mock.js"),
-      "react-native-image-picker": path.resolve(__dirname, "./compat/empty-mock.js"),
+      "react-native-image-picker": path.resolve(__dirname, "./compat/image-picker.web.ts"),
       "react-native-keyboard-controller": path.resolve(__dirname, "./compat/empty-mock.js"),
     },
     extensions: [

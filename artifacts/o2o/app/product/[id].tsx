@@ -16,6 +16,8 @@ import { AppButton } from "@/components/ui/AppButton";
 import { useAuth } from "@/context/AuthContext";
 import { useData } from "@/context/DataContext";
 import { useColors } from "@/hooks/useColors";
+import { ProductMediaView } from "@/components/ProductMediaView";
+import { getDisplayDetails } from "@/lib/productMedia";
 
 export default function ProductDetailScreen() {
   const colors = useColors();
@@ -42,14 +44,7 @@ export default function ProductDetailScreen() {
       </View>
 
       <ScrollView contentContainerStyle={{ paddingBottom: 100 }}>
-        {(product.image || (product as any).images?.[0]?.url) ? (
-          <Image source={{ uri: product.image || (product as any).images[0].url }} style={styles.imagePreview} />
-        ) : (
-          <View style={[styles.imagePlaceholder, { backgroundColor: colors.muted }]}>
-            <Feather name="image" size={60} color={colors.mutedForeground} />
-            <Text style={[styles.imagePlaceholderText, { color: colors.mutedForeground }]}>Product Image</Text>
-          </View>
-        )}
+        <ProductMediaView product={product} height={320} />
 
         <View style={styles.content}>
           <Text style={[styles.productName, { color: colors.foreground }]}>{product.name}</Text>
@@ -66,12 +61,12 @@ export default function ProductDetailScreen() {
           <Text style={[styles.sectionTitle, { color: colors.foreground }]}>Description</Text>
           <Text style={[styles.description, { color: colors.mutedForeground }]}>{product.description}</Text>
 
-          {product.details && product.details.length > 0 && (
+          {getDisplayDetails(product).length > 0 && (
             <>
               <Text style={[styles.sectionTitle, { color: colors.foreground }]}>Details</Text>
               <View style={[styles.detailsTable, { backgroundColor: colors.card, borderColor: colors.border }]}>
-                {product.details.map((d, idx) => (
-                  <View key={idx} style={[styles.detailRow, { borderBottomColor: colors.border, borderBottomWidth: idx < product.details.length - 1 ? 1 : 0 }]}>
+                {getDisplayDetails(product).map((d, idx) => (
+                  <View key={idx} style={[styles.detailRow, { borderBottomColor: colors.border, borderBottomWidth: idx < getDisplayDetails(product).length - 1 ? 1 : 0 }]}>
                     <Text style={[styles.detailKey, { color: colors.mutedForeground }]}>{d.name}</Text>
                     <Text style={[styles.detailVal, { color: colors.foreground }]}>{d.value}</Text>
                   </View>

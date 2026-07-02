@@ -66,12 +66,15 @@ export default function ChannelScreen() {
         <TouchableOpacity onPress={() => router.back()}>
           <Feather name="arrow-left" size={22} color={colors.foreground} />
         </TouchableOpacity>
-        <View style={styles.headerInfo}>
+        <TouchableOpacity
+          style={styles.headerInfo}
+          onPress={() => router.push({ pathname: "/channel/info", params: { id: channel.id } })}
+        >
           <Text style={[styles.channelName, { color: colors.foreground }]}>{channel.name}</Text>
           <Text style={[styles.followers, { color: colors.mutedForeground }]}>
             {channel.followers.length.toLocaleString()} Followers
           </Text>
-        </View>
+        </TouchableOpacity>
         {!isOwner && (
           <TouchableOpacity
             style={[

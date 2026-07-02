@@ -14,7 +14,7 @@ export default function SellerBidsScreen() {
   const colors = useColors();
   const insets = useSafeAreaInsets();
   const { user } = useAuth();
-  const { channels, bids } = useData();
+  const { channels, bids, acceptBid } = useData();
 
   if (!user) return null;
   const myChannels = channels.filter((c) => c.ownerId === user.id);
@@ -22,6 +22,10 @@ export default function SellerBidsScreen() {
 
   const bidRequests = bids.filter((b) =>
     b.status === "active" && (b.allSellers || b.selectedSellers.some((s) => myChannelIds.includes(s)))
+  );
+
+  const wonBids = bids.filter(
+    (b) => b.status === "ended" && b.winnerId === user.id && !b.offers.every(() => false)
   );
 
   const formatTimeLeft = (endTime: string) => {
@@ -45,6 +49,28 @@ export default function SellerBidsScreen() {
         data={bidRequests}
         keyExtractor={(item) => item.id}
         contentContainerStyle={[styles.list, { paddingBottom: 40 }]}
+        ListHeaderComponent={
+          wonBids.length > 0 ? (
+            <View style={{ marginBottom: 16, gap: 10 }}>
+              <Text style={[styles.sectionTitle, { color: colors.foreground }]}>Bids You Won — Accept to Create Order</Text>
+              {wonBids.map((item) => (
+                <View key={item.id} style={[styles.card, { backgroundColor: "#D1FAE5", borderColor: "#A7F3D0" }]}>
+                  <Text style={[styles.productName, { color: "#065F46" }]}>{item.productName}</Text>
+                  <AppButton
+                    title="ACCEPT & CREATE ORDER"
+                    size="sm"
+                    onPress={async () => {
+                      const result = await acceptBid(item.id);
+                      if (result.order?.id) {
+                        router.push({ pathname: "/order/[id]", params: { id: result.order.id } });
+                      }
+                    }}
+                  />
+                </View>
+              ))}
+            </View>
+          ) : null
+        }
         ListEmptyComponent={
           <View style={styles.empty}>
             <Feather name="inbox" size={52} color={colors.border} />
@@ -100,6 +126,14 @@ export default function SellerBidsScreen() {
                   />
                 </View>
               )}
+              {myOffer && item.status === "active" && (
+                <AppButton
+                  title="Update Offer"
+                  variant="outline"
+                  size="sm"
+                  onPress={() => router.push({ pathname: "/bid/offer/[id]", params: { id: item.id, channelId: myChannelId } })}
+                />
+              )}
             </View>
           );
         }}
@@ -113,6 +147,7 @@ const styles = StyleSheet.create({
   header: { flexDirection: "row", alignItems: "center", paddingHorizontal: 16, paddingBottom: 12, borderBottomWidth: 1, gap: 12 },
   title: { flex: 1, fontSize: 22, fontWeight: "800" },
   list: { flexGrow: 1, padding: 16, gap: 12 },
+  sectionTitle: { fontSize: 15, fontWeight: "700", marginBottom: 4 },
   empty: { alignItems: "center", paddingTop: 80, gap: 12 },
   emptyTitle: { fontSize: 18, fontWeight: "700" },
   emptyText: { fontSize: 14, textAlign: "center" },

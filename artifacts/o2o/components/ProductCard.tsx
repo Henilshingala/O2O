@@ -9,6 +9,7 @@ import {
 import { Feather } from "@/compat/vector-icons";
 import { router } from "@/compat/router";
 import { useColors } from "@/hooks/useColors";
+import { getProductPrimaryImage } from "@/lib/productMedia";
 import type { Channel, Product } from "@/types";
 
 interface ProductCardProps {
@@ -46,8 +47,8 @@ export function ProductCard({
       }
     >
       <View style={styles.imageContainer}>
-        {(product.image || (product as any).images?.[0]?.url) ? (
-          <Image source={{ uri: product.image || (product as any).images[0].url }} style={styles.image} resizeMode="cover" />
+        {getProductPrimaryImage(product) ? (
+          <Image source={{ uri: getProductPrimaryImage(product)! }} style={styles.image} resizeMode="cover" />
         ) : (
           <View style={[styles.imagePlaceholder, { backgroundColor: colors.muted }]}>
             <Feather name="image" size={40} color={colors.mutedForeground} />

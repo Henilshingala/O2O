@@ -90,6 +90,7 @@ export const createProductSchema = z.object({
   categoryId: z.string().optional(),
   image: z.string().optional(),
   images: z.array(z.string()).optional(),
+  videoUrl: z.string().optional(),
   details: z.array(z.object({ name: z.string(), value: z.string() })).optional(),
 });
 

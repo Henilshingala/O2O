@@ -3,14 +3,15 @@ import { useQueryClient } from "@tanstack/react-query";
 import { API_URL } from "@env";
 import { useAuth } from "@/context/AuthContext";
 import { connectSocket, disconnectSocket } from "@/lib/socket";
+import type { Bid, BidOffer, Chat, Group, Channel, Message } from "@/types";
 
 const API_BASE_URL = API_URL || "https://o2o-rphb.onrender.com";
 
-function debounce<T extends (...args: any[]) => void>(fn: T, ms = 300) {
+function debounce<T extends (...args: unknown[]) => void>(fn: T, ms = 500) {
   let timeoutId: ReturnType<typeof setTimeout>;
-  return function (this: any, ...args: Parameters<T>) {
+  return (...args: Parameters<T>) => {
     clearTimeout(timeoutId);
-    timeoutId = setTimeout(() => fn.apply(this, args), ms);
+    timeoutId = setTimeout(() => fn(...args), ms);
   };
 }
 
@@ -30,25 +31,65 @@ export function SocketProvider({ children }: { children: React.ReactNode }) {
     connectSocket(API_BASE_URL).then((sock) => {
       if (!mounted) return;
 
-      const invalidateChats = debounce(() => queryClient.invalidateQueries({ queryKey: ["chats"] }));
-      const invalidateGroups = debounce(() => queryClient.invalidateQueries({ queryKey: ["groups"] }));
-      const invalidateChannels = debounce(() => queryClient.invalidateQueries({ queryKey: ["channels"] }));
-      const invalidateOrders = debounce(() => queryClient.invalidateQueries({ queryKey: ["orders"] }));
-      const invalidateBids = debounce(() => queryClient.invalidateQueries({ queryKey: ["bids"] }));
-      const invalidateNotifications = debounce(() => queryClient.invalidateQueries({ queryKey: ["notifications"] }));
+      const debouncedInvalidateBids = debounce(() => queryClient.invalidateQueries({ queryKey: ["bids"] }));
+      const debouncedInvalidateNotifications = debounce(() =>
+        queryClient.invalidateQueries({ queryKey: ["notifications"] })
+      );
+      const debouncedInvalidateOrders = debounce(() =>
+        queryClient.invalidateQueries({ queryKey: ["orders"] })
+      );
 
-      sock.on("message:new", () => {
-        invalidateChats();
-        invalidateGroups();
-        invalidateChannels();
-        invalidateOrders();
+      sock.on("message:new", (msg: Message & { chatId?: string; groupId?: string; channelId?: string }) => {
+        if (msg.chatId) {
+          queryClient.setQueryData<Chat[]>(["chats"], (old) =>
+            old?.map((c) =>
+              c.id === msg.chatId && !c.messages.some((m) => m.id === msg.id)
+                ? { ...c, messages: [...c.messages, msg] }
+                : c
+            ) ?? old
+          );
+        }
+        if (msg.groupId) {
+          queryClient.setQueryData<Group[]>(["groups"], (old) =>
+            old?.map((g) =>
+              g.id === msg.groupId && !g.messages.some((m) => m.id === msg.id)
+                ? { ...g, messages: [...g.messages, msg] }
+                : g
+            ) ?? old
+          );
+        }
+        if (msg.channelId) {
+          queryClient.setQueryData<Channel[]>(["channels"], (old) =>
+            old?.map((ch) =>
+              ch.id === msg.channelId && !ch.messages.some((m) => m.id === msg.id)
+                ? { ...ch, messages: [...ch.messages, msg] }
+                : ch
+            ) ?? old
+          );
+        }
       });
-      sock.on("message:edit", invalidateChats);
-      sock.on("message:delete", invalidateChats);
-      sock.on("bid:offer", invalidateBids);
-      sock.on("bid:ended", invalidateBids);
-      sock.on("bid:winner", invalidateBids);
-      sock.on("notification:new", invalidateNotifications);
+
+      sock.on("bid:offer", (offer: BidOffer & { bidId: string }) => {
+        queryClient.setQueryData<Bid[]>(["bids"], (old) =>
+          old?.map((b) => {
+            if (b.id !== offer.bidId) return b;
+            const exists = b.offers.find(
+              (o) => o.sellerId === offer.sellerId && o.channelId === offer.channelId
+            );
+            const offers = exists
+              ? b.offers.map((o) =>
+                  o.sellerId === offer.sellerId && o.channelId === offer.channelId ? { ...o, ...offer } : o
+                )
+              : [...b.offers, offer];
+            return { ...b, offers };
+          }) ?? old
+        );
+      });
+
+      sock.on("bid:ended", debouncedInvalidateBids);
+      sock.on("bid:winner", debouncedInvalidateBids);
+      sock.on("bid:accepted", debouncedInvalidateOrders);
+      sock.on("notification:new", debouncedInvalidateNotifications);
     });
 
     return () => {

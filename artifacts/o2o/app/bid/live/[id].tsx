@@ -1,6 +1,7 @@
 import { router, useLocalSearchParams } from "@/compat/router";
 import React, { useCallback, useEffect, useState } from "react";
 import {
+  Image,
   Platform,
   ScrollView,
   StyleSheet,
@@ -15,6 +16,9 @@ import { AppButton } from "@/components/ui/AppButton";
 import { useAuth } from "@/context/AuthContext";
 import { useData } from "@/context/DataContext";
 import { useColors } from "@/hooks/useColors";
+import { getSocket } from "@/lib/socket";
+import { resolveMediaUrl } from "@/lib/mediaUrl";
+import { useQueryClient } from "@tanstack/react-query";
 
 function formatCountdown(ms: number) {
   const totalSec = Math.max(0, Math.floor(ms / 1000));
@@ -30,11 +34,28 @@ export default function LiveBidScreen() {
   const { getBid, endBid } = useData();
   const params = useLocalSearchParams<{ id: string }>();
   const [tick, setTick] = useState(0);
+  const queryClient = useQueryClient();
 
   useEffect(() => {
     const t = setInterval(() => setTick((x) => x + 1), 1000);
     return () => clearInterval(t);
   }, []);
+
+  useEffect(() => {
+    const socket = getSocket();
+    if (!socket || !params.id) return;
+    socket.emit("join:bid", params.id);
+    const refresh = () => queryClient.invalidateQueries({ queryKey: ["bids"] });
+    socket.on("bid:offer", refresh);
+    socket.on("bid:ended", refresh);
+    socket.on("bid:winner", refresh);
+    return () => {
+      socket.off("bid:offer", refresh);
+      socket.off("bid:ended", refresh);
+      socket.off("bid:winner", refresh);
+      socket.emit("leave:bid", params.id);
+    };
+  }, [params.id, queryClient]);
 
   if (!user) return null;
   const bid = getBid(params.id);
@@ -80,6 +101,9 @@ export default function LiveBidScreen() {
       <ScrollView contentContainerStyle={[styles.content, { paddingBottom: 100 }]} showsVerticalScrollIndicator={false}>
         {/* Bid Info */}
         <View style={[styles.bidInfo, { backgroundColor: colors.card, borderColor: colors.border }]}>
+          {bid.productImage && (
+            <Image source={{ uri: resolveMediaUrl(bid.productImage) }} style={styles.bidImage} resizeMode="cover" />
+          )}
           <Text style={[styles.bidProduct, { color: colors.foreground }]}>Product: {bid.productName}</Text>
           <Text style={[styles.bidDetail, { color: colors.mutedForeground }]}>Quantity: {bid.quantity}</Text>
           <Text style={[styles.bidDetail, { color: colors.mutedForeground }]}>Budget: ₹{bid.budget}/unit</Text>
@@ -178,6 +202,7 @@ const styles = StyleSheet.create({
   liveText: { fontSize: 11, fontWeight: "700" },
   content: { padding: 16, gap: 12 },
   bidInfo: { padding: 16, borderRadius: 14, borderWidth: 1, gap: 4 },
+  bidImage: { width: "100%", height: 120, borderRadius: 10, marginBottom: 8 },
   bidProduct: { fontSize: 16, fontWeight: "700", marginBottom: 4 },
   bidDetail: { fontSize: 13 },
   timerCard: { flexDirection: "row", alignItems: "center", gap: 12, padding: 18, borderRadius: 14 },

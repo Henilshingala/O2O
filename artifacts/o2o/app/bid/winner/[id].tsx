@@ -23,15 +23,11 @@ export default function SelectWinnerScreen() {
 
   const handleSelect = async (offer: typeof bid.offers[0]) => {
     Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-    const result = await customFetch<{ success: boolean; order?: { id: string } }>(`/api/data/bids/${bid.id}/winner`, {
+    await customFetch(`/api/data/bids/${bid.id}/winner`, {
       method: "POST",
       body: JSON.stringify({ winnerId: offer.sellerId, winnerChannelId: offer.channelId }),
     });
-    if (result.order?.id) {
-      router.replace({ pathname: "/order/[id]", params: { id: result.order.id } });
-    } else {
-      router.replace("/(tabs)");
-    }
+    router.replace("/(tabs)");
   };
 
   const handleRejectAll = () => {

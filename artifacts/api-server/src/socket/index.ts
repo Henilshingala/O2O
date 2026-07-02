@@ -30,6 +30,10 @@ export function initSocket(httpServer: HttpServer): Server {
 
     socket.on("join:chat", (chatId: string) => socket.join(`chat:${chatId}`));
     socket.on("leave:chat", (chatId: string) => socket.leave(`chat:${chatId}`));
+    socket.on("join:group", (groupId: string) => socket.join(`group:${groupId}`));
+    socket.on("leave:group", (groupId: string) => socket.leave(`group:${groupId}`));
+    socket.on("join:channel", (channelId: string) => socket.join(`channel:${channelId}`));
+    socket.on("leave:channel", (channelId: string) => socket.leave(`channel:${channelId}`));
     socket.on("join:bid", (bidId: string) => socket.join(`bid:${bidId}`));
     socket.on("leave:bid", (bidId: string) => socket.leave(`bid:${bidId}`));
     socket.on("typing:start", (data: { chatId: string }) => {
@@ -46,6 +50,14 @@ export function initSocket(httpServer: HttpServer): Server {
 
 export function emitToChat(chatId: string, event: string, data: unknown) {
   ioInstance?.to(`chat:${chatId}`).emit(event, data);
+}
+
+export function emitToGroup(groupId: string, event: string, data: unknown) {
+  ioInstance?.to(`group:${groupId}`).emit(event, data);
+}
+
+export function emitToChannel(channelId: string, event: string, data: unknown) {
+  ioInstance?.to(`channel:${channelId}`).emit(event, data);
 }
 
 export function emitToBid(bidId: string, event: string, data: unknown) {

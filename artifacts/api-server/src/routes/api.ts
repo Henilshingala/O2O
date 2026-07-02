@@ -4,7 +4,7 @@ import { eq, or, and, inArray, desc, asc, isNull, lt, count, sql } from "drizzle
 import * as schema from "@workspace/db";
 import { requireAuth, type AuthRequest } from "../middlewares/auth";
 import { createNotification } from "./notifications";
-import { emitToChat, emitToBid, emitToUser } from "../socket/index";
+import { emitToChat, emitToBid, emitToUser, emitToGroup, emitToChannel } from "../socket/index";
 import { parseOffsetPagination, parseCursorPagination, buildOffsetMeta, sendListResponse } from "../lib/pagination";
 import {
   validateBody,
@@ -60,7 +60,7 @@ async function loadProductsWithImages(channelIds: string[], productLimit = 50) {
     const prodImages = images
       .filter((img) => img.productId === prod.id)
       .map((img) => ({ id: img.id, url: img.url, isPrimary: img.isPrimary }));
-    const entry = { ...prod, images: prodImages };
+    const entry = { ...prod, images: prodImages, videoUrl: (prod.details as { name: string; value: string }[] | null)?.find((d) => d.name === "__videoUrl")?.value };
     const list = byChannel.get(prod.channelId) ?? [];
     list.push(entry);
     byChannel.set(prod.channelId, list);
@@ -130,9 +130,13 @@ router.post("/channels", validateBody(createChannelSchema), async (req: AuthRequ
 router.post("/channels/:id/products", async (req: AuthRequest, res) => {
   try {
     const id = genId("prod");
-    const { images, ...body } = req.body;
+    const { images, videoUrl, ...body } = req.body;
     const imageUrl = body.image || (Array.isArray(images) && images.length > 0 ? images[0] : null);
-    const newProduct = { ...body, id, channelId: req.params.id as string, details: body.details || [], image: imageUrl };
+    const details = [...(body.details || [])];
+    if (videoUrl) {
+      details.push({ name: "__videoUrl", value: videoUrl });
+    }
+    const newProduct = { ...body, id, channelId: req.params.id as string, details, image: imageUrl };
     await db.insert(schema.products).values(newProduct);
 
     const imageUrls: string[] = Array.isArray(images) && images.length > 0
@@ -154,6 +158,7 @@ router.post("/channels/:id/products", async (req: AuthRequest, res) => {
 
     return res.json({
       ...newProduct,
+      videoUrl: videoUrl || undefined,
       images: imageUrls.map((url: string, idx: number) => ({
         id: `${id}_img_${idx}`,
         url,
@@ -212,9 +217,92 @@ router.post("/channels/:id/messages", async (req: AuthRequest, res) => {
     }
     const id = genId("msg");
     const { timestamp, ...restBody } = req.body;
-    const newMsg = { ...restBody, id, channelId, senderId: req.user!.userId, timestamp: timestamp ? new Date(timestamp) : new Date() };
+    const newMsg = {
+      ...restBody,
+      id,
+      channelId,
+      senderId: req.user!.userId,
+      type: req.body.type || "text",
+      metadata: req.body.metadata || {},
+      timestamp: timestamp ? new Date(timestamp) : new Date(),
+    };
     await db.insert(schema.messages).values(newMsg);
+    emitToChannel(channelId, "message:new", newMsg);
     return res.json(newMsg);
+  } catch (error) { return res.status(500).json({ error: "Server error" }); }
+});
+
+router.patch("/channels/:id", async (req: AuthRequest, res) => {
+  try {
+    const channelId = req.params.id as string;
+    const channel = await db.select().from(schema.channels).where(eq(schema.channels.id, channelId)).limit(1);
+    if (!channel[0]) return res.status(404).json({ error: "Channel not found" });
+    if (channel[0].ownerId !== req.user!.userId) {
+      return res.status(403).json({ error: "Only channel owner can edit" });
+    }
+    const { name, description, image, logo } = req.body;
+    const updates: Record<string, unknown> = {};
+    if (name !== undefined) updates.name = name;
+    if (description !== undefined) updates.description = description;
+    const logoVal = logo ?? image;
+    if (logoVal !== undefined) updates.logo = logoVal;
+    await db.update(schema.channels).set(updates).where(eq(schema.channels.id, channelId));
+    const updated = await db.select().from(schema.channels).where(eq(schema.channels.id, channelId)).limit(1);
+    const fols = await db.select().from(schema.channelFollowers).where(eq(schema.channelFollowers.channelId, channelId));
+    return res.json({
+      ...updated[0],
+      image: updated[0]?.logo,
+      followers: fols.map((f) => f.userId),
+      products: [],
+      messages: [],
+    });
+  } catch (error) { return res.status(500).json({ error: "Server error" }); }
+});
+
+router.delete("/channels/:id", async (req: AuthRequest, res) => {
+  try {
+    const channelId = req.params.id as string;
+    const channel = await db.select().from(schema.channels).where(eq(schema.channels.id, channelId)).limit(1);
+    if (!channel[0]) return res.status(404).json({ error: "Channel not found" });
+    if (channel[0].ownerId !== req.user!.userId) {
+      return res.status(403).json({ error: "Only channel owner can delete" });
+    }
+    await db.transaction(async (tx) => {
+      await tx.delete(schema.channelFollowers).where(eq(schema.channelFollowers.channelId, channelId));
+      await tx.delete(schema.channels).where(eq(schema.channels.id, channelId));
+    });
+    return res.json({ success: true });
+  } catch (error) { return res.status(500).json({ error: "Server error" }); }
+});
+
+router.post("/channels/:id/transfer", async (req: AuthRequest, res) => {
+  try {
+    const channelId = req.params.id as string;
+    const { newOwnerId } = req.body;
+    if (!newOwnerId) return res.status(400).json({ error: "newOwnerId required" });
+    const channel = await db.select().from(schema.channels).where(eq(schema.channels.id, channelId)).limit(1);
+    if (!channel[0]) return res.status(404).json({ error: "Channel not found" });
+    if (channel[0].ownerId !== req.user!.userId) {
+      return res.status(403).json({ error: "Only channel owner can transfer ownership" });
+    }
+    await db.update(schema.channels).set({ ownerId: newOwnerId }).where(eq(schema.channels.id, channelId));
+    return res.json({ success: true });
+  } catch (error) { return res.status(500).json({ error: "Server error" }); }
+});
+
+router.delete("/channels/:id/followers/:userId", async (req: AuthRequest, res) => {
+  try {
+    const channelId = req.params.id as string;
+    const followerId = req.params.userId as string;
+    const channel = await db.select().from(schema.channels).where(eq(schema.channels.id, channelId)).limit(1);
+    if (!channel[0]) return res.status(404).json({ error: "Channel not found" });
+    if (channel[0].ownerId !== req.user!.userId) {
+      return res.status(403).json({ error: "Only channel owner can manage followers" });
+    }
+    await db.delete(schema.channelFollowers).where(
+      and(eq(schema.channelFollowers.channelId, channelId), eq(schema.channelFollowers.userId, followerId))
+    );
+    return res.json({ success: true });
   } catch (error) { return res.status(500).json({ error: "Server error" }); }
 });
 
@@ -487,11 +575,54 @@ router.post("/groups", async (req: AuthRequest, res) => {
 
 router.post("/groups/:id/messages", async (req: AuthRequest, res) => {
   try {
+    const groupId = req.params.id as string;
+    const membership = await db.select().from(schema.groupMembers).where(
+      and(eq(schema.groupMembers.groupId, groupId), eq(schema.groupMembers.userId, req.user!.userId))
+    );
+    if (membership.length === 0) {
+      return res.status(403).json({ error: "Not a group member" });
+    }
     const id = genId("msg");
     const { timestamp, ...restBody } = req.body;
-    const newMsg = { ...restBody, id, groupId: req.params.id as string, senderId: req.user!.userId, timestamp: timestamp ? new Date(timestamp) : new Date() };
+    const newMsg = {
+      ...restBody,
+      id,
+      groupId,
+      senderId: req.user!.userId,
+      type: req.body.type || "text",
+      metadata: req.body.metadata || {},
+      timestamp: timestamp ? new Date(timestamp) : new Date(),
+    };
     await db.insert(schema.messages).values(newMsg);
+    emitToGroup(groupId, "message:new", newMsg);
     return res.json(newMsg);
+  } catch (error) { return res.status(500).json({ error: "Server error" }); }
+});
+
+router.get("/groups/:id/messages", async (req: AuthRequest, res) => {
+  try {
+    const groupId = req.params.id as string;
+    const membership = await db.select().from(schema.groupMembers).where(
+      and(eq(schema.groupMembers.groupId, groupId), eq(schema.groupMembers.userId, req.user!.userId))
+    );
+    if (membership.length === 0) return res.status(403).json({ error: "Not a group member" });
+
+    const { limit, cursor } = parseCursorPagination(req.query as Record<string, unknown>, { limit: 50, maxLimit: 100 });
+    let whereClause = and(eq(schema.messages.groupId, groupId), isNull(schema.messages.deletedAt));
+    if (cursor) {
+      const cursorRow = await db.select({ ts: schema.messages.timestamp }).from(schema.messages).where(eq(schema.messages.id, cursor)).limit(1);
+      if (cursorRow[0]) {
+        whereClause = and(whereClause, lt(schema.messages.timestamp, cursorRow[0].ts));
+      }
+    }
+    const msgs = await db.select().from(schema.messages)
+      .where(whereClause)
+      .orderBy(desc(schema.messages.timestamp))
+      .limit(limit + 1);
+    const hasMore = msgs.length > limit;
+    const page = hasMore ? msgs.slice(0, limit) : msgs;
+    const nextCursor = hasMore ? page[page.length - 1]?.id ?? null : null;
+    return res.json({ messages: page.reverse(), nextCursor });
   } catch (error) { return res.status(500).json({ error: "Server error" }); }
 });
 
@@ -547,6 +678,43 @@ router.delete("/groups/:id/members/:userId", async (req: AuthRequest, res) => {
     await db.delete(schema.groupMembers).where(
       and(eq(schema.groupMembers.groupId, groupId), eq(schema.groupMembers.userId, memberId))
     );
+    return res.json({ success: true });
+  } catch (error) { return res.status(500).json({ error: "Server error" }); }
+});
+
+router.delete("/groups/:id", async (req: AuthRequest, res) => {
+  try {
+    const groupId = req.params.id as string;
+    const group = await db.select().from(schema.groups).where(eq(schema.groups.id, groupId)).limit(1);
+    if (!group[0]) return res.status(404).json({ error: "Group not found" });
+    if (group[0].createdBy !== req.user!.userId) {
+      return res.status(403).json({ error: "Only group owner can delete" });
+    }
+    await db.transaction(async (tx) => {
+      await tx.delete(schema.groupMembers).where(eq(schema.groupMembers.groupId, groupId));
+      await tx.delete(schema.groups).where(eq(schema.groups.id, groupId));
+    });
+    return res.json({ success: true });
+  } catch (error) { return res.status(500).json({ error: "Server error" }); }
+});
+
+router.post("/groups/:id/transfer", async (req: AuthRequest, res) => {
+  try {
+    const groupId = req.params.id as string;
+    const { newOwnerId } = req.body;
+    if (!newOwnerId) return res.status(400).json({ error: "newOwnerId required" });
+    const group = await db.select().from(schema.groups).where(eq(schema.groups.id, groupId)).limit(1);
+    if (!group[0]) return res.status(404).json({ error: "Group not found" });
+    if (group[0].createdBy !== req.user!.userId) {
+      return res.status(403).json({ error: "Only group owner can transfer ownership" });
+    }
+    const member = await db.select().from(schema.groupMembers).where(
+      and(eq(schema.groupMembers.groupId, groupId), eq(schema.groupMembers.userId, newOwnerId))
+    );
+    if (member.length === 0) {
+      await db.insert(schema.groupMembers).values({ groupId, userId: newOwnerId });
+    }
+    await db.update(schema.groups).set({ createdBy: newOwnerId }).where(eq(schema.groups.id, groupId));
     return res.json({ success: true });
   } catch (error) { return res.status(500).json({ error: "Server error" }); }
 });
@@ -610,15 +778,44 @@ router.post("/bids", validateBody(createBidSchema), async (req: AuthRequest, res
 
 router.post("/bids/:id/offers", async (req: AuthRequest, res) => {
   try {
-    const id = genId("off");
-    const newOffer = { ...req.body, id, bidId: req.params.id as string, sellerId: req.user!.userId };
-    await db.insert(schema.bidOffers).values(newOffer);
-    emitToBid(req.params.id as string, "bid:offer", newOffer);
-    const bid = await db.select().from(schema.bids).where(eq(schema.bids.id, req.params.id as string)).limit(1);
-    if (bid[0]) {
-      await createNotification(bid[0].buyerId, "New Bid Offer", `New offer on ${bid[0].productName}`, "bid_offer", null);
-      emitToUser(bid[0].buyerId, "notification:new", { type: "bid_offer" });
+    const bidId = req.params.id as string;
+    const sellerId = req.user!.userId;
+    const { channelId, price, deliveryTime, message, sellerName, rating } = req.body;
+    if (!channelId || price == null || !deliveryTime) {
+      return res.status(400).json({ error: "channelId, price, and deliveryTime required" });
     }
+
+    const bid = await db.select().from(schema.bids).where(eq(schema.bids.id, bidId)).limit(1);
+    if (!bid[0] || bid[0].status !== "active") {
+      return res.status(400).json({ error: "Bid is not active" });
+    }
+    if (new Date(bid[0].endTime) < new Date()) {
+      return res.status(400).json({ error: "Bid has ended" });
+    }
+
+    const existing = await db.select().from(schema.bidOffers).where(
+      and(eq(schema.bidOffers.bidId, bidId), eq(schema.bidOffers.sellerId, sellerId), eq(schema.bidOffers.channelId, channelId))
+    );
+
+    let newOffer;
+    if (existing[0]) {
+      await db.update(schema.bidOffers).set({
+        price,
+        deliveryTime,
+        message: message ?? "",
+        timestamp: new Date(),
+      }).where(eq(schema.bidOffers.id, existing[0].id));
+      newOffer = { ...existing[0], price, deliveryTime, message: message ?? "", timestamp: new Date(), sellerName, rating };
+    } else {
+      const id = genId("off");
+      const dbOffer = { id, bidId, sellerId, channelId, price, deliveryTime, message: message ?? "" };
+      await db.insert(schema.bidOffers).values(dbOffer);
+      newOffer = { ...dbOffer, sellerName, rating, timestamp: new Date() };
+    }
+
+    emitToBid(bidId, "bid:offer", newOffer);
+    await createNotification(bid[0].buyerId, "New Bid Offer", `Updated offer on ${bid[0].productName}`, "bid_offer", null);
+    emitToUser(bid[0].buyerId, "notification:new", { type: "bid_offer" });
     return res.json(newOffer);
   } catch (error) { return res.status(500).json({ error: "Server error" }); }
 });
@@ -632,41 +829,81 @@ router.post("/bids/:id/winner", validateBody(winnerSchema), async (req: AuthRequ
     if (!bid) return res.status(404).json({ error: "Bid not found" });
     if (bid.buyerId !== req.user!.userId) return res.status(403).json({ error: "Only bid owner can select winner" });
 
-    let order = null;
-    await db.transaction(async (tx) => {
-      await tx.update(schema.bids).set({ winnerId, winnerChannelId, status: "ended" }).where(eq(schema.bids.id, bidId));
+    await db.update(schema.bids).set({ winnerId, winnerChannelId, status: "ended" }).where(eq(schema.bids.id, bidId));
 
-      const offers = await tx.select().from(schema.bidOffers).where(
-        and(eq(schema.bidOffers.bidId, bidId), eq(schema.bidOffers.sellerId, winnerId), eq(schema.bidOffers.channelId, winnerChannelId))
-      );
-      const winningOffer = offers[0];
-      const sellerRows = await tx.select().from(schema.users).where(eq(schema.users.id, winnerId)).limit(1);
-      const sellerName = sellerRows[0]?.fullName ?? "Seller";
+    const allOffers = await db.select().from(schema.bidOffers).where(eq(schema.bidOffers.bidId, bidId));
 
-      if (winningOffer) {
-        const orderId = genId("ord");
-        const orderRow = {
-          id: orderId,
-          bidId,
-          buyerId: bid.buyerId,
-          sellerId: winnerId,
-          sellerChannelId: winnerChannelId,
-          offerPrice: winningOffer.price,
-          productName: bid.productName,
-          quantity: bid.quantity,
-          status: "pending" as const,
-        };
-        await tx.insert(schema.orders).values(orderRow);
-        order = { ...orderRow, sellerName, messages: [] };
+    await createNotification(
+      winnerId,
+      "Bid Won!",
+      `You won the bid for ${bid.productName}. Accept to confirm the order.`,
+      "bid_won",
+      null
+    );
+    emitToUser(winnerId, "notification:new", { type: "bid_won", bidId });
+
+    for (const offer of allOffers) {
+      if (offer.sellerId !== winnerId) {
+        await createNotification(
+          offer.sellerId,
+          "Bid Not Selected",
+          `Your offer for ${bid.productName} was not selected.`,
+          "bid_rejected",
+          null
+        );
+        emitToUser(offer.sellerId, "notification:new", { type: "bid_rejected", bidId });
       }
-    });
-
-    if (order) {
-      await createNotification(winnerId, "Bid Won", `You won the bid for ${bid.productName}`, "bid_won", null);
-      emitToUser(winnerId, "notification:new", { type: "bid_won" });
     }
 
-    emitToBid(bidId, "bid:winner", { bidId, winnerId, winnerChannelId, order });
+    emitToBid(bidId, "bid:winner", { bidId, winnerId, winnerChannelId });
+    return res.json({ success: true, bidId, winnerId, winnerChannelId });
+  } catch (error) { return res.status(500).json({ error: "Server error" }); }
+});
+
+router.post("/bids/:id/accept", async (req: AuthRequest, res) => {
+  try {
+    const bidId = req.params.id as string;
+    const sellerId = req.user!.userId;
+    const bidRows = await db.select().from(schema.bids).where(eq(schema.bids.id, bidId)).limit(1);
+    const bid = bidRows[0];
+    if (!bid) return res.status(404).json({ error: "Bid not found" });
+    if (bid.winnerId !== sellerId) return res.status(403).json({ error: "Only winning seller can accept" });
+    if (!bid.winnerChannelId) return res.status(400).json({ error: "No winner channel set" });
+
+    const existingOrder = await db.select().from(schema.orders).where(eq(schema.orders.bidId, bidId)).limit(1);
+    if (existingOrder[0]) {
+      const [withName] = await enrichOrdersWithSellerName(existingOrder);
+      return res.json({ success: true, order: { ...withName, messages: [] } });
+    }
+
+    const offers = await db.select().from(schema.bidOffers).where(
+      and(eq(schema.bidOffers.bidId, bidId), eq(schema.bidOffers.sellerId, sellerId), eq(schema.bidOffers.channelId, bid.winnerChannelId))
+    );
+    const winningOffer = offers[0];
+    if (!winningOffer) return res.status(400).json({ error: "Winning offer not found" });
+
+    const sellerRows = await db.select().from(schema.users).where(eq(schema.users.id, sellerId)).limit(1);
+    const sellerName = sellerRows[0]?.fullName ?? "Seller";
+
+    const orderId = genId("ord");
+    const orderRow = {
+      id: orderId,
+      bidId,
+      buyerId: bid.buyerId,
+      sellerId,
+      sellerChannelId: bid.winnerChannelId,
+      offerPrice: winningOffer.price,
+      productName: bid.productName,
+      quantity: bid.quantity,
+      status: "pending" as const,
+    };
+    await db.insert(schema.orders).values(orderRow);
+    const order = { ...orderRow, sellerName, messages: [] };
+
+    await createNotification(bid.buyerId, "Order Created", `${sellerName} accepted your bid for ${bid.productName}`, "order_created", null);
+    emitToUser(bid.buyerId, "notification:new", { type: "order_created", orderId });
+
+    emitToBid(bidId, "bid:accepted", { bidId, order });
     return res.json({ success: true, order });
   } catch (error) { return res.status(500).json({ error: "Server error" }); }
 });
@@ -691,6 +928,7 @@ router.post("/bids/:id/end", async (req: AuthRequest, res) => {
       return res.status(403).json({ error: "Only bid owner can end bid" });
     }
     await db.update(schema.bids).set({ status: "ended" }).where(eq(schema.bids.id, bidId));
+    emitToBid(bidId, "bid:ended", { bidId });
     return res.json({ success: true });
   } catch (error) { return res.status(500).json({ error: "Server error" }); }
 });
@@ -730,10 +968,27 @@ router.post("/orders", async (req: AuthRequest, res) => {
 
 router.post("/orders/:id/messages", async (req: AuthRequest, res) => {
   try {
+    const orderId = req.params.id as string;
+    const order = await db.select().from(schema.orders).where(eq(schema.orders.id, orderId)).limit(1);
+    if (!order[0]) return res.status(404).json({ error: "Order not found" });
+    const userId = req.user!.userId;
+    if (order[0].buyerId !== userId && order[0].sellerId !== userId) {
+      return res.status(403).json({ error: "Forbidden" });
+    }
     const id = genId("msg");
     const { timestamp, ...restBody } = req.body;
-    const newMsg = { ...restBody, id, orderId: req.params.id as string, senderId: req.user!.userId, timestamp: timestamp ? new Date(timestamp) : new Date() };
+    const newMsg = {
+      ...restBody,
+      id,
+      orderId,
+      senderId: userId,
+      type: req.body.type || "text",
+      metadata: req.body.metadata || {},
+      timestamp: timestamp ? new Date(timestamp) : new Date(),
+    };
     await db.insert(schema.messages).values(newMsg);
+    const otherId = order[0].buyerId === userId ? order[0].sellerId : order[0].buyerId;
+    emitToUser(otherId, "message:new", newMsg);
     return res.json(newMsg);
   } catch (error) { return res.status(500).json({ error: "Server error" }); }
 });

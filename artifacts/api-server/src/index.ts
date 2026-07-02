@@ -3,7 +3,7 @@ import http from "http";
 import app from "./app";
 import { logger } from "./lib/logger";
 import { seedSuperAdmin } from "./lib/seed-admin";
-import { initSocket } from "./socket/index";
+import { initSocket, emitToBid } from "./socket/index";
 import { db } from "@workspace/db";
 import { bids } from "@workspace/db/schema";
 import { eq, and, lt } from "drizzle-orm";
@@ -17,10 +17,21 @@ if (Number.isNaN(port) || port <= 0) {
 
 async function closeExpiredBids() {
   try {
+    const expired = await db
+      .select({ id: bids.id })
+      .from(bids)
+      .where(and(eq(bids.status, "active"), lt(bids.endTime, new Date())));
+
+    if (expired.length === 0) return;
+
     await db
       .update(bids)
       .set({ status: "ended" })
       .where(and(eq(bids.status, "active"), lt(bids.endTime, new Date())));
+
+    for (const { id } of expired) {
+      emitToBid(id, "bid:ended", { bidId: id });
+    }
   } catch (err) {
     logger.error({ err }, "Failed to close expired bids");
   }

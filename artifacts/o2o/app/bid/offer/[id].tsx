@@ -31,32 +31,46 @@ export default function SellerOfferScreen() {
     return () => clearInterval(t);
   }, []);
 
-  if (!user) return null;
   const bid = getBid(params.id);
-  if (!bid) return null;
+  const myOffer = bid?.offers.find((o) => o.sellerId === user?.id && o.channelId === params.channelId);
+
+  useEffect(() => {
+    if (myOffer) {
+      setForm({
+        price: String(myOffer.price),
+        deliveryTime: myOffer.deliveryTime,
+        message: myOffer.message,
+      });
+    }
+  }, [myOffer?.id]);
+
+  if (!user || !bid) return null;
 
   const myChannel = channels.find((c) => c.id === params.channelId && c.ownerId === user.id);
   const msLeft = new Date(bid.endTime).getTime() - Date.now();
   const set = (k: keyof typeof form) => (v: string) => setForm((f) => ({ ...f, [k]: v }));
 
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
     const e: Record<string, string> = {};
     if (!form.price || isNaN(Number(form.price))) e.price = "Valid price required";
     if (!form.deliveryTime.trim()) e.deliveryTime = "Delivery time required";
     if (Object.keys(e).length > 0) { setErrors(e); return; }
     setLoading(true);
-    submitOffer(bid.id, {
-      sellerId: user.id,
-      sellerName: myChannel?.name ?? user.fullName,
-      channelId: params.channelId,
-      price: Number(form.price),
-      deliveryTime: form.deliveryTime.trim(),
-      message: form.message.trim(),
-      rating: 4.5,
-    });
-    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-    setLoading(false);
-    router.back();
+    try {
+      await submitOffer(bid.id, {
+        sellerId: user.id,
+        sellerName: myChannel?.name ?? user.fullName,
+        channelId: params.channelId,
+        price: Number(form.price),
+        deliveryTime: form.deliveryTime.trim(),
+        message: form.message.trim(),
+        rating: 4.5,
+      });
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+      router.back();
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -65,7 +79,7 @@ export default function SellerOfferScreen() {
         <TouchableOpacity onPress={() => router.back()}>
           <Feather name="arrow-left" size={22} color={colors.foreground} />
         </TouchableOpacity>
-        <Text style={[styles.title, { color: colors.foreground }]}>Submit Offer</Text>
+        <Text style={[styles.title, { color: colors.foreground }]}>{myOffer ? "Update Offer" : "Submit Offer"}</Text>
         <View style={{ width: 22 }} />
       </View>
       <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
@@ -81,7 +95,7 @@ export default function SellerOfferScreen() {
         <AppInput label="Your Offer Price (₹)" value={form.price} onChangeText={set("price")} placeholder="Enter your price per unit" keyboardType="numeric" error={errors.price} />
         <AppInput label="Delivery Time" value={form.deliveryTime} onChangeText={set("deliveryTime")} placeholder="e.g. 7 days, 2 weeks" error={errors.deliveryTime} />
         <AppInput label="Message to Buyer" value={form.message} onChangeText={set("message")} placeholder="Any additional info..." multiline style={{ height: 80, textAlignVertical: "top", paddingTop: 10 }} />
-        <AppButton title="SUBMIT OFFER" onPress={handleSubmit} loading={loading} />
+        <AppButton title={myOffer ? "UPDATE OFFER" : "SUBMIT OFFER"} onPress={handleSubmit} loading={loading} />
       </ScrollView>
     </KeyboardAvoidingView>
   );

@@ -22,7 +22,7 @@ export default function SelectSellersScreen() {
   const { user } = useAuth();
   const { channels, createBid } = useData();
   const params = useLocalSearchParams<{
-    productName: string; quantity: string; budget: string; description: string; sellerMode: string;
+    productName: string; quantity: string; budget: string; description: string; sellerMode: string; productImage?: string;
   }>();
 
   const sellerChannels = channels.filter((c) => c.ownerId !== user?.id);
@@ -42,6 +42,7 @@ export default function SelectSellersScreen() {
       const bid = await createBid({
         buyerId: user.id,
         productName: params.productName,
+        productImage: params.productImage || undefined,
         quantity: Number(params.quantity),
         budget: Number(params.budget),
         description: params.description ?? "",

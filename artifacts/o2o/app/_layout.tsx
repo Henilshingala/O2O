@@ -37,8 +37,10 @@ import ChatDetailScreen from "./chat/[id]";
 import GroupDetailScreen from "./group/[id]";
 import GroupCreateScreen from "./group/create";
 import GroupCreateDetailsScreen from "./group/create-details";
+import GroupInfoScreen from "./group/info";
 import ChannelDetailScreen from "./channel/[id]";
 import ChannelCreateScreen from "./channel/create";
+import ChannelInfoScreen from "./channel/info";
 import ChannelPostScreen from "./channel/post";
 import ChannelRepostScreen from "./channel/repost";
 import ProductDetailScreen from "./product/[id]";
@@ -74,8 +76,10 @@ function RootLayoutNav() {
       <Stack.Screen name="group/[id]" component={GroupDetailScreen} />
       <Stack.Screen name="group/create" component={GroupCreateScreen} />
       <Stack.Screen name="group/create-details" component={GroupCreateDetailsScreen} />
+      <Stack.Screen name="group/info" component={GroupInfoScreen} />
       <Stack.Screen name="channel/[id]" component={ChannelDetailScreen} />
       <Stack.Screen name="channel/create" component={ChannelCreateScreen} />
+      <Stack.Screen name="channel/info" component={ChannelInfoScreen} />
       <Stack.Screen name="channel/post" component={ChannelPostScreen} />
       <Stack.Screen name="channel/repost" component={ChannelRepostScreen} />
       <Stack.Screen name="product/[id]" component={ProductDetailScreen} />
