@@ -1,0 +1,34 @@
+declare module 'react-native-web' {
+  import type * as React from 'react';
+  export const ActivityIndicator: any;
+  export const Alert: any;
+  export const Animated: any;
+  export const Appearance: any;
+  export const AppRegistry: any;
+  export const Button: any;
+  export const Dimensions: any;
+  export const FlatList: any;
+  export const Image: any;
+  export const KeyboardAvoidingView: any;
+  export const Linking: any;
+  export const Modal: any;
+  export const Platform: any;
+  export const Pressable: any;
+  export const RefreshControl: any;
+  export const SafeAreaView: any;
+  export const ScrollView: any;
+  export const SectionList: any;
+  export const StyleSheet: any;
+  export const Switch: any;
+  export const Text: any;
+  export const TextInput: any;
+  export const TouchableOpacity: any;
+  export const View: any;
+  export const useColorScheme: any;
+  export const useWindowDimensions: any;
+  export const I18nManager: any;
+  export const NativeEventEmitter: any;
+  export const DeviceEventEmitter: any;
+  export const PlatformColor: any;
+  export default any;
+}
