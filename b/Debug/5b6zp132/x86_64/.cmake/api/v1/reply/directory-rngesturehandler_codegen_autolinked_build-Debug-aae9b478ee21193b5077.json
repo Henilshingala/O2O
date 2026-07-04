@@ -1,0 +1,14 @@
+{
+	"backtraceGraph" : 
+	{
+		"commands" : [],
+		"files" : [],
+		"nodes" : []
+	},
+	"installers" : [],
+	"paths" : 
+	{
+		"build" : "rngesturehandler_codegen_autolinked_build",
+		"source" : "D:/downloads/020/o2o/o2o/artifacts/o2o/node_modules/react-native-gesture-handler/android/build/generated/source/codegen/jni"
+	}
+}

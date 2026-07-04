@@ -1,0 +1,14 @@
+{
+	"backtraceGraph" : 
+	{
+		"commands" : [],
+		"files" : [],
+		"nodes" : []
+	},
+	"installers" : [],
+	"paths" : 
+	{
+		"build" : "rnsvg_autolinked_build",
+		"source" : "D:/downloads/020/o2o/o2o/artifacts/o2o/node_modules/react-native-svg/android/src/main/jni"
+	}
+}

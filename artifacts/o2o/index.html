@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1" />
+    <meta name="description" content="O2O — Buy, Sell, and Bid on products" />
+    <title>O2O – Buy · Sell · Bid</title>
+    <style>
+      html, body, #root {
+        height: 100%;
+        margin: 0;
+        padding: 0;
+        overflow: hidden;
+      }
+      #root {
+        display: flex;
+        flex: 1;
+      }
+      body {
+        -webkit-text-size-adjust: 100%;
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      }
+      #loading {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: #10B981;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: white;
+        font-size: 24px;
+        z-index: 9999;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="loading">Direct HTML Test - If you see this, HTML is working!</div>
+    <div id="root"></div>
+    <script>
+      console.log("HTML loaded");
+      window.global = window;
+      
+      setTimeout(() => {
+        const root = document.getElementById('root');
+        if (root) {
+          root.innerHTML = '<div style="padding: 20px; font-size: 24px; color: white; background: #1E3A8A; height: 100vh; display: flex; align-items: center; justify-content: center;">Direct JS Test - If you see this, JavaScript is working!</div>';
+        }
+      }, 1000);
+    </script>
+  </body>
+</html>

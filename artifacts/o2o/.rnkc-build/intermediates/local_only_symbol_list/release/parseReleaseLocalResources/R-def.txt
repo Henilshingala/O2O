@@ -1,0 +1,16 @@
+R_DEF: Internal format may change without notice
+local
+attr? color
+attr? tone
+style aosp_light
+style gboard_dark
+style gboard_light
+style gboard_tts_dark
+style gboard_tts_light
+style samsung_dark
+style samsung_light
+style swiftkey_dark
+style swiftkey_light
+style yandex_dark
+style yandex_light
+styleable ColorProperties color tone

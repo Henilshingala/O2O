@@ -1,0 +1,4 @@
+D:/downloads/020/o2o/o2o/b/Debug/5b6zp132/x86/CMakeFiles/_CMakeLTOTest-CXX/bin/CMakeFiles/foo.dir
+D:/downloads/020/o2o/o2o/b/Debug/5b6zp132/x86/CMakeFiles/_CMakeLTOTest-CXX/bin/CMakeFiles/boo.dir
+D:/downloads/020/o2o/o2o/b/Debug/5b6zp132/x86/CMakeFiles/_CMakeLTOTest-CXX/bin/CMakeFiles/edit_cache.dir
+D:/downloads/020/o2o/o2o/b/Debug/5b6zp132/x86/CMakeFiles/_CMakeLTOTest-CXX/bin/CMakeFiles/rebuild_cache.dir
