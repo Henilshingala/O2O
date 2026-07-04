@@ -6,7 +6,7 @@ buildscript {
     minSdkVersion = 24
     compileSdkVersion = 35
     targetSdkVersion = 35
-    ndkVersion = "27.1.12297006"
+    ndkVersion = "23.1.7779620"
     kotlinVersion = "2.1.20"
   }
   repositories {
@@ -14,16 +14,22 @@ buildscript {
     mavenCentral()
   }
   dependencies {
-    classpath('com.android.tools.build:gradle:8.7.3')
-    classpath('org.jetbrains.kotlin:kotlin-gradle-plugin:2.1.20')
+    classpath("com.android.tools.build:gradle:8.7.3")
+    classpath("org.jetbrains.kotlin:kotlin-gradle-plugin:2.1.20")
   }
 }
 
 allprojects {
+  configurations.all {
+    exclude group: 'com.facebook.react', module: 'react-android'
+  }
+  ext.react = [
+      enableHermes: true,
+  ]
   repositories {
     google()
     mavenCentral()
-    maven { url 'https://www.jitpack.io' }
+    maven { url "https://www.jitpack.io" }
     maven {
       url "$rootDir/../node_modules/react-native/android"
     }
@@ -33,15 +39,40 @@ allprojects {
   }
 }
 
-subprojects {
-  afterEvaluate { project ->
-    if (project.hasProperty("android")) {
-      android {
-        compileOptions {
-          sourceCompatibility JavaVersion.VERSION_17
-          targetCompatibility JavaVersion.VERSION_17
+subprojects { project ->
+  def manifestFile = file("${project.projectDir}/src/main/AndroidManifest.xml")
+  def pkg = null
+  if (manifestFile.exists()) {
+    def manifestContent = manifestFile.text
+    def matcher = manifestContent =~ /package="([^"]+)"/
+    if (matcher.find()) {
+        pkg = matcher.group(1)
+    }
+  }
+
+  project.plugins.withId("com.android.library") {
+    project.android {
+      if (pkg != null) {
+        namespace = pkg
+      } else if (namespace == null) {
+        if (project.name == "react-native-gesture-handler") {
+          namespace = "com.swmansion.gesturehandler.react"
+        } else {
+          namespace = "com.anonymous." + project.name.replaceAll("[^a-zA-Z0-9_]", "")
         }
+      }
+      buildFeatures {
+        buildConfig true
+      }
+    }
+  }
+
+  project.afterEvaluate {
+    project.tasks.withType(org.jetbrains.kotlin.gradle.tasks.KotlinCompile).configureEach {
+      kotlinOptions {
+        jvmTarget = "1.8"
       }
     }
   }
 }
+

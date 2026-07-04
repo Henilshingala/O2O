@@ -75,8 +75,12 @@ android {
         }
     }
     packagingOptions {
+        pickFirst '**/libjsi.so'
+        pickFirst '**/libc++_shared.so'
+        pickFirst '**/libreact_nativemodule_core.so'
+        pickFirst '**/libfbjni.so'
         jniLibs {
-            useLegacyPackaging false
+            useLegacyPackaging true
             pickFirst '**/libc++_shared.so'
             pickFirst '**/libfbjni.so'
         }
@@ -105,11 +109,15 @@ dependencies {
     implementation "com.facebook.react:react-native:0.68.7"
 
     if (hermesEnabled.toBoolean()) {
-        // React Native 0.68.7 includes Hermes internally, no need for separate hermes-android
+        def hermesPath = "../../node_modules/hermes-engine/android/";
+        debugImplementation files(hermesPath + "hermes-debug.aar")
+        releaseImplementation files(hermesPath + "hermes-release.aar")
     } else {
         implementation jscFlavor
     }
 }
 apply from: new File(["node", "--print", "require.resolve('react-native-vector-icons/fonts.gradle')"].execute(null, rootDir).text.trim())
+
+apply from: new File(["node", "--print", "require('path').join(require.resolve('react-native/package.json'), '../../@react-native-community/cli-platform-android/native_modules.gradle')"].execute(null, rootDir).text.trim()); applyNativeModulesAppBuildGradle(project)
 
 

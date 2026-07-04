@@ -1,0 +1,31 @@
+diff --git a/android/lib/src/main/java/com/swmansion/gesturehandler/PanGestureHandler.kt b/android/lib/src/main/java/com/swmansion/gesturehandler/PanGestureHandler.kt
+index 1111111..2222222 100644
+--- a/android/lib/src/main/java/com/swmansion/gesturehandler/PanGestureHandler.kt
++++ b/android/lib/src/main/java/com/swmansion/gesturehandler/PanGestureHandler.kt
+@@ -54,7 +54,7 @@ class PanGestureHandler(context: Context?) : GestureHandler<PanGestureHandler>()
+     */
+     init {
+-      val vc = ViewConfiguration.get(context)
++      val vc = ViewConfiguration.get(context!!)
+       val touchSlop = vc.scaledTouchSlop
+       defaultMinDistSq = (touchSlop * touchSlop).toFloat()
+diff --git a/android/src/main/java/com/swmansion/gesturehandler/RNGestureHandlerPackage.kt b/android/src/main/java/com/swmansion/gesturehandler/RNGestureHandlerPackage.kt
+index 3333333..4444444 100644
+--- a/android/src/main/java/com/swmansion/gesturehandler/RNGestureHandlerPackage.kt
++++ b/android/src/main/java/com/swmansion/gesturehandler/RNGestureHandlerPackage.kt
+@@ -5,7 +5,6 @@ import com.facebook.react.bridge.NativeModule
+ import com.facebook.react.bridge.ReactApplicationContext
+ import com.facebook.react.uimanager.ViewManager
+ import com.facebook.soloader.SoLoader
+-import com.swmansion.gesturehandler.BuildConfig
+ import com.swmansion.gesturehandler.react.RNGestureHandlerModule
+ import com.swmansion.gesturehandler.react.RNGestureHandlerRootViewManager
+ import com.swmansion.gesturehandler.react.RNGestureHandlerButtonViewManager
+@@ -13,7 +12,7 @@ import com.swmansion.gesturehandler.react.RNGestureHandlerButtonViewManager
+ class RNGestureHandlerPackage : ReactPackage {
+   override fun createNativeModules(reactContext: ReactApplicationContext): List<NativeModule> {
+-    if (BuildConfig.IS_NEW_ARCHITECTURE_ENABLED) {
++    if (false) {
+       // For Fabric, we load c++ native library here, this triggers gesture handler's
+       // Fabric component registration which is necessary in order to avoid asking users
+       // to manually add init calls in their application code.

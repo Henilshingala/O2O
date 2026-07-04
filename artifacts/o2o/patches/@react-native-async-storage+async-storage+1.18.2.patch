@@ -1,0 +1,32 @@
+diff --git a/android/src/main/java/com/reactnativecommunity/asyncstorage/AsyncStorageModule.java b/android/src/main/java/com/reactnativecommunity/asyncstorage/AsyncStorageModule.java
+index 1111111..2222222 100644
+--- a/android/src/main/java/com/reactnativecommunity/asyncstorage/AsyncStorageModule.java
++++ b/android/src/main/java/com/reactnativecommunity/asyncstorage/AsyncStorageModule.java
+@@ -51,7 +51,7 @@ public final class AsyncStorageModule
+   public AsyncStorageModule(ReactApplicationContext reactContext) {
+     this(
+       reactContext,
+-      BuildConfig.AsyncStorage_useDedicatedExecutor
++      false
+         ? Executors.newSingleThreadExecutor()
+         : AsyncTask.THREAD_POOL_EXECUTOR
+     );
+diff --git a/android/src/main/java/com/reactnativecommunity/asyncstorage/AsyncStoragePackage.java b/android/src/main/java/com/reactnativecommunity/asyncstorage/AsyncStoragePackage.java
+index 3333333..4444444 100644
+--- a/android/src/main/java/com/reactnativecommunity/asyncstorage/AsyncStoragePackage.java
++++ b/android/src/main/java/com/reactnativecommunity/asyncstorage/AsyncStoragePackage.java
+@@ -24,7 +24,7 @@ public class AsyncStoragePackage implements ReactPackage {
+     List<NativeModule> moduleList = new ArrayList<>(1);
+ 
+-        if (BuildConfig.AsyncStorage_useNextStorage) {
++        if (false) {
+             try {
+                 Class storageClass = Class.forName("com.reactnativecommunity.asyncstorage.next.StorageModule");
+                 NativeModule inst = (NativeModule) storageClass.getDeclaredConstructor(new Class[]{ReactContext.class}).newInstance(reactContext);
+diff --git a/android/src/main/java/com/reactnativecommunity/asyncstorage/ReactDatabaseSupplier.java b/android/src/main/java/com/reactnativecommunity/asyncstorage/ReactDatabaseSupplier.java
+index 5555555..6666666 100644
+--- a/android/src/main/java/com/reactnativecommunity/asyncstorage/ReactDatabaseSupplier.java
++++ b/android/src/main/java/com/reactnativecommunity/asyncstorage/ReactDatabaseSupplier.java
+@@ -1,6 +1,6 @@
+-  private long mMaximumDatabaseSize =  BuildConfig.AsyncStorage_db_size * 1024L * 1024L;
++  private long mMaximumDatabaseSize =  6 * 1024L * 1024L;
