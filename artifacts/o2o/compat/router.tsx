@@ -75,7 +75,7 @@ export function useNavigation() {
 const NativeStack = createNativeStackNavigator();
 export function Stack({ children, screenOptions }: any) {
   return (
-    <NativeStack.Navigator screenOptions={{ headerShown: false, ...screenOptions }}>
+    <NativeStack.Navigator id={undefined} screenOptions={{ headerShown: false, ...screenOptions }}>
       {children}
     </NativeStack.Navigator>
   );
@@ -86,7 +86,7 @@ Stack.Screen = NativeStack.Screen;
 const BottomTab = createBottomTabNavigator();
 export function Tabs({ children, screenOptions }: any) {
   return (
-    <BottomTab.Navigator screenOptions={{ headerShown: false, ...screenOptions }}>
+    <BottomTab.Navigator id={undefined} screenOptions={{ headerShown: false, ...screenOptions }}>
       {children}
     </BottomTab.Navigator>
   );

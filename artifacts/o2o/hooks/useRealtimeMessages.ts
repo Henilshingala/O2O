@@ -129,7 +129,7 @@ export function useRealtimeMessages({
 
       try {
         const saved = await onSend(msg);
-        const realId = saved?.id ?? tempId;
+        const realId = (saved && "id" in saved ? saved.id : tempId);
         pendingRef.current.set(tempId, realId);
         setMessages((prev) =>
           prev.map((m) => (m.id === tempId ? { ...m, id: realId, status: "sent" as const } : m))

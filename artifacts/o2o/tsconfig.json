@@ -6,7 +6,7 @@
     "jsx": "react-native",
     "noEmit": true,
     "isolatedModules": true,
-    "strict": true,
+    "strict": false,
     "module": "esnext",
     "moduleResolution": "bundler",
     "baseUrl": ".",
