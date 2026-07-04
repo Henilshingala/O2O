@@ -5,7 +5,6 @@ def projectRoot = rootDir.getAbsoluteFile().getParentFile().getAbsolutePath()
 
 apply from: file("../../node_modules/react-native/react.gradle")
 
-
 def enableMinifyInReleaseBuilds = (findProperty('android.enableMinifyInReleaseBuilds') ?: false).toBoolean()
 
 def jscFlavor = 'io.github.react-native-community:jsc-android:2026004.+'
@@ -78,6 +77,8 @@ android {
     packagingOptions {
         jniLibs {
             useLegacyPackaging false
+            pickFirst '**/libc++_shared.so'
+            pickFirst '**/libfbjni.so'
         }
     }
     androidResources {
@@ -99,10 +100,12 @@ android {
 }
 
 dependencies {
-    implementation("com.facebook.react:react-android")
+    implementation "androidx.swiperefreshlayout:swiperefreshlayout:1.0.0"
+    implementation "androidx.appcompat:appcompat:1.6.1"
+    implementation "com.facebook.react:react-native:0.68.7"
 
     if (hermesEnabled.toBoolean()) {
-        implementation("com.facebook.react:hermes-android")
+        // React Native 0.68.7 includes Hermes internally, no need for separate hermes-android
     } else {
         implementation jscFlavor
     }
