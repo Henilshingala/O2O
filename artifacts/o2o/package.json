@@ -14,7 +14,7 @@
     "@babel/core": "^7.25.2",
     "@babel/runtime": "^7.29.7",
     "@react-native-community/cli": "^7.0.3",
-    "@react-native/metro-config": "^0.86.0",
+    "@react-native/metro-config": "^0.72.3",
     "@types/react": "~19.1.10",
     "@types/react-native": "0.71.3",
     "@types/react-native-vector-icons": "^6.4.18",

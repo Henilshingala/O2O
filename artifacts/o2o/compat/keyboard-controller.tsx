@@ -27,7 +27,11 @@ let nativeModule: {
 if (isKeyboardControllerLinked()) {
   try {
     // eslint-disable-next-line @typescript-eslint/no-require-imports
-    nativeModule = require("react-native-keyboard-controller");
+    const mod = require("react-native-keyboard-controller");
+    // Only use the module if it actually exports KeyboardProvider
+    if (mod && typeof mod.KeyboardProvider === "function") {
+      nativeModule = mod;
+    }
   } catch {
     nativeModule = null;
   }
