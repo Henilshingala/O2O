@@ -220,13 +220,13 @@ importers:
         version: 4.4.1(react-native@0.68.7(@babel/core@7.29.7)(react@18.3.1))(react@18.3.1)
       '@react-navigation/bottom-tabs':
         specifier: ^7.2.0
-        version: 7.18.3(@react-navigation/native@7.3.4(react-native@0.68.7(@babel/core@7.29.7)(react@18.3.1))(react@18.3.1))(react-native-safe-area-context@4.2.4(react-native@0.68.7(@babel/core@7.29.7)(react@18.3.1))(react@18.3.1))(react-native-screens@3.13.1(react-native@0.68.7(@babel/core@7.29.7)(react@18.3.1))(react@18.3.1))(react-native@0.68.7(@babel/core@7.29.7)(react@18.3.1))(react@18.3.1)
+        version: 7.18.3(@react-navigation/native@7.3.4(react-native@0.68.7(@babel/core@7.29.7)(react@18.3.1))(react@18.3.1))(react-native-safe-area-context@3.4.1(react-native@0.68.7(@babel/core@7.29.7)(react@18.3.1))(react@18.3.1))(react-native-screens@3.13.1(react-native@0.68.7(@babel/core@7.29.7)(react@18.3.1))(react@18.3.1))(react-native@0.68.7(@babel/core@7.29.7)(react@18.3.1))(react@18.3.1)
       '@react-navigation/native':
         specifier: ^7.0.14
         version: 7.3.4(react-native@0.68.7(@babel/core@7.29.7)(react@18.3.1))(react@18.3.1)
       '@react-navigation/native-stack':
         specifier: ^7.2.0
-        version: 7.17.6(@react-navigation/native@7.3.4(react-native@0.68.7(@babel/core@7.29.7)(react@18.3.1))(react@18.3.1))(react-native-safe-area-context@4.2.4(react-native@0.68.7(@babel/core@7.29.7)(react@18.3.1))(react@18.3.1))(react-native-screens@3.13.1(react-native@0.68.7(@babel/core@7.29.7)(react@18.3.1))(react@18.3.1))(react-native@0.68.7(@babel/core@7.29.7)(react@18.3.1))(react@18.3.1)
+        version: 7.17.6(@react-navigation/native@7.3.4(react-native@0.68.7(@babel/core@7.29.7)(react@18.3.1))(react@18.3.1))(react-native-safe-area-context@3.4.1(react-native@0.68.7(@babel/core@7.29.7)(react@18.3.1))(react@18.3.1))(react-native-screens@3.13.1(react-native@0.68.7(@babel/core@7.29.7)(react@18.3.1))(react@18.3.1))(react-native@0.68.7(@babel/core@7.29.7)(react@18.3.1))(react@18.3.1)
       '@tanstack/react-query':
         specifier: 'catalog:'
         version: 5.101.1(react@18.3.1)
@@ -261,8 +261,8 @@ importers:
         specifier: ~2.14.4
         version: 2.14.4(@babel/core@7.29.7)(react-native@0.68.7(@babel/core@7.29.7)(react@18.3.1))(react@18.3.1)
       react-native-safe-area-context:
-        specifier: ~4.2.4
-        version: 4.2.4(react-native@0.68.7(@babel/core@7.29.7)(react@18.3.1))(react@18.3.1)
+        specifier: ~3.4.1
+        version: 3.4.1(react-native@0.68.7(@babel/core@7.29.7)(react@18.3.1))(react@18.3.1)
       react-native-screens:
         specifier: ~3.13.1
         version: 3.13.1(react-native@0.68.7(@babel/core@7.29.7)(react@18.3.1))(react@18.3.1)
@@ -4407,8 +4407,8 @@ packages:
       react: '*'
       react-native: '*'
 
-  react-native-safe-area-context@4.2.4:
-    resolution: {integrity: sha512-OOX+W2G4YYufvryonn6Kw6YnyT8ZThkxPHZBD04NLHaZmicUaaDVII/PZ3M5fD1o5N62+T+8K4bCS5Un2ggvkA==}
+  react-native-safe-area-context@3.4.1:
+    resolution: {integrity: sha512-xfpVd0CiZR7oBhuwJ2HcZMehg5bjha1Ohu1XHpcT+9ykula0TgovH2BNU0R5Krzf/jBR1LMjR6VabxdlUjqxcA==}
     peerDependencies:
       react: '*'
       react-native: '*'
@@ -6691,14 +6691,14 @@ snapshots:
 
   '@react-native/polyfills@2.0.0': {}
 
-  '@react-navigation/bottom-tabs@7.18.3(@react-navigation/native@7.3.4(react-native@0.68.7(@babel/core@7.29.7)(react@18.3.1))(react@18.3.1))(react-native-safe-area-context@4.2.4(react-native@0.68.7(@babel/core@7.29.7)(react@18.3.1))(react@18.3.1))(react-native-screens@3.13.1(react-native@0.68.7(@babel/core@7.29.7)(react@18.3.1))(react@18.3.1))(react-native@0.68.7(@babel/core@7.29.7)(react@18.3.1))(react@18.3.1)':
+  '@react-navigation/bottom-tabs@7.18.3(@react-navigation/native@7.3.4(react-native@0.68.7(@babel/core@7.29.7)(react@18.3.1))(react@18.3.1))(react-native-safe-area-context@3.4.1(react-native@0.68.7(@babel/core@7.29.7)(react@18.3.1))(react@18.3.1))(react-native-screens@3.13.1(react-native@0.68.7(@babel/core@7.29.7)(react@18.3.1))(react@18.3.1))(react-native@0.68.7(@babel/core@7.29.7)(react@18.3.1))(react@18.3.1)':
     dependencies:
-      '@react-navigation/elements': 2.9.26(@react-navigation/native@7.3.4(react-native@0.68.7(@babel/core@7.29.7)(react@18.3.1))(react@18.3.1))(react-native-safe-area-context@4.2.4(react-native@0.68.7(@babel/core@7.29.7)(react@18.3.1))(react@18.3.1))(react-native@0.68.7(@babel/core@7.29.7)(react@18.3.1))(react@18.3.1)
+      '@react-navigation/elements': 2.9.26(@react-navigation/native@7.3.4(react-native@0.68.7(@babel/core@7.29.7)(react@18.3.1))(react@18.3.1))(react-native-safe-area-context@3.4.1(react-native@0.68.7(@babel/core@7.29.7)(react@18.3.1))(react@18.3.1))(react-native@0.68.7(@babel/core@7.29.7)(react@18.3.1))(react@18.3.1)
       '@react-navigation/native': 7.3.4(react-native@0.68.7(@babel/core@7.29.7)(react@18.3.1))(react@18.3.1)
       color: 4.2.3
       react: 18.3.1
       react-native: 0.68.7(@babel/core@7.29.7)(react@18.3.1)
-      react-native-safe-area-context: 4.2.4(react-native@0.68.7(@babel/core@7.29.7)(react@18.3.1))(react@18.3.1)
+      react-native-safe-area-context: 3.4.1(react-native@0.68.7(@babel/core@7.29.7)(react@18.3.1))(react@18.3.1)
       react-native-screens: 3.13.1(react-native@0.68.7(@babel/core@7.29.7)(react@18.3.1))(react@18.3.1)
       sf-symbols-typescript: 2.2.0
     transitivePeerDependencies:
@@ -6716,24 +6716,24 @@ snapshots:
       use-latest-callback: 0.2.6(react@18.3.1)
       use-sync-external-store: 1.6.0(react@18.3.1)
 
-  '@react-navigation/elements@2.9.26(@react-navigation/native@7.3.4(react-native@0.68.7(@babel/core@7.29.7)(react@18.3.1))(react@18.3.1))(react-native-safe-area-context@4.2.4(react-native@0.68.7(@babel/core@7.29.7)(react@18.3.1))(react@18.3.1))(react-native@0.68.7(@babel/core@7.29.7)(react@18.3.1))(react@18.3.1)':
+  '@react-navigation/elements@2.9.26(@react-navigation/native@7.3.4(react-native@0.68.7(@babel/core@7.29.7)(react@18.3.1))(react@18.3.1))(react-native-safe-area-context@3.4.1(react-native@0.68.7(@babel/core@7.29.7)(react@18.3.1))(react@18.3.1))(react-native@0.68.7(@babel/core@7.29.7)(react@18.3.1))(react@18.3.1)':
     dependencies:
       '@react-navigation/native': 7.3.4(react-native@0.68.7(@babel/core@7.29.7)(react@18.3.1))(react@18.3.1)
       color: 4.2.3
       react: 18.3.1
       react-native: 0.68.7(@babel/core@7.29.7)(react@18.3.1)
-      react-native-safe-area-context: 4.2.4(react-native@0.68.7(@babel/core@7.29.7)(react@18.3.1))(react@18.3.1)
+      react-native-safe-area-context: 3.4.1(react-native@0.68.7(@babel/core@7.29.7)(react@18.3.1))(react@18.3.1)
       use-latest-callback: 0.2.6(react@18.3.1)
       use-sync-external-store: 1.6.0(react@18.3.1)
 
-  '@react-navigation/native-stack@7.17.6(@react-navigation/native@7.3.4(react-native@0.68.7(@babel/core@7.29.7)(react@18.3.1))(react@18.3.1))(react-native-safe-area-context@4.2.4(react-native@0.68.7(@babel/core@7.29.7)(react@18.3.1))(react@18.3.1))(react-native-screens@3.13.1(react-native@0.68.7(@babel/core@7.29.7)(react@18.3.1))(react@18.3.1))(react-native@0.68.7(@babel/core@7.29.7)(react@18.3.1))(react@18.3.1)':
+  '@react-navigation/native-stack@7.17.6(@react-navigation/native@7.3.4(react-native@0.68.7(@babel/core@7.29.7)(react@18.3.1))(react@18.3.1))(react-native-safe-area-context@3.4.1(react-native@0.68.7(@babel/core@7.29.7)(react@18.3.1))(react@18.3.1))(react-native-screens@3.13.1(react-native@0.68.7(@babel/core@7.29.7)(react@18.3.1))(react@18.3.1))(react-native@0.68.7(@babel/core@7.29.7)(react@18.3.1))(react@18.3.1)':
     dependencies:
-      '@react-navigation/elements': 2.9.26(@react-navigation/native@7.3.4(react-native@0.68.7(@babel/core@7.29.7)(react@18.3.1))(react@18.3.1))(react-native-safe-area-context@4.2.4(react-native@0.68.7(@babel/core@7.29.7)(react@18.3.1))(react@18.3.1))(react-native@0.68.7(@babel/core@7.29.7)(react@18.3.1))(react@18.3.1)
+      '@react-navigation/elements': 2.9.26(@react-navigation/native@7.3.4(react-native@0.68.7(@babel/core@7.29.7)(react@18.3.1))(react@18.3.1))(react-native-safe-area-context@3.4.1(react-native@0.68.7(@babel/core@7.29.7)(react@18.3.1))(react@18.3.1))(react-native@0.68.7(@babel/core@7.29.7)(react@18.3.1))(react@18.3.1)
       '@react-navigation/native': 7.3.4(react-native@0.68.7(@babel/core@7.29.7)(react@18.3.1))(react@18.3.1)
       color: 4.2.3
       react: 18.3.1
       react-native: 0.68.7(@babel/core@7.29.7)(react@18.3.1)
-      react-native-safe-area-context: 4.2.4(react-native@0.68.7(@babel/core@7.29.7)(react@18.3.1))(react@18.3.1)
+      react-native-safe-area-context: 3.4.1(react-native@0.68.7(@babel/core@7.29.7)(react@18.3.1))(react@18.3.1)
       react-native-screens: 3.13.1(react-native@0.68.7(@babel/core@7.29.7)(react@18.3.1))(react@18.3.1)
       sf-symbols-typescript: 2.2.0
       warn-once: 0.1.1
@@ -10200,7 +10200,7 @@ snapshots:
     transitivePeerDependencies:
       - supports-color
 
-  react-native-safe-area-context@4.2.4(react-native@0.68.7(@babel/core@7.29.7)(react@18.3.1))(react@18.3.1):
+  react-native-safe-area-context@3.4.1(react-native@0.68.7(@babel/core@7.29.7)(react@18.3.1))(react@18.3.1):
     dependencies:
       react: 18.3.1
       react-native: 0.68.7(@babel/core@7.29.7)(react@18.3.1)
