@@ -1,5 +1,8 @@
+// babel.config.js — React Native 0.68.7 (metro-react-native-babel-preset)
+// NOTE: @react-native/babel-preset was introduced in RN 0.73+.
+// For RN 0.68.x the correct preset is metro-react-native-babel-preset.
 module.exports = {
-  presets: ["module:@react-native/babel-preset"],
+  presets: ["module:metro-react-native-babel-preset"],
   plugins: [
     [
       "module-resolver",
@@ -8,6 +11,16 @@ module.exports = {
         alias: {
           "@": "./",
         },
+        extensions: [
+          ".ios.js",
+          ".android.js",
+          ".native.js",
+          ".js",
+          ".jsx",
+          ".ts",
+          ".tsx",
+          ".json",
+        ],
       },
     ],
     [
@@ -15,8 +28,15 @@ module.exports = {
       {
         moduleName: "@env",
         path: ".env",
+        safe: false,
+        allowUndefined: true,
       },
     ],
+    "@babel/plugin-proposal-class-properties",
+    "@babel/plugin-proposal-private-methods",
+    "@babel/plugin-proposal-optional-chaining",
+    "@babel/plugin-proposal-nullish-coalescing-operator",
+    // react-native-reanimated/plugin MUST be last
     "react-native-reanimated/plugin",
   ],
 };

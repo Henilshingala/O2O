@@ -93,7 +93,7 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
   const { user } = useAuth();
   const enabled = !!user;
 
-  const queryDefaults = { staleTime: 30_000, gcTime: 5 * 60_000 };
+  const queryDefaults = { staleTime: 30000, gcTime: 5 * 60000 };
 
   const { data: channels = [], isLoading: loadingChannels } = useQuery<Channel[]>({ queryKey: ["channels"], queryFn: () => fetcher("/api/data/channels"), enabled, ...queryDefaults });
   const { data: chats = [], isLoading: loadingChats } = useQuery<Chat[]>({ queryKey: ["chats"], queryFn: () => fetcher("/api/data/chats"), enabled, ...queryDefaults });
@@ -106,8 +106,8 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
     queryKey: ["counts"],
     queryFn: () => fetcher("/api/data/counts"),
     enabled,
-    staleTime: 15_000,
-    refetchInterval: 30_000,
+    staleTime: 15000,
+    refetchInterval: 30000,
   });
 
   const isLoading = enabled && (loadingChannels || loadingChats || loadingGroups || loadingBids || loadingOrders || loadingReviews || loadingWishlist || loadingCounts);

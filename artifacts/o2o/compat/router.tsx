@@ -1,4 +1,4 @@
-import React, { createContext, useContext } from "react";
+import React from "react";
 import { 
   createNavigationContainerRef, 
   useNavigation as useReactNavigation,
@@ -6,7 +6,7 @@ import {
 } from "@react-navigation/native";
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
 import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
-import { TouchableOpacity, View, StyleSheet, Text } from "react-native";
+import { TouchableOpacity, Text } from "react-native";
 
 export const navigationRef = createNavigationContainerRef<any>();
 

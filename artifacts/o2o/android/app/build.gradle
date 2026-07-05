@@ -3,7 +3,12 @@ apply plugin: "org.jetbrains.kotlin.android"
 
 def projectRoot = rootDir.getAbsoluteFile().getParentFile().getAbsolutePath()
 
-apply from: file("../../node_modules/react-native/react.gradle")
+apply from: new File(["node", "--print", "require.resolve('react-native/react.gradle')"].execute(null, rootDir).text.trim())
+
+project.ext.react = [
+    enableHermes: true,
+    bundleInRelease: false,
+]
 
 def enableMinifyInReleaseBuilds = (findProperty('android.enableMinifyInReleaseBuilds') ?: false).toBoolean()
 
@@ -81,8 +86,6 @@ android {
         pickFirst '**/libfbjni.so'
         jniLibs {
             useLegacyPackaging true
-            pickFirst '**/libc++_shared.so'
-            pickFirst '**/libfbjni.so'
         }
     }
     androidResources {
@@ -109,15 +112,23 @@ dependencies {
     implementation "com.facebook.react:react-native:0.68.7"
 
     if (hermesEnabled.toBoolean()) {
-        def hermesPath = "../../node_modules/hermes-engine/android/";
-        debugImplementation files(hermesPath + "hermes-debug.aar")
-        releaseImplementation files(hermesPath + "hermes-release.aar")
+        def hermesPath = new File(["node", "--print", "require('path').dirname(require.resolve('hermes-engine/package.json'))"].execute(null, rootDir).text.trim(), "android")
+        debugImplementation files(new File(hermesPath, "hermes-debug.aar"))
+        releaseImplementation files(new File(hermesPath, "hermes-release.aar"))
     } else {
         implementation jscFlavor
     }
 }
 apply from: new File(["node", "--print", "require.resolve('react-native-vector-icons/fonts.gradle')"].execute(null, rootDir).text.trim())
 
-apply from: new File(["node", "--print", "require('path').join(require.resolve('react-native/package.json'), '../../@react-native-community/cli-platform-android/native_modules.gradle')"].execute(null, rootDir).text.trim()); applyNativeModulesAppBuildGradle(project)
+apply from: new File(["node", "--print", "require('path').dirname(require.resolve('@react-native-community/cli-platform-android/package.json', { paths: [require.resolve('react-native/package.json')] })) + '/native_modules.gradle'"].execute(null, rootDir).text.trim()); applyNativeModulesAppBuildGradle(project)
 
+project.afterEvaluate {
+    project.tasks.configureEach { task ->
+        if (task.name.startsWith("bundle") && task.name.endsWith("JsAndAssets") || task.name.contains("copyReleaseBundledJs")) {
+            task.enabled = false
+            task.doNotTrackState("We bundle manually because pnpm symlinks break Gradle file tree inputs")
+        }
+    }
+}
 
