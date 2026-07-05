@@ -206,3 +206,83 @@ if (gestureHandlerDir) {
 console.log(
   `\n✅  Postinstall patches done: ${patchCount} file(s) patched, ${skipCount} skipped.\n`
 );
+
+// ─────────────────────────────────────────────────────────────────────────────
+// 3. react-native-safe-area-context  — strip RN 0.71+ autolinking fields
+// ─────────────────────────────────────────────────────────────────────────────
+console.log('\n=== Patching react-native-safe-area-context (autolinking compat) ===');
+
+const safeAreaDir = findPackageDir('react-native-safe-area-context', null);
+if (safeAreaDir) {
+  const cfgPath = join(safeAreaDir, 'react-native.config.js');
+  const cleanCfg = `// Patched for RN 0.68 compat: removed libraryName & componentDescriptors
+module.exports = {
+  dependency: {
+    platforms: {
+      android: {},
+      macos: null,
+      windows: null,
+    },
+  },
+};\n`;
+  writeFileSync(cfgPath, cleanCfg, 'utf8');
+  console.log('  [PATCH] react-native-safe-area-context/react-native.config.js stripped');
+  patchCount++;
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// 4. react-native-screens — strip RN 0.71+ autolinking fields
+// ─────────────────────────────────────────────────────────────────────────────
+console.log('\n=== Patching react-native-screens (autolinking compat) ===');
+
+const screensDir = findPackageDir('react-native-screens', null);
+if (screensDir) {
+  const cfgPath = join(screensDir, 'react-native.config.js');
+  const cleanCfg = `// Patched for RN 0.68 compat: removed componentDescriptors & cmakeListsPath
+module.exports = {
+  dependency: {
+    platforms: {
+      android: {},
+    },
+  },
+};\n`;
+  writeFileSync(cfgPath, cleanCfg, 'utf8');
+  console.log('  [PATCH] react-native-screens/react-native.config.js stripped');
+  patchCount++;
+
+  // Patch ScreenStack.kt Canvas nullability for Android SDK 33+
+  patchFile(
+    join(screensDir, 'android/src/main/java/com/swmansion/rnscreens/ScreenStack.kt'),
+    [
+      [
+        'super.drawChild(op.canvas, op.child, op.drawingTime)',
+        'super.drawChild(op.canvas!!, op.child, op.drawingTime)',
+        'ScreenStack.kt: Fix Canvas nullability (op.canvas!!)'
+      ]
+    ]
+  );
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// 5. react-native-svg — strip RN 0.71+ autolinking fields
+// ─────────────────────────────────────────────────────────────────────────────
+console.log('\n=== Patching react-native-svg (autolinking compat) ===');
+
+const svgDir = findPackageDir('react-native-svg', null);
+if (svgDir) {
+  const cfgPath = join(svgDir, 'react-native.config.js');
+  const cleanCfg = `// Patched for RN 0.68 compat: removed componentDescriptors & cmakeListsPath
+module.exports = {
+  dependency: {
+    platforms: {
+      android: {},
+    },
+  },
+};\n`;
+  writeFileSync(cfgPath, cleanCfg, 'utf8');
+  console.log('  [PATCH] react-native-svg/react-native.config.js stripped');
+  patchCount++;
+}
+
+console.log(`\n✅  All patches applied: ${patchCount} total.\n`);
+
