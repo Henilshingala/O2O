@@ -1,0 +1,674 @@
+--------- beginning of system
+--------- beginning of main
+2026-07-06 23:39:54.059  4135-17872 WorkSourceUtil          com.google.android.gms               E  Could not find package: com.anonymous.o2o
+2026-07-06 23:40:09.118 27239-27239 SoLoader                com.anonymous.o2o                    E  couldn't find DSO to load: libjscexecutor.so caused by: dlopen failed: library "libjsc.so" not found: needed by /data/app/~~Rn7cPGAz47cU-CT_Wj3ywQ==/com.anonymous.o2o-X8y2xsPQXwM3acj0TDiEaQ==/lib/arm64/libjscexecutor.so in namespace clns-4 result: 0
+2026-07-06 23:40:09.378 27239-27239 FBI                     com.anonymous.o2o                    E  Can't load library: dlopen failed: library "libmagtsync.so" not found
+2026-07-06 23:40:09.425 27239-27311 ion                     com.anonymous.o2o                    E  ioctl c0044901 failed with code -1: Invalid argument
+2026-07-06 23:40:14.639 27239-27347 ReactNativeJS           com.anonymous.o2o                    E  TypeError: undefined is not a function
+                                                                                                    
+                                                                                                    This error is located at:
+                                                                                                        in Unknown
+                                                                                                        in Unknown
+                                                                                                        in Unknown
+                                                                                                        in RNGestureHandlerRootView
+                                                                                                        in Unknown
+                                                                                                        in Unknown
+                                                                                                        in Unknown
+                                                                                                        in i
+                                                                                                        in RNCSafeAreaProvider
+                                                                                                        in Unknown
+                                                                                                        in Unknown
+                                                                                                        in RCTView
+                                                                                                        in Unknown
+                                                                                                        in RCTView
+                                                                                                        in Unknown
+                                                                                                        in p, js engine: hermes
+2026-07-06 23:40:14.675 27239-27348 unknown:ReactNative     com.anonymous.o2o                    E  TypeError: undefined is not a function
+                                                                                                    
+                                                                                                    This error is located at:
+                                                                                                        in Unknown
+                                                                                                        in Unknown
+                                                                                                        in Unknown
+                                                                                                        in RNGestureHandlerRootView
+                                                                                                        in Unknown
+                                                                                                        in Unknown
+                                                                                                        in Unknown
+                                                                                                        in i
+                                                                                                        in RNCSafeAreaProvider
+                                                                                                        in Unknown
+                                                                                                        in Unknown
+                                                                                                        in RCTView
+                                                                                                        in Unknown
+                                                                                                        in RCTView
+                                                                                                        in Unknown
+                                                                                                        in p, js engine: hermes, stack:
+                                                                                                    anonymous@170:6348
+                                                                                                    anonymous@790:801
+                                                                                                    anonymous@799:132
+                                                                                                    anonymous@1082:244
+                                                                                                    yr@71:41765
+                                                                                                    ql@71:90118
+                                                                                                    Fa@71:80984
+                                                                                                    Ua@71:80886
+                                                                                                    La@71:80651
+                                                                                                    Ea@71:77639
+                                                                                                    dt@71:25907
+                                                                                                    Te@71:93470
+                                                                                                    Pe@71:12953
+                                                                                                    Ne@71:13330
+                                                                                                    receiveEvent@71:13746
+                                                                                                    value@55:4180
+                                                                                                    anonymous@55:1297
+                                                                                                    value@55:3127
+                                                                                                    value@55:1269
+---------------------------- PROCESS STARTED (27816) for package com.anonymous.o2o ----------------------------
+2026-07-06 23:42:53.594 27816-27816 nativeloader            com.anonymous.o2o                    D  Configuring clns-4 for other apk /data/app/~~srIj3wM33rlTbMeALGwwig==/com.anonymous.o2o-GyIPIUv6utk6hqPXrK5cXQ==/base.apk. target_sdk_version=35, uses_libraries=, library_path=/data/app/~~srIj3wM33rlTbMeALGwwig==/com.anonymous.o2o-GyIPIUv6utk6hqPXrK5cXQ==/lib/arm64:/data/app/~~srIj3wM33rlTbMeALGwwig==/com.anonymous.o2o-GyIPIUv6utk6hqPXrK5cXQ==/base.apk!/lib/arm64-v8a, permitted_path=/data:/mnt/expand:/data/user/0/com.anonymous.o2o
+2026-07-06 23:42:53.607 27816-27816 nativeloader            com.anonymous.o2o                    D  Load libframework-connectivity-jni.so using APEX ns com_android_tethering for caller /apex/com.android.tethering/javalib/framework-connectivity.jar: ok
+2026-07-06 23:42:53.610 27816-27816 GraphicsEnvironment     com.anonymous.o2o                    V  ANGLE Developer option for 'com.anonymous.o2o' set to: 'default'
+2026-07-06 23:42:53.611 27816-27816 GraphicsEnvironment     com.anonymous.o2o                    V  ANGLE GameManagerService for com.anonymous.o2o: false
+2026-07-06 23:42:53.611 27816-27816 GraphicsEnvironment     com.anonymous.o2o                    V  App is not on the allowlist for updatable production driver.
+2026-07-06 23:42:53.615 27816-27816 NetworkSecurityConfig   com.anonymous.o2o                    D  No Network Security Config specified, using platform default
+2026-07-06 23:42:53.616 27816-27816 NetworkSecurityConfig   com.anonymous.o2o                    D  No Network Security Config specified, using platform default
+2026-07-06 23:42:53.639 27816-27816 fb-UnpackingSoSource    com.anonymous.o2o                    V  locked dso store /data/user/0/com.anonymous.o2o/lib-main
+2026-07-06 23:42:53.641 27816-27816 fb-UnpackingSoSource    com.anonymous.o2o                    V  deps mismatch on deps store: regenerating
+2026-07-06 23:42:53.641 27816-27816 fb-UnpackingSoSource    com.anonymous.o2o                    V  so store dirty: regenerating
+2026-07-06 23:42:53.756 27816-27816 ApkSoSource             com.anonymous.o2o                    D  not allowing consideration of lib/arm64-v8a/libbutter.so: deferring to libdir
+2026-07-06 23:42:53.756 27816-27816 ApkSoSource             com.anonymous.o2o                    D  not allowing consideration of lib/arm64-v8a/libc++_shared.so: deferring to libdir
+2026-07-06 23:42:53.756 27816-27816 ApkSoSource             com.anonymous.o2o                    D  not allowing consideration of lib/arm64-v8a/libfabricjni.so: deferring to libdir
+2026-07-06 23:42:53.757 27816-27816 ApkSoSource             com.anonymous.o2o                    D  not allowing consideration of lib/arm64-v8a/libfb.so: deferring to libdir
+2026-07-06 23:42:53.757 27816-27816 ApkSoSource             com.anonymous.o2o                    D  not allowing consideration of lib/arm64-v8a/libfbjni.so: deferring to libdir
+2026-07-06 23:42:53.757 27816-27816 ApkSoSource             com.anonymous.o2o                    D  not allowing consideration of lib/arm64-v8a/libfolly_futures.so: deferring to libdir
+2026-07-06 23:42:53.757 27816-27816 ApkSoSource             com.anonymous.o2o                    D  not allowing consideration of lib/arm64-v8a/libfolly_json.so: deferring to libdir
+2026-07-06 23:42:53.757 27816-27816 ApkSoSource             com.anonymous.o2o                    D  not allowing consideration of lib/arm64-v8a/libglog.so: deferring to libdir
+2026-07-06 23:42:53.757 27816-27816 ApkSoSource             com.anonymous.o2o                    D  not allowing consideration of lib/arm64-v8a/libglog_init.so: deferring to libdir
+2026-07-06 23:42:53.757 27816-27816 ApkSoSource             com.anonymous.o2o                    D  not allowing consideration of lib/arm64-v8a/libhermes-executor-debug.so: deferring to libdir
+2026-07-06 23:42:53.757 27816-27816 ApkSoSource             com.anonymous.o2o                    D  not allowing consideration of lib/arm64-v8a/libhermes-executor-release.so: deferring to libdir
+2026-07-06 23:42:53.757 27816-27816 ApkSoSource             com.anonymous.o2o                    D  not allowing consideration of lib/arm64-v8a/libhermes.so: deferring to libdir
+2026-07-06 23:42:53.758 27816-27816 ApkSoSource             com.anonymous.o2o                    D  not allowing consideration of lib/arm64-v8a/libimagepipeline.so: deferring to libdir
+2026-07-06 23:42:53.758 27816-27816 ApkSoSource             com.anonymous.o2o                    D  not allowing consideration of lib/arm64-v8a/libjscexecutor.so: deferring to libdir
+2026-07-06 23:42:53.758 27816-27816 ApkSoSource             com.anonymous.o2o                    D  not allowing consideration of lib/arm64-v8a/libjsi.so: deferring to libdir
+2026-07-06 23:42:53.758 27816-27816 ApkSoSource             com.anonymous.o2o                    D  not allowing consideration of lib/arm64-v8a/libjsijniprofiler.so: deferring to libdir
+2026-07-06 23:42:53.758 27816-27816 ApkSoSource             com.anonymous.o2o                    D  not allowing consideration of lib/arm64-v8a/libjsinspector.so: deferring to libdir
+2026-07-06 23:42:53.758 27816-27816 ApkSoSource             com.anonymous.o2o                    D  not allowing consideration of lib/arm64-v8a/liblogger.so: deferring to libdir
+2026-07-06 23:42:53.758 27816-27816 ApkSoSource             com.anonymous.o2o                    D  not allowing consideration of lib/arm64-v8a/libmapbufferjni.so: deferring to libdir
+2026-07-06 23:42:53.758 27816-27816 ApkSoSource             com.anonymous.o2o                    D  not allowing consideration of lib/arm64-v8a/libnative-filters.so: deferring to libdir
+2026-07-06 23:42:53.758 27816-27816 ApkSoSource             com.anonymous.o2o                    D  not allowing consideration of lib/arm64-v8a/libnative-imagetranscoder.so: deferring to libdir
+2026-07-06 23:42:53.758 27816-27816 ApkSoSource             com.anonymous.o2o                    D  not allowing consideration of lib/arm64-v8a/libreact_codegen_rncore.so: deferring to libdir
+2026-07-06 23:42:53.759 27816-27816 ApkSoSource             com.anonymous.o2o                    D  not allowing consideration of lib/arm64-v8a/libreact_config.so: deferring to libdir
+2026-07-06 23:42:53.759 27816-27816 ApkSoSource             com.anonymous.o2o                    D  not allowing consideration of lib/arm64-v8a/libreact_debug.so: deferring to libdir
+2026-07-06 23:42:53.759 27816-27816 ApkSoSource             com.anonymous.o2o                    D  not allowing consideration of lib/arm64-v8a/libreact_nativemodule_core.so: deferring to libdir
+2026-07-06 23:42:53.759 27816-27816 ApkSoSource             com.anonymous.o2o                    D  not allowing consideration of lib/arm64-v8a/libreact_render_animations.so: deferring to libdir
+2026-07-06 23:42:53.759 27816-27816 ApkSoSource             com.anonymous.o2o                    D  not allowing consideration of lib/arm64-v8a/libreact_render_attributedstring.so: deferring to libdir
+2026-07-06 23:42:53.759 27816-27816 ApkSoSource             com.anonymous.o2o                    D  not allowing consideration of lib/arm64-v8a/libreact_render_componentregistry.so: deferring to libdir
+2026-07-06 23:42:53.759 27816-27816 ApkSoSource             com.anonymous.o2o                    D  not allowing consideration of lib/arm64-v8a/libreact_render_core.so: deferring to libdir
+2026-07-06 23:42:53.759 27816-27816 ApkSoSource             com.anonymous.o2o                    D  not allowing consideration of lib/arm64-v8a/libreact_render_debug.so: deferring to libdir
+2026-07-06 23:42:53.759 27816-27816 ApkSoSource             com.anonymous.o2o                    D  not allowing consideration of lib/arm64-v8a/libreact_render_graphics.so: deferring to libdir
+2026-07-06 23:42:53.760 27816-27816 ApkSoSource             com.anonymous.o2o                    D  not allowing consideration of lib/arm64-v8a/libreact_render_imagemanager.so: deferring to libdir
+2026-07-06 23:42:53.760 27816-27816 ApkSoSource             com.anonymous.o2o                    D  not allowing consideration of lib/arm64-v8a/libreact_render_leakchecker.so: deferring to libdir
+2026-07-06 23:42:53.760 27816-27816 ApkSoSource             com.anonymous.o2o                    D  not allowing consideration of lib/arm64-v8a/libreact_render_mapbuffer.so: deferring to libdir
+2026-07-06 23:42:53.760 27816-27816 ApkSoSource             com.anonymous.o2o                    D  not allowing consideration of lib/arm64-v8a/libreact_render_mounting.so: deferring to libdir
+2026-07-06 23:42:53.760 27816-27816 ApkSoSource             com.anonymous.o2o                    D  not allowing consideration of lib/arm64-v8a/libreact_render_runtimescheduler.so: deferring to libdir
+2026-07-06 23:42:53.760 27816-27816 ApkSoSource             com.anonymous.o2o                    D  not allowing consideration of lib/arm64-v8a/libreact_render_scheduler.so: deferring to libdir
+2026-07-06 23:42:53.760 27816-27816 ApkSoSource             com.anonymous.o2o                    D  not allowing consideration of lib/arm64-v8a/libreact_render_telemetry.so: deferring to libdir
+2026-07-06 23:42:53.760 27816-27816 ApkSoSource             com.anonymous.o2o                    D  not allowing consideration of lib/arm64-v8a/libreact_render_templateprocessor.so: deferring to libdir
+2026-07-06 23:42:53.760 27816-27816 ApkSoSource             com.anonymous.o2o                    D  not allowing consideration of lib/arm64-v8a/libreact_render_textlayoutmanager.so: deferring to libdir
+2026-07-06 23:42:53.761 27816-27816 ApkSoSource             com.anonymous.o2o                    D  not allowing consideration of lib/arm64-v8a/libreact_render_uimanager.so: deferring to libdir
+2026-07-06 23:42:53.761 27816-27816 ApkSoSource             com.anonymous.o2o                    D  not allowing consideration of lib/arm64-v8a/libreact_utils.so: deferring to libdir
+2026-07-06 23:42:53.761 27816-27816 ApkSoSource             com.anonymous.o2o                    D  not allowing consideration of lib/arm64-v8a/libreactnativeblob.so: deferring to libdir
+2026-07-06 23:42:53.761 27816-27816 ApkSoSource             com.anonymous.o2o                    D  not allowing consideration of lib/arm64-v8a/libreactnativejni.so: deferring to libdir
+2026-07-06 23:42:53.761 27816-27816 ApkSoSource             com.anonymous.o2o                    D  not allowing consideration of lib/arm64-v8a/libreactperfloggerjni.so: deferring to libdir
+2026-07-06 23:42:53.761 27816-27816 ApkSoSource             com.anonymous.o2o                    D  not allowing consideration of lib/arm64-v8a/libreanimated.so: deferring to libdir
+2026-07-06 23:42:53.761 27816-27816 ApkSoSource             com.anonymous.o2o                    D  not allowing consideration of lib/arm64-v8a/librrc_image.so: deferring to libdir
+2026-07-06 23:42:53.762 27816-27816 ApkSoSource             com.anonymous.o2o                    D  not allowing consideration of lib/arm64-v8a/librrc_root.so: deferring to libdir
+2026-07-06 23:42:53.762 27816-27816 ApkSoSource             com.anonymous.o2o                    D  not allowing consideration of lib/arm64-v8a/librrc_text.so: deferring to libdir
+2026-07-06 23:42:53.762 27816-27816 ApkSoSource             com.anonymous.o2o                    D  not allowing consideration of lib/arm64-v8a/librrc_unimplementedview.so: deferring to libdir
+2026-07-06 23:42:53.762 27816-27816 ApkSoSource             com.anonymous.o2o                    D  not allowing consideration of lib/arm64-v8a/librrc_view.so: deferring to libdir
+2026-07-06 23:42:53.763 27816-27816 ApkSoSource             com.anonymous.o2o                    D  not allowing consideration of lib/arm64-v8a/libruntimeexecutor.so: deferring to libdir
+2026-07-06 23:42:53.763 27816-27816 ApkSoSource             com.anonymous.o2o                    D  not allowing consideration of lib/arm64-v8a/libturbomodulejsijni.so: deferring to libdir
+2026-07-06 23:42:53.763 27816-27816 ApkSoSource             com.anonymous.o2o                    D  not allowing consideration of lib/arm64-v8a/libyoga.so: deferring to libdir
+2026-07-06 23:42:53.763 27816-27816 fb-UnpackingSoSource    com.anonymous.o2o                    V  regenerating DSO store com.facebook.soloader.ApkSoSource
+2026-07-06 23:42:53.764 27816-27816 fb-UnpackingSoSource    com.anonymous.o2o                    V  Finished regenerating DSO store com.facebook.soloader.ApkSoSource
+2026-07-06 23:42:53.764 27816-27816 fb-UnpackingSoSource    com.anonymous.o2o                    V  starting syncer worker
+2026-07-06 23:42:53.767 27816-27816 fb-UnpackingSoSource    com.anonymous.o2o                    V  releasing dso store lock for /data/user/0/com.anonymous.o2o/lib-main (from syncer thread)
+2026-07-06 23:42:53.768 27816-27816 fb-UnpackingSoSource    com.anonymous.o2o                    V  not releasing dso store lock for /data/user/0/com.anonymous.o2o/lib-main (syncer thread started)
+2026-07-06 23:42:53.804 27816-27816 AppCompatDelegate       com.anonymous.o2o                    D  Checking for metadata for AppLocalesMetadataHolderService : Service not found
+2026-07-06 23:42:53.853 27816-27816 SoLoader                com.anonymous.o2o                    D  libjscexecutor.so not found on /data/data/com.anonymous.o2o/lib-main
+2026-07-06 23:42:53.853 27816-27816 SoLoader                com.anonymous.o2o                    D  libjscexecutor.so found on /data/app/~~srIj3wM33rlTbMeALGwwig==/com.anonymous.o2o-GyIPIUv6utk6hqPXrK5cXQ==/lib/arm64
+2026-07-06 23:42:53.853 27816-27816 SoLoader                com.anonymous.o2o                    D  Not resolving dependencies for libjscexecutor.so
+2026-07-06 23:42:53.854 27816-27816 nativeloader            com.anonymous.o2o                    D  Load /data/app/~~srIj3wM33rlTbMeALGwwig==/com.anonymous.o2o-GyIPIUv6utk6hqPXrK5cXQ==/lib/arm64/libjscexecutor.so using class loader ns clns-4 (caller=/data/app/~~srIj3wM33rlTbMeALGwwig==/com.anonymous.o2o-GyIPIUv6utk6hqPXrK5cXQ==/base.apk): dlopen failed: library "libjsc.so" not found: needed by /data/app/~~srIj3wM33rlTbMeALGwwig==/com.anonymous.o2o-GyIPIUv6utk6hqPXrK5cXQ==/lib/arm64/libjscexecutor.so in namespace clns-4
+2026-07-06 23:42:53.855 27816-27816 System.err              com.anonymous.o2o                    W  java.lang.UnsatisfiedLinkError: dlopen failed: library "libjsc.so" not found: needed by /data/app/~~srIj3wM33rlTbMeALGwwig==/com.anonymous.o2o-GyIPIUv6utk6hqPXrK5cXQ==/lib/arm64/libjscexecutor.so in namespace clns-4
+2026-07-06 23:42:53.855 27816-27816 System.err              com.anonymous.o2o                    W  	at java.lang.Runtime.load0(Runtime.java:962)
+2026-07-06 23:42:53.855 27816-27816 System.err              com.anonymous.o2o                    W  	at java.lang.System.load(System.java:1729)
+2026-07-06 23:42:53.855 27816-27816 System.err              com.anonymous.o2o                    W  	at com.facebook.soloader.SoLoader$1.load(SoLoader.java:529)
+2026-07-06 23:42:53.855 27816-27816 System.err              com.anonymous.o2o                    W  	at com.facebook.soloader.DirectorySoSource.loadLibraryFrom(DirectorySoSource.java:110)
+2026-07-06 23:42:53.855 27816-27816 System.err              com.anonymous.o2o                    W  	at com.facebook.soloader.DirectorySoSource.loadLibrary(DirectorySoSource.java:63)
+2026-07-06 23:42:53.855 27816-27816 System.err              com.anonymous.o2o                    W  	at com.facebook.soloader.ApplicationSoSource.loadLibrary(ApplicationSoSource.java:91)
+2026-07-06 23:42:53.856 27816-27816 System.err              com.anonymous.o2o                    W  	at com.facebook.soloader.SoLoader.doLoadLibraryBySoName(SoLoader.java:1038)
+2026-07-06 23:42:53.856 27816-27816 System.err              com.anonymous.o2o                    W  	at com.facebook.soloader.SoLoader.loadLibraryBySoNameImpl(SoLoader.java:914)
+2026-07-06 23:42:53.856 27816-27816 System.err              com.anonymous.o2o                    W  	at com.facebook.soloader.SoLoader.loadLibraryBySoName(SoLoader.java:826)
+2026-07-06 23:42:53.856 27816-27816 System.err              com.anonymous.o2o                    W  	at com.facebook.soloader.SoLoader.loadLibrary(SoLoader.java:773)
+2026-07-06 23:42:53.856 27816-27816 System.err              com.anonymous.o2o                    W  	at com.facebook.soloader.SoLoader.loadLibrary(SoLoader.java:743)
+2026-07-06 23:42:53.856 27816-27816 System.err              com.anonymous.o2o                    W  	at com.facebook.react.jscexecutor.JSCExecutor.loadLibrary(JSCExecutor.java:24)
+2026-07-06 23:42:53.856 27816-27816 System.err              com.anonymous.o2o                    W  	at com.facebook.react.jscexecutor.JSCExecutor.<clinit>(JSCExecutor.java:20)
+2026-07-06 23:42:53.856 27816-27816 System.err              com.anonymous.o2o                    W  	at com.facebook.react.ReactInstanceManagerBuilder.getDefaultJSExecutorFactory(ReactInstanceManagerBuilder.java:388)
+2026-07-06 23:42:53.856 27816-27816 System.err              com.anonymous.o2o                    W  	at com.facebook.react.ReactInstanceManagerBuilder.build(ReactInstanceManagerBuilder.java:344)
+2026-07-06 23:42:53.856 27816-27816 System.err              com.anonymous.o2o                    W  	at com.facebook.react.ReactNativeHost.createReactInstanceManager(ReactNativeHost.java:95)
+2026-07-06 23:42:53.856 27816-27816 System.err              com.anonymous.o2o                    W  	at com.facebook.react.ReactNativeHost.getReactInstanceManager(ReactNativeHost.java:42)
+2026-07-06 23:42:53.856 27816-27816 System.err              com.anonymous.o2o                    W  	at com.facebook.react.ReactDelegate.loadApp(ReactDelegate.java:104)
+2026-07-06 23:42:53.856 27816-27816 System.err              com.anonymous.o2o                    W  	at com.facebook.react.ReactActivityDelegate.loadApp(ReactActivityDelegate.java:91)
+2026-07-06 23:42:53.856 27816-27816 System.err              com.anonymous.o2o                    W  	at com.facebook.react.ReactActivityDelegate.onCreate(ReactActivityDelegate.java:86)
+2026-07-06 23:42:53.856 27816-27816 System.err              com.anonymous.o2o                    W  	at com.facebook.react.ReactActivity.onCreate(ReactActivity.java:46)
+2026-07-06 23:42:53.856 27816-27816 System.err              com.anonymous.o2o                    W  	at android.app.Activity.performCreate(Activity.java:8696)
+2026-07-06 23:42:53.857 27816-27816 System.err              com.anonymous.o2o                    W  	at android.app.Activity.performCreate(Activity.java:8665)
+2026-07-06 23:42:53.857 27816-27816 System.err              com.anonymous.o2o                    W  	at android.app.Instrumentation.callActivityOnCreate(Instrumentation.java:1384)
+2026-07-06 23:42:53.857 27816-27816 System.err              com.anonymous.o2o                    W  	at android.app.ActivityThread.performLaunchActivity(ActivityThread.java:3947)
+2026-07-06 23:42:53.857 27816-27816 System.err              com.anonymous.o2o                    W  	at android.app.ActivityThread.handleLaunchActivity(ActivityThread.java:4111)
+2026-07-06 23:42:53.857 27816-27816 System.err              com.anonymous.o2o                    W  	at android.app.servertransaction.LaunchActivityItem.execute(LaunchActivityItem.java:101)
+2026-07-06 23:42:53.857 27816-27816 System.err              com.anonymous.o2o                    W  	at android.app.servertransaction.TransactionExecutor.executeCallbacks(TransactionExecutor.java:135)
+2026-07-06 23:42:53.857 27816-27816 System.err              com.anonymous.o2o                    W  	at android.app.servertransaction.TransactionExecutor.execute(TransactionExecutor.java:95)
+2026-07-06 23:42:53.857 27816-27816 System.err              com.anonymous.o2o                    W  	at android.app.ActivityThread$H.handleMessage(ActivityThread.java:2526)
+2026-07-06 23:42:53.857 27816-27816 System.err              com.anonymous.o2o                    W  	at android.os.Handler.dispatchMessage(Handler.java:106)
+2026-07-06 23:42:53.857 27816-27816 System.err              com.anonymous.o2o                    W  	at android.os.Looper.loopOnce(Looper.java:223)
+2026-07-06 23:42:53.857 27816-27816 System.err              com.anonymous.o2o                    W  	at android.os.Looper.loop(Looper.java:324)
+2026-07-06 23:42:53.857 27816-27816 System.err              com.anonymous.o2o                    W  	at android.app.ActivityThread.main(ActivityThread.java:8481)
+2026-07-06 23:42:53.857 27816-27816 System.err              com.anonymous.o2o                    W  	at java.lang.reflect.Method.invoke(Native Method)
+2026-07-06 23:42:53.857 27816-27816 System.err              com.anonymous.o2o                    W  	at com.android.internal.os.RuntimeInit$MethodAndArgsCaller.run(RuntimeInit.java:582)
+2026-07-06 23:42:53.857 27816-27816 System.err              com.anonymous.o2o                    W  	at com.android.internal.os.ZygoteInit.main(ZygoteInit.java:1061)
+2026-07-06 23:42:53.858 27816-27816 SoLoader                com.anonymous.o2o                    E  couldn't find DSO to load: libjscexecutor.so caused by: dlopen failed: library "libjsc.so" not found: needed by /data/app/~~srIj3wM33rlTbMeALGwwig==/com.anonymous.o2o-GyIPIUv6utk6hqPXrK5cXQ==/lib/arm64/libjscexecutor.so in namespace clns-4 result: 0
+2026-07-06 23:42:53.860 27816-27816 SoLoader                com.anonymous.o2o                    D  libhermes.so not found on /data/data/com.anonymous.o2o/lib-main
+2026-07-06 23:42:53.860 27816-27816 SoLoader                com.anonymous.o2o                    D  libhermes.so found on /data/app/~~srIj3wM33rlTbMeALGwwig==/com.anonymous.o2o-GyIPIUv6utk6hqPXrK5cXQ==/lib/arm64
+2026-07-06 23:42:53.860 27816-27816 SoLoader                com.anonymous.o2o                    D  Not resolving dependencies for libhermes.so
+2026-07-06 23:42:53.864 27816-27816 nativeloader            com.anonymous.o2o                    D  Load /data/app/~~srIj3wM33rlTbMeALGwwig==/com.anonymous.o2o-GyIPIUv6utk6hqPXrK5cXQ==/lib/arm64/libhermes.so using class loader ns clns-4 (caller=/data/app/~~srIj3wM33rlTbMeALGwwig==/com.anonymous.o2o-GyIPIUv6utk6hqPXrK5cXQ==/base.apk): ok
+2026-07-06 23:42:53.865 27816-27816 SoLoader                com.anonymous.o2o                    D  libhermes-executor-debug.so not found on /data/data/com.anonymous.o2o/lib-main
+2026-07-06 23:42:53.865 27816-27816 SoLoader                com.anonymous.o2o                    D  libhermes-executor-debug.so found on /data/app/~~srIj3wM33rlTbMeALGwwig==/com.anonymous.o2o-GyIPIUv6utk6hqPXrK5cXQ==/lib/arm64
+2026-07-06 23:42:53.865 27816-27816 SoLoader                com.anonymous.o2o                    D  Not resolving dependencies for libhermes-executor-debug.so
+2026-07-06 23:42:53.871 27816-27816 nativeloader            com.anonymous.o2o                    D  Load /data/app/~~srIj3wM33rlTbMeALGwwig==/com.anonymous.o2o-GyIPIUv6utk6hqPXrK5cXQ==/lib/arm64/libhermes-executor-debug.so using class loader ns clns-4 (caller=/data/app/~~srIj3wM33rlTbMeALGwwig==/com.anonymous.o2o-GyIPIUv6utk6hqPXrK5cXQ==/base.apk): ok
+2026-07-06 23:42:53.996 27816-27816 m.anonymous.o2o         com.anonymous.o2o                    I  hiddenapi: Accessing hidden method Landroid/view/View;->computeFitSystemWindows(Landroid/graphics/Rect;Landroid/graphics/Rect;)Z (runtime_flags=0, domain=platform, api=unsupported) from Landroidx/appcompat/widget/ViewUtils; (domain=app, TargetSdkVersion=35) using reflection: allowed
+2026-07-06 23:42:53.997 27816-27816 m.anonymous.o2o         com.anonymous.o2o                    I  hiddenapi: Accessing hidden method Landroid/view/ViewGroup;->makeOptionalFitsSystemWindows()V (runtime_flags=0, domain=platform, api=unsupported) from Landroidx/appcompat/widget/ViewUtils; (domain=app, TargetSdkVersion=35) using reflection: allowed
+2026-07-06 23:42:54.012 27816-27816 MSYNC3-Var...efreshRate com.anonymous.o2o                    I  Variable refreshrate is disabled
+2026-07-06 23:42:54.015 27816-27862 nativeloader            com.anonymous.o2o                    D  Load libpowerhalwrap_jni.so using system ns (caller=/system/framework/mediatek-framework.jar): ok
+2026-07-06 23:42:54.015 27816-27862 PowerHalWrapper         com.anonymous.o2o                    I  PowerHalWrapper.getInstance 
+2026-07-06 23:42:54.020 27816-27816 libc                    com.anonymous.o2o                    W  Access denied finding property "ro.vendor.perf.scroll_opt.heavy_app"
+2026-07-06 23:42:54.042 27816-27816 unknown:ReactNative     com.anonymous.o2o                    W  Packager connection already open, nooping.
+2026-07-06 23:42:54.058 27816-27816 BufferQueueConsumer     com.anonymous.o2o                    D  [](id:6ca800000000,api:0,p:-1,c:27816) connect: controlledByApp=false
+2026-07-06 23:42:54.061 27816-27816 FBI                     com.anonymous.o2o                    E  Can't load library: dlopen failed: library "libmagtsync.so" not found
+2026-07-06 23:42:54.078 27816-27839 skia                    com.anonymous.o2o                    D  GrGLMakeAssembledInterface verStr OpenGL ES 3.2 v1.r32p1-00bet5.a87a909447f91dbbba43e39a03b14f82
+2026-07-06 23:42:54.078 27816-27839 skia                    com.anonymous.o2o                    D  GrGLMakeAssembledGLESInterface verStr OpenGL ES 3.2 v1.r32p1-00bet5.a87a909447f91dbbba43e39a03b14f82
+2026-07-06 23:42:54.078 27816-27839 skia                    com.anonymous.o2o                    D  extensions init verString=OpenGL ES 3.2 v1.r32p1-00bet5.a87a909447f91dbbba43e39a03b14f82
+2026-07-06 23:42:54.093 27816-27877 ion                     com.anonymous.o2o                    E  ioctl c0044901 failed with code -1: Invalid argument
+2026-07-06 23:42:54.094 27816-27839 hw-ProcessState         com.anonymous.o2o                    D  Binder ioctl to enable oneway spam detection failed: Invalid argument
+2026-07-06 23:42:54.114 27816-27839 BLASTBufferQueue        com.anonymous.o2o                    D  [VRI[MainActivity]#0](f:0,a:1) acquireNextBufferLocked size=1080x2400 mFrameNumber=1 applyTransaction=true mTimestamp=9443834871793(auto) mPendingTransactions.size=0 graphicBufferId=119468810305536 transform=0
+2026-07-06 23:42:54.118 27816-27839 Parcel                  com.anonymous.o2o                    W  Expecting binder but got null!
+2026-07-06 23:42:54.156 27816-27816 Compatibil...geReporter com.anonymous.o2o                    D  Compat change id reported: 210923482; UID 10889; state: ENABLED
+2026-07-06 23:42:54.196 27816-27816 BufferQueueConsumer     com.anonymous.o2o                    D  [](id:6ca800000001,api:0,p:-1,c:27816) connect: controlledByApp=false
+2026-07-06 23:42:54.218 27816-27839 BLASTBufferQueue        com.anonymous.o2o                    D  [VRI[PopupWindow:476ab7d]#1](f:0,a:1) acquireNextBufferLocked size=1080x58 mFrameNumber=1 applyTransaction=true mTimestamp=9443938938024(auto) mPendingTransactions.size=0 graphicBufferId=119468810305540 transform=0
+2026-07-06 23:42:54.218 27816-27839 Parcel                  com.anonymous.o2o                    W  Expecting binder but got null!
+2026-07-06 23:42:54.223 27816-27816 ImeFocusController      com.anonymous.o2o                    V  onWindowFocus: DecorView@5004509[MainActivity] softInputMode=STATE_UNSPECIFIED|ADJUST_RESIZE|IS_FORWARD_NAVIGATION
+2026-07-06 23:42:54.223 27816-27816 ImeFocusController      com.anonymous.o2o                    V  Restarting due to isRestartOnNextWindowFocus as true
+2026-07-06 23:42:54.223 27816-27816 ImeFocusController      com.anonymous.o2o                    D  onViewFocusChanged, view=DecorView@5004509[MainActivity], mServedView=null
+2026-07-06 23:42:54.224 27816-27816 ImeFocusController      com.anonymous.o2o                    V  checkFocus: view=null next=DecorView@5004509[MainActivity] immDelegate=delegate{e79436c displayId=0} force=true package=<none>
+2026-07-06 23:42:54.240 27816-27848 unknown:ReactNative     com.anonymous.o2o                    W  Could not parse DebugServerException from: <!DOCTYPE html> (Fix with AI)
+                                                                                                    <html lang="en">
+                                                                                                    <head>
+                                                                                                    <meta charset="utf-8">
+                                                                                                    <title>Error</title>
+                                                                                                    </head>
+                                                                                                    <body>
+                                                                                                    <pre>Error: Unable to resolve module ./index from D:\downloads\O2Os\O2O/.: <br><br>None of these files exist:<br> &nbsp;* index(.native|.android.js|.native.js|.js|.android.json|.native.json|.json|.android.ts|.native.ts|.ts|.android.tsx|.native.tsx|.tsx)<br> &nbsp;* index\index(.native|.android.js|.native.js|.js|.android.json|.native.json|.json|.android.ts|.native.ts|.ts|.android.tsx|.native.tsx|.tsx)<br> &nbsp; &nbsp;at ModuleResolver.resolveDependency (D:\downloads\O2Os\O2O\node_modules\metro\src\node-haste\DependencyGraph\ModuleResolution.js:136:15)<br> &nbsp; &nbsp;at DependencyGraph.resolveDependency (D:\downloads\O2Os\O2O\node_modules\metro\src\node-haste\DependencyGraph.js:231:43)<br> &nbsp; &nbsp;at D:\downloads\O2Os\O2O\node_modules\metro\src\lib\transformHelpers.js:129:24<br> &nbsp; &nbsp;at Server._resolveRelativePath (D:\downloads\O2Os\O2O\node_modules\metro\src\Server.js:1107:12)<br> &nbsp; &nbsp;at async Server.requestProcessor [as _processBundleRequest] (D:\downloads\O2Os\O2O\node_modules\metro\src\Server.js:450:37)<br> &nbsp; &nbsp;at async Server._processRequest (D:\downloads\O2Os\O2O\node_modules\metro\src\Server.js:406:9)</pre>
+                                                                                                    </body>
+                                                                                                    </html>
+                                                                                                    
+                                                                                                    org.json.JSONException: Value <!DOCTYPE of type java.lang.String cannot be converted to JSONObject
+                                                                                                    	at org.json.JSON.typeMismatch(JSON.java:112)
+                                                                                                    	at org.json.JSONObject.<init>(JSONObject.java:172)
+                                                                                                    	at org.json.JSONObject.<init>(JSONObject.java:185)
+                                                                                                    	at com.facebook.react.common.DebugServerException.parse(DebugServerException.java:76)
+                                                                                                    	at com.facebook.react.devsupport.BundleDownloader.processBundleResult(BundleDownloader.java:251)
+                                                                                                    	at com.facebook.react.devsupport.BundleDownloader.access$200(BundleDownloader.java:34)
+                                                                                                    	at com.facebook.react.devsupport.BundleDownloader$1.onResponse(BundleDownloader.java:151)
+                                                                                                    	at okhttp3.internal.connection.RealCall$AsyncCall.run(RealCall.kt:519)
+                                                                                                    	at java.util.concurrent.ThreadPoolExecutor.runWorker(ThreadPoolExecutor.java:1100)
+                                                                                                    	at java.util.concurrent.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:624)
+                                                                                                    	at java.lang.Thread.run(Thread.java:1572)
+2026-07-06 23:42:54.241 27816-27848 unknown:ReactNative     com.anonymous.o2o                    E  Unable to download JS bundle (Fix with AI)
+                                                                                                    com.facebook.react.common.DebugServerException: The development server returned response error code: 500
+                                                                                                    
+                                                                                                    URL: http://localhost:8081/index.bundle?platform=android&dev=true&minify=false&app=com.anonymous.o2o&modulesOnly=false&runModule=true
+                                                                                                    
+                                                                                                    Body:
+                                                                                                    <!DOCTYPE html>
+                                                                                                    <html lang="en">
+                                                                                                    <head>
+                                                                                                    <meta charset="utf-8">
+                                                                                                    <title>Error</title>
+                                                                                                    </head>
+                                                                                                    <body>
+                                                                                                    <pre>Error: Unable to resolve module ./index from D:\downloads\O2Os\O2O/.: <br><br>None of these files exist:<br> &nbsp;* index(.native|.android.js|.native.js|.js|.android.json|.native.json|.json|.android.ts|.native.ts|.ts|.android.tsx|.native.tsx|.tsx)<br> &nbsp;* index\index(.native|.android.js|.native.js|.js|.android.json|.native.json|.json|.android.ts|.native.ts|.ts|.android.tsx|.native.tsx|.tsx)<br> &nbsp; &nbsp;at ModuleResolver.resolveDependency (D:\downloads\O2Os\O2O\node_modules\metro\src\node-haste\DependencyGraph\ModuleResolution.js:136:15)<br> &nbsp; &nbsp;at DependencyGraph.resolveDependency (D:\downloads\O2Os\O2O\node_modules\metro\src\node-haste\DependencyGraph.js:231:43)<br> &nbsp; &nbsp;at D:\downloads\O2Os\O2O\node_modules\metro\src\lib\transformHelpers.js:129:24<br> &nbsp; &nbsp;at Server._resolveRelativePath (D:\downloads\O2Os\O2O\node_modules\metro\src\Server.js:1107:12)<br> &nbsp; &nbsp;at async Server.requestProcessor [as _processBundleRequest] (D:\downloads\O2Os\O2O\node_modules\metro\src\Server.js:450:37)<br> &nbsp; &nbsp;at async Server._processRequest (D:\downloads\O2Os\O2O\node_modules\metro\src\Server.js:406:9)</pre>
+                                                                                                    </body>
+                                                                                                    </html>
+                                                                                                    
+                                                                                                    	at com.facebook.react.devsupport.BundleDownloader.processBundleResult(BundleDownloader.java:264)
+                                                                                                    	at com.facebook.react.devsupport.BundleDownloader.access$200(BundleDownloader.java:34)
+                                                                                                    	at com.facebook.react.devsupport.BundleDownloader$1.onResponse(BundleDownloader.java:151)
+                                                                                                    	at okhttp3.internal.connection.RealCall$AsyncCall.run(RealCall.kt:519)
+                                                                                                    	at java.util.concurrent.ThreadPoolExecutor.runWorker(ThreadPoolExecutor.java:1100)
+                                                                                                    	at java.util.concurrent.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:624)
+                                                                                                    	at java.lang.Thread.run(Thread.java:1572)
+2026-07-06 23:42:54.255 27816-27816 BLASTBufferQueue        com.anonymous.o2o                    D  [VRI[PopupWindow:476ab7d]#1](f:0,a:1) destructor()
+2026-07-06 23:42:54.255 27816-27816 BufferQueueConsumer     com.anonymous.o2o                    D  [VRI[PopupWindow:476ab7d]#1(BLAST Consumer)1](id:6ca800000001,api:0,p:-1,c:27816) disconnect
+2026-07-06 23:42:54.265 27816-27816 unknown:ReactNative     com.anonymous.o2o                    E  Exception in native call (Fix with AI)
+                                                                                                    com.facebook.react.common.DebugServerException: The development server returned response error code: 500
+                                                                                                    
+                                                                                                    URL: http://localhost:8081/index.bundle?platform=android&dev=true&minify=false&app=com.anonymous.o2o&modulesOnly=false&runModule=true
+                                                                                                    
+                                                                                                    Body:
+                                                                                                    <!DOCTYPE html>
+                                                                                                    <html lang="en">
+                                                                                                    <head>
+                                                                                                    <meta charset="utf-8">
+                                                                                                    <title>Error</title>
+                                                                                                    </head>
+                                                                                                    <body>
+                                                                                                    <pre>Error: Unable to resolve module ./index from D:\downloads\O2Os\O2O/.: <br><br>None of these files exist:<br> &nbsp;* index(.native|.android.js|.native.js|.js|.android.json|.native.json|.json|.android.ts|.native.ts|.ts|.android.tsx|.native.tsx|.tsx)<br> &nbsp;* index\index(.native|.android.js|.native.js|.js|.android.json|.native.json|.json|.android.ts|.native.ts|.ts|.android.tsx|.native.tsx|.tsx)<br> &nbsp; &nbsp;at ModuleResolver.resolveDependency (D:\downloads\O2Os\O2O\node_modules\metro\src\node-haste\DependencyGraph\ModuleResolution.js:136:15)<br> &nbsp; &nbsp;at DependencyGraph.resolveDependency (D:\downloads\O2Os\O2O\node_modules\metro\src\node-haste\DependencyGraph.js:231:43)<br> &nbsp; &nbsp;at D:\downloads\O2Os\O2O\node_modules\metro\src\lib\transformHelpers.js:129:24<br> &nbsp; &nbsp;at Server._resolveRelativePath (D:\downloads\O2Os\O2O\node_modules\metro\src\Server.js:1107:12)<br> &nbsp; &nbsp;at async Server.requestProcessor [as _processBundleRequest] (D:\downloads\O2Os\O2O\node_modules\metro\src\Server.js:450:37)<br> &nbsp; &nbsp;at async Server._processRequest (D:\downloads\O2Os\O2O\node_modules\metro\src\Server.js:406:9)</pre>
+                                                                                                    </body>
+                                                                                                    </html>
+                                                                                                    
+                                                                                                    	at com.facebook.react.devsupport.BundleDownloader.processBundleResult(BundleDownloader.java:264)
+                                                                                                    	at com.facebook.react.devsupport.BundleDownloader.access$200(BundleDownloader.java:34)
+                                                                                                    	at com.facebook.react.devsupport.BundleDownloader$1.onResponse(BundleDownloader.java:151)
+                                                                                                    	at okhttp3.internal.connection.RealCall$AsyncCall.run(RealCall.kt:519)
+                                                                                                    	at java.util.concurrent.ThreadPoolExecutor.runWorker(ThreadPoolExecutor.java:1100)
+                                                                                                    	at java.util.concurrent.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:624)
+                                                                                                    	at java.lang.Thread.run(Thread.java:1572)
+2026-07-06 23:42:54.283 27816-27816 Compatibil...geReporter com.anonymous.o2o                    D  Compat change id reported: 171228096; UID 10889; state: ENABLED
+2026-07-06 23:42:54.360 27816-27816 BufferQueueConsumer     com.anonymous.o2o                    D  [](id:6ca800000002,api:0,p:-1,c:27816) connect: controlledByApp=false
+2026-07-06 23:42:54.474 27816-27839 BLASTBufferQueue        com.anonymous.o2o                    D  [VRI[MainActivity]#2](f:0,a:1) acquireNextBufferLocked size=1080x2400 mFrameNumber=1 applyTransaction=true mTimestamp=9444195709101(auto) mPendingTransactions.size=0 graphicBufferId=119468810305547 transform=0
+2026-07-06 23:42:54.475 27816-27839 Parcel                  com.anonymous.o2o                    W  Expecting binder but got null!
+2026-07-06 23:42:54.492 27816-27830 ActivityThread          com.anonymous.o2o                    V  updateVmProcessStateForGc sceneId =1 state=196608
+2026-07-06 23:42:54.540 27816-27816 ImeFocusController      com.anonymous.o2o                    V  onWindowFocus: DecorView@f3d74e1[MainActivity] softInputMode=STATE_UNSPECIFIED|ADJUST_RESIZE|IS_FORWARD_NAVIGATION
+2026-07-06 23:42:54.540 27816-27816 ImeFocusController      com.anonymous.o2o                    D  onViewFocusChanged, view=DecorView@f3d74e1[MainActivity], mServedView=null
+2026-07-06 23:42:54.540 27816-27816 ImeFocusController      com.anonymous.o2o                    V  checkFocus: view=null next=DecorView@f3d74e1[MainActivity] immDelegate=delegate{e79436c displayId=0} force=false package=<none>
+2026-07-06 23:42:54.901 27816-27824 m.anonymous.o2o         com.anonymous.o2o                    I  Compiler allocated 5600KB to compile void android.view.ViewRootImpl.performTraversals()
+2026-07-06 23:42:55.029 27816-27851 SoLoader                com.anonymous.o2o                    D  libreactnativejni.so not found on /data/data/com.anonymous.o2o/lib-main
+2026-07-06 23:42:55.030 27816-27851 SoLoader                com.anonymous.o2o                    D  libreactnativejni.so found on /data/app/~~srIj3wM33rlTbMeALGwwig==/com.anonymous.o2o-GyIPIUv6utk6hqPXrK5cXQ==/lib/arm64
+2026-07-06 23:42:55.030 27816-27851 SoLoader                com.anonymous.o2o                    D  Not resolving dependencies for libreactnativejni.so
+2026-07-06 23:42:55.032 27816-27851 nativeloader            com.anonymous.o2o                    D  Load /data/app/~~srIj3wM33rlTbMeALGwwig==/com.anonymous.o2o-GyIPIUv6utk6hqPXrK5cXQ==/lib/arm64/libreactnativejni.so using class loader ns clns-4 (caller=/data/app/~~srIj3wM33rlTbMeALGwwig==/com.anonymous.o2o-GyIPIUv6utk6hqPXrK5cXQ==/base.apk): ok
+2026-07-06 23:42:55.034 27816-27851 SoLoader                com.anonymous.o2o                    D  libfbjni.so not found on /data/data/com.anonymous.o2o/lib-main
+2026-07-06 23:42:55.035 27816-27851 SoLoader                com.anonymous.o2o                    D  libfbjni.so found on /data/app/~~srIj3wM33rlTbMeALGwwig==/com.anonymous.o2o-GyIPIUv6utk6hqPXrK5cXQ==/lib/arm64
+2026-07-06 23:42:55.035 27816-27851 SoLoader                com.anonymous.o2o                    D  Not resolving dependencies for libfbjni.so
+2026-07-06 23:42:55.036 27816-27851 nativeloader            com.anonymous.o2o                    D  Load /data/app/~~srIj3wM33rlTbMeALGwwig==/com.anonymous.o2o-GyIPIUv6utk6hqPXrK5cXQ==/lib/arm64/libfbjni.so using class loader ns clns-4 (caller=/data/app/~~srIj3wM33rlTbMeALGwwig==/com.anonymous.o2o-GyIPIUv6utk6hqPXrK5cXQ==/base.apk): ok
+2026-07-06 23:42:57.738 27816-27830 ActivityThread          com.anonymous.o2o                    V  updateVmProcessStateForGc sceneId =0 state=196864
+2026-07-06 23:42:58.296 27816-27830 ActivityThread          com.anonymous.o2o                    V  updateVmProcessStateForGc sceneId =0 state=196608
+2026-07-06 23:42:59.592 27816-27816 ImeFocusController      com.anonymous.o2o                    V  onWindowFocus: DecorView@f3d74e1[MainActivity] softInputMode=STATE_UNSPECIFIED|ADJUST_RESIZE
+2026-07-06 23:42:59.592 27816-27816 ImeFocusController      com.anonymous.o2o                    D  onViewFocusChanged, view=DecorView@f3d74e1[MainActivity], mServedView=DecorView@f3d74e1[MainActivity]
+2026-07-06 23:42:59.592 27816-27816 ImeFocusController      com.anonymous.o2o                    V  checkFocus: view=DecorView@f3d74e1[MainActivity] next=DecorView@f3d74e1[MainActivity] immDelegate=delegate{e79436c displayId=0} force=true package=com.anonymous.o2o
+2026-07-06 23:42:59.752 27816-27816 SurfaceComposerClient   com.anonymous.o2o                    I  XDR setRegion is not supported 0xb400006e6888f0d0, 1, 0
+2026-07-06 23:42:59.760 27816-27897 BLASTBufferQueue        com.anonymous.o2o                    D  [VRI[MainActivity]#2](f:0,a:1) destructor()
+2026-07-06 23:42:59.760 27816-27897 BufferQueueConsumer     com.anonymous.o2o                    D  [VRI[MainActivity]#2(BLAST Consumer)2](id:6ca800000002,api:0,p:-1,c:27816) disconnect
+2026-07-06 23:42:59.817 27816-27816 BufferQueueConsumer     com.anonymous.o2o                    D  [](id:6ca800000003,api:0,p:-1,c:27816) connect: controlledByApp=false
+2026-07-06 23:42:59.832 27816-27839 BLASTBufferQueue        com.anonymous.o2o                    D  [VRI[PopupWindow:a4f834a]#3](f:0,a:1) acquireNextBufferLocked size=1080x58 mFrameNumber=1 applyTransaction=true mTimestamp=9449552474024(auto) mPendingTransactions.size=0 graphicBufferId=119468810305551 transform=0
+2026-07-06 23:42:59.834 27816-27839 Parcel                  com.anonymous.o2o                    W  Expecting binder but got null!
+2026-07-06 23:42:59.842 27816-27816 ImeFocusController      com.anonymous.o2o                    V  onWindowFocus: DecorView@5004509[MainActivity] softInputMode=STATE_UNSPECIFIED|ADJUST_RESIZE
+2026-07-06 23:42:59.842 27816-27816 ImeFocusController      com.anonymous.o2o                    D  onViewFocusChanged, view=DecorView@5004509[MainActivity], mServedView=DecorView@5004509[MainActivity]
+2026-07-06 23:42:59.842 27816-27816 ImeFocusController      com.anonymous.o2o                    V  checkFocus: view=DecorView@5004509[MainActivity] next=DecorView@5004509[MainActivity] immDelegate=delegate{e79436c displayId=0} force=true package=com.anonymous.o2o
+2026-07-06 23:42:59.905 27816-27848 unknown:ReactNative     com.anonymous.o2o                    W  Could not parse DebugServerException from: <!DOCTYPE html> (Fix with AI)
+                                                                                                    <html lang="en">
+                                                                                                    <head>
+                                                                                                    <meta charset="utf-8">
+                                                                                                    <title>Error</title>
+                                                                                                    </head>
+                                                                                                    <body>
+                                                                                                    <pre>Error: Unable to resolve module ./index from D:\downloads\O2Os\O2O/.: <br><br>None of these files exist:<br> &nbsp;* index(.native|.android.js|.native.js|.js|.android.json|.native.json|.json|.android.ts|.native.ts|.ts|.android.tsx|.native.tsx|.tsx)<br> &nbsp;* index\index(.native|.android.js|.native.js|.js|.android.json|.native.json|.json|.android.ts|.native.ts|.ts|.android.tsx|.native.tsx|.tsx)<br> &nbsp; &nbsp;at ModuleResolver.resolveDependency (D:\downloads\O2Os\O2O\node_modules\metro\src\node-haste\DependencyGraph\ModuleResolution.js:136:15)<br> &nbsp; &nbsp;at DependencyGraph.resolveDependency (D:\downloads\O2Os\O2O\node_modules\metro\src\node-haste\DependencyGraph.js:231:43)<br> &nbsp; &nbsp;at D:\downloads\O2Os\O2O\node_modules\metro\src\lib\transformHelpers.js:129:24<br> &nbsp; &nbsp;at Server._resolveRelativePath (D:\downloads\O2Os\O2O\node_modules\metro\src\Server.js:1107:12)<br> &nbsp; &nbsp;at async Server.requestProcessor [as _processBundleRequest] (D:\downloads\O2Os\O2O\node_modules\metro\src\Server.js:450:37)<br> &nbsp; &nbsp;at async Server._processRequest (D:\downloads\O2Os\O2O\node_modules\metro\src\Server.js:406:9)</pre>
+                                                                                                    </body>
+                                                                                                    </html>
+                                                                                                    
+                                                                                                    org.json.JSONException: Value <!DOCTYPE of type java.lang.String cannot be converted to JSONObject
+                                                                                                    	at org.json.JSON.typeMismatch(JSON.java:112)
+                                                                                                    	at org.json.JSONObject.<init>(JSONObject.java:172)
+                                                                                                    	at org.json.JSONObject.<init>(JSONObject.java:185)
+                                                                                                    	at com.facebook.react.common.DebugServerException.parse(DebugServerException.java:76)
+                                                                                                    	at com.facebook.react.devsupport.BundleDownloader.processBundleResult(BundleDownloader.java:251)
+                                                                                                    	at com.facebook.react.devsupport.BundleDownloader.access$200(BundleDownloader.java:34)
+                                                                                                    	at com.facebook.react.devsupport.BundleDownloader$1.onResponse(BundleDownloader.java:151)
+                                                                                                    	at okhttp3.internal.connection.RealCall$AsyncCall.run(RealCall.kt:519)
+                                                                                                    	at java.util.concurrent.ThreadPoolExecutor.runWorker(ThreadPoolExecutor.java:1100)
+                                                                                                    	at java.util.concurrent.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:624)
+                                                                                                    	at java.lang.Thread.run(Thread.java:1572)
+2026-07-06 23:42:59.906 27816-27848 unknown:ReactNative     com.anonymous.o2o                    E  Unable to download JS bundle (Fix with AI)
+                                                                                                    com.facebook.react.common.DebugServerException: The development server returned response error code: 500
+                                                                                                    
+                                                                                                    URL: http://localhost:8081/index.bundle?platform=android&dev=true&minify=false&app=com.anonymous.o2o&modulesOnly=false&runModule=true
+                                                                                                    
+                                                                                                    Body:
+                                                                                                    <!DOCTYPE html>
+                                                                                                    <html lang="en">
+                                                                                                    <head>
+                                                                                                    <meta charset="utf-8">
+                                                                                                    <title>Error</title>
+                                                                                                    </head>
+                                                                                                    <body>
+                                                                                                    <pre>Error: Unable to resolve module ./index from D:\downloads\O2Os\O2O/.: <br><br>None of these files exist:<br> &nbsp;* index(.native|.android.js|.native.js|.js|.android.json|.native.json|.json|.android.ts|.native.ts|.ts|.android.tsx|.native.tsx|.tsx)<br> &nbsp;* index\index(.native|.android.js|.native.js|.js|.android.json|.native.json|.json|.android.ts|.native.ts|.ts|.android.tsx|.native.tsx|.tsx)<br> &nbsp; &nbsp;at ModuleResolver.resolveDependency (D:\downloads\O2Os\O2O\node_modules\metro\src\node-haste\DependencyGraph\ModuleResolution.js:136:15)<br> &nbsp; &nbsp;at DependencyGraph.resolveDependency (D:\downloads\O2Os\O2O\node_modules\metro\src\node-haste\DependencyGraph.js:231:43)<br> &nbsp; &nbsp;at D:\downloads\O2Os\O2O\node_modules\metro\src\lib\transformHelpers.js:129:24<br> &nbsp; &nbsp;at Server._resolveRelativePath (D:\downloads\O2Os\O2O\node_modules\metro\src\Server.js:1107:12)<br> &nbsp; &nbsp;at async Server.requestProcessor [as _processBundleRequest] (D:\downloads\O2Os\O2O\node_modules\metro\src\Server.js:450:37)<br> &nbsp; &nbsp;at async Server._processRequest (D:\downloads\O2Os\O2O\node_modules\metro\src\Server.js:406:9)</pre>
+                                                                                                    </body>
+                                                                                                    </html>
+                                                                                                    
+                                                                                                    	at com.facebook.react.devsupport.BundleDownloader.processBundleResult(BundleDownloader.java:264)
+                                                                                                    	at com.facebook.react.devsupport.BundleDownloader.access$200(BundleDownloader.java:34)
+                                                                                                    	at com.facebook.react.devsupport.BundleDownloader$1.onResponse(BundleDownloader.java:151)
+                                                                                                    	at okhttp3.internal.connection.RealCall$AsyncCall.run(RealCall.kt:519)
+                                                                                                    	at java.util.concurrent.ThreadPoolExecutor.runWorker(ThreadPoolExecutor.java:1100)
+                                                                                                    	at java.util.concurrent.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:624)
+                                                                                                    	at java.lang.Thread.run(Thread.java:1572)
+2026-07-06 23:42:59.908 27816-27816 BLASTBufferQueue        com.anonymous.o2o                    D  [VRI[PopupWindow:a4f834a]#3](f:0,a:1) destructor()
+2026-07-06 23:42:59.908 27816-27816 BufferQueueConsumer     com.anonymous.o2o                    D  [VRI[PopupWindow:a4f834a]#3(BLAST Consumer)3](id:6ca800000003,api:0,p:-1,c:27816) disconnect
+2026-07-06 23:42:59.917 27816-27816 unknown:ReactNative     com.anonymous.o2o                    E  Exception in native call (Fix with AI)
+                                                                                                    com.facebook.react.common.DebugServerException: The development server returned response error code: 500
+                                                                                                    
+                                                                                                    URL: http://localhost:8081/index.bundle?platform=android&dev=true&minify=false&app=com.anonymous.o2o&modulesOnly=false&runModule=true
+                                                                                                    
+                                                                                                    Body:
+                                                                                                    <!DOCTYPE html>
+                                                                                                    <html lang="en">
+                                                                                                    <head>
+                                                                                                    <meta charset="utf-8">
+                                                                                                    <title>Error</title>
+                                                                                                    </head>
+                                                                                                    <body>
+                                                                                                    <pre>Error: Unable to resolve module ./index from D:\downloads\O2Os\O2O/.: <br><br>None of these files exist:<br> &nbsp;* index(.native|.android.js|.native.js|.js|.android.json|.native.json|.json|.android.ts|.native.ts|.ts|.android.tsx|.native.tsx|.tsx)<br> &nbsp;* index\index(.native|.android.js|.native.js|.js|.android.json|.native.json|.json|.android.ts|.native.ts|.ts|.android.tsx|.native.tsx|.tsx)<br> &nbsp; &nbsp;at ModuleResolver.resolveDependency (D:\downloads\O2Os\O2O\node_modules\metro\src\node-haste\DependencyGraph\ModuleResolution.js:136:15)<br> &nbsp; &nbsp;at DependencyGraph.resolveDependency (D:\downloads\O2Os\O2O\node_modules\metro\src\node-haste\DependencyGraph.js:231:43)<br> &nbsp; &nbsp;at D:\downloads\O2Os\O2O\node_modules\metro\src\lib\transformHelpers.js:129:24<br> &nbsp; &nbsp;at Server._resolveRelativePath (D:\downloads\O2Os\O2O\node_modules\metro\src\Server.js:1107:12)<br> &nbsp; &nbsp;at async Server.requestProcessor [as _processBundleRequest] (D:\downloads\O2Os\O2O\node_modules\metro\src\Server.js:450:37)<br> &nbsp; &nbsp;at async Server._processRequest (D:\downloads\O2Os\O2O\node_modules\metro\src\Server.js:406:9)</pre>
+                                                                                                    </body>
+                                                                                                    </html>
+                                                                                                    
+                                                                                                    	at com.facebook.react.devsupport.BundleDownloader.processBundleResult(BundleDownloader.java:264)
+                                                                                                    	at com.facebook.react.devsupport.BundleDownloader.access$200(BundleDownloader.java:34)
+                                                                                                    	at com.facebook.react.devsupport.BundleDownloader$1.onResponse(BundleDownloader.java:151)
+                                                                                                    	at okhttp3.internal.connection.RealCall$AsyncCall.run(RealCall.kt:519)
+                                                                                                    	at java.util.concurrent.ThreadPoolExecutor.runWorker(ThreadPoolExecutor.java:1100)
+                                                                                                    	at java.util.concurrent.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:624)
+                                                                                                    	at java.lang.Thread.run(Thread.java:1572)
+2026-07-06 23:42:59.979 27816-27816 BufferQueueConsumer     com.anonymous.o2o                    D  [](id:6ca800000004,api:0,p:-1,c:27816) connect: controlledByApp=false
+2026-07-06 23:43:00.050 27816-27839 BLASTBufferQueue        com.anonymous.o2o                    D  [VRI[MainActivity]#4](f:0,a:1) acquireNextBufferLocked size=1080x2400 mFrameNumber=1 applyTransaction=true mTimestamp=9449770748716(auto) mPendingTransactions.size=0 graphicBufferId=119468810305555 transform=0
+2026-07-06 23:43:00.052 27816-27839 Parcel                  com.anonymous.o2o                    W  Expecting binder but got null!
+2026-07-06 23:43:00.109 27816-27816 ImeFocusController      com.anonymous.o2o                    V  onWindowFocus: DecorView@186cd81[MainActivity] softInputMode=STATE_UNSPECIFIED|ADJUST_RESIZE|IS_FORWARD_NAVIGATION
+2026-07-06 23:43:00.110 27816-27816 ImeFocusController      com.anonymous.o2o                    D  onViewFocusChanged, view=DecorView@186cd81[MainActivity], mServedView=null
+2026-07-06 23:43:00.110 27816-27816 ImeFocusController      com.anonymous.o2o                    V  checkFocus: view=null next=DecorView@186cd81[MainActivity] immDelegate=delegate{e79436c displayId=0} force=false package=<none>
+2026-07-06 23:43:01.567 27816-27830 ActivityThread          com.anonymous.o2o                    V  updateVmProcessStateForGc sceneId =0 state=196864
+2026-07-06 23:43:01.849 27816-27833 ActivityThread          com.anonymous.o2o                    V  updateVmProcessStateForGc sceneId =0 state=196608
+2026-07-06 23:43:03.151 27816-27816 ImeFocusController      com.anonymous.o2o                    V  onWindowFocus: DecorView@186cd81[MainActivity] softInputMode=STATE_UNSPECIFIED|ADJUST_RESIZE
+2026-07-06 23:43:03.151 27816-27816 ImeFocusController      com.anonymous.o2o                    D  onViewFocusChanged, view=DecorView@186cd81[MainActivity], mServedView=DecorView@186cd81[MainActivity]
+2026-07-06 23:43:03.152 27816-27816 ImeFocusController      com.anonymous.o2o                    V  checkFocus: view=DecorView@186cd81[MainActivity] next=DecorView@186cd81[MainActivity] immDelegate=delegate{e79436c displayId=0} force=true package=com.anonymous.o2o
+2026-07-06 23:43:03.296 27816-27816 SurfaceComposerClient   com.anonymous.o2o                    I  XDR setRegion is not supported 0xb400006e68881f20, 1, 0
+2026-07-06 23:43:03.313 27816-27833 BLASTBufferQueue        com.anonymous.o2o                    D  [VRI[MainActivity]#4](f:0,a:1) destructor()
+2026-07-06 23:43:03.313 27816-27833 BufferQueueConsumer     com.anonymous.o2o                    D  [VRI[MainActivity]#4(BLAST Consumer)4](id:6ca800000004,api:0,p:-1,c:27816) disconnect
+2026-07-06 23:43:03.355 27816-27848 unknown:ReactNative     com.anonymous.o2o                    W  Could not parse DebugServerException from: <!DOCTYPE html> (Fix with AI)
+                                                                                                    <html lang="en">
+                                                                                                    <head>
+                                                                                                    <meta charset="utf-8">
+                                                                                                    <title>Error</title>
+                                                                                                    </head>
+                                                                                                    <body>
+                                                                                                    <pre>Error: Unable to resolve module ./index from D:\downloads\O2Os\O2O/.: <br><br>None of these files exist:<br> &nbsp;* index(.native|.android.js|.native.js|.js|.android.json|.native.json|.json|.android.ts|.native.ts|.ts|.android.tsx|.native.tsx|.tsx)<br> &nbsp;* index\index(.native|.android.js|.native.js|.js|.android.json|.native.json|.json|.android.ts|.native.ts|.ts|.android.tsx|.native.tsx|.tsx)<br> &nbsp; &nbsp;at ModuleResolver.resolveDependency (D:\downloads\O2Os\O2O\node_modules\metro\src\node-haste\DependencyGraph\ModuleResolution.js:136:15)<br> &nbsp; &nbsp;at DependencyGraph.resolveDependency (D:\downloads\O2Os\O2O\node_modules\metro\src\node-haste\DependencyGraph.js:231:43)<br> &nbsp; &nbsp;at D:\downloads\O2Os\O2O\node_modules\metro\src\lib\transformHelpers.js:129:24<br> &nbsp; &nbsp;at Server._resolveRelativePath (D:\downloads\O2Os\O2O\node_modules\metro\src\Server.js:1107:12)<br> &nbsp; &nbsp;at async Server.requestProcessor [as _processBundleRequest] (D:\downloads\O2Os\O2O\node_modules\metro\src\Server.js:450:37)<br> &nbsp; &nbsp;at async Server._processRequest (D:\downloads\O2Os\O2O\node_modules\metro\src\Server.js:406:9)</pre>
+                                                                                                    </body>
+                                                                                                    </html>
+                                                                                                    
+                                                                                                    org.json.JSONException: Value <!DOCTYPE of type java.lang.String cannot be converted to JSONObject
+                                                                                                    	at org.json.JSON.typeMismatch(JSON.java:112)
+                                                                                                    	at org.json.JSONObject.<init>(JSONObject.java:172)
+                                                                                                    	at org.json.JSONObject.<init>(JSONObject.java:185)
+                                                                                                    	at com.facebook.react.common.DebugServerException.parse(DebugServerException.java:76)
+                                                                                                    	at com.facebook.react.devsupport.BundleDownloader.processBundleResult(BundleDownloader.java:251)
+                                                                                                    	at com.facebook.react.devsupport.BundleDownloader.access$200(BundleDownloader.java:34)
+                                                                                                    	at com.facebook.react.devsupport.BundleDownloader$1.onResponse(BundleDownloader.java:151)
+                                                                                                    	at okhttp3.internal.connection.RealCall$AsyncCall.run(RealCall.kt:519)
+                                                                                                    	at java.util.concurrent.ThreadPoolExecutor.runWorker(ThreadPoolExecutor.java:1100)
+                                                                                                    	at java.util.concurrent.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:624)
+                                                                                                    	at java.lang.Thread.run(Thread.java:1572)
+2026-07-06 23:43:03.355 27816-27848 unknown:ReactNative     com.anonymous.o2o                    E  Unable to download JS bundle (Fix with AI)
+                                                                                                    com.facebook.react.common.DebugServerException: The development server returned response error code: 500
+                                                                                                    
+                                                                                                    URL: http://localhost:8081/index.bundle?platform=android&dev=true&minify=false&app=com.anonymous.o2o&modulesOnly=false&runModule=true
+                                                                                                    
+                                                                                                    Body:
+                                                                                                    <!DOCTYPE html>
+                                                                                                    <html lang="en">
+                                                                                                    <head>
+                                                                                                    <meta charset="utf-8">
+                                                                                                    <title>Error</title>
+                                                                                                    </head>
+                                                                                                    <body>
+                                                                                                    <pre>Error: Unable to resolve module ./index from D:\downloads\O2Os\O2O/.: <br><br>None of these files exist:<br> &nbsp;* index(.native|.android.js|.native.js|.js|.android.json|.native.json|.json|.android.ts|.native.ts|.ts|.android.tsx|.native.tsx|.tsx)<br> &nbsp;* index\index(.native|.android.js|.native.js|.js|.android.json|.native.json|.json|.android.ts|.native.ts|.ts|.android.tsx|.native.tsx|.tsx)<br> &nbsp; &nbsp;at ModuleResolver.resolveDependency (D:\downloads\O2Os\O2O\node_modules\metro\src\node-haste\DependencyGraph\ModuleResolution.js:136:15)<br> &nbsp; &nbsp;at DependencyGraph.resolveDependency (D:\downloads\O2Os\O2O\node_modules\metro\src\node-haste\DependencyGraph.js:231:43)<br> &nbsp; &nbsp;at D:\downloads\O2Os\O2O\node_modules\metro\src\lib\transformHelpers.js:129:24<br> &nbsp; &nbsp;at Server._resolveRelativePath (D:\downloads\O2Os\O2O\node_modules\metro\src\Server.js:1107:12)<br> &nbsp; &nbsp;at async Server.requestProcessor [as _processBundleRequest] (D:\downloads\O2Os\O2O\node_modules\metro\src\Server.js:450:37)<br> &nbsp; &nbsp;at async Server._processRequest (D:\downloads\O2Os\O2O\node_modules\metro\src\Server.js:406:9)</pre>
+                                                                                                    </body>
+                                                                                                    </html>
+                                                                                                    
+                                                                                                    	at com.facebook.react.devsupport.BundleDownloader.processBundleResult(BundleDownloader.java:264)
+                                                                                                    	at com.facebook.react.devsupport.BundleDownloader.access$200(BundleDownloader.java:34)
+                                                                                                    	at com.facebook.react.devsupport.BundleDownloader$1.onResponse(BundleDownloader.java:151)
+                                                                                                    	at okhttp3.internal.connection.RealCall$AsyncCall.run(RealCall.kt:519)
+                                                                                                    	at java.util.concurrent.ThreadPoolExecutor.runWorker(ThreadPoolExecutor.java:1100)
+                                                                                                    	at java.util.concurrent.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:624)
+                                                                                                    	at java.lang.Thread.run(Thread.java:1572)
+2026-07-06 23:43:03.368 27816-27816 BufferQueueConsumer     com.anonymous.o2o                    D  [](id:6ca800000005,api:0,p:-1,c:27816) connect: controlledByApp=false
+2026-07-06 23:43:03.376 27816-27839 BLASTBufferQueue        com.anonymous.o2o                    D  [VRI[PopupWindow:2f14e4f]#5](f:0,a:1) acquireNextBufferLocked size=1080x58 mFrameNumber=1 applyTransaction=true mTimestamp=9453097195563(auto) mPendingTransactions.size=0 graphicBufferId=119468810305557 transform=0
+2026-07-06 23:43:03.377 27816-27839 Parcel                  com.anonymous.o2o                    W  Expecting binder but got null!
+2026-07-06 23:43:03.381 27816-27816 ImeFocusController      com.anonymous.o2o                    V  onWindowFocus: DecorView@5004509[MainActivity] softInputMode=STATE_UNSPECIFIED|ADJUST_RESIZE
+2026-07-06 23:43:03.381 27816-27816 ImeFocusController      com.anonymous.o2o                    D  onViewFocusChanged, view=DecorView@5004509[MainActivity], mServedView=DecorView@5004509[MainActivity]
+2026-07-06 23:43:03.382 27816-27816 ImeFocusController      com.anonymous.o2o                    V  checkFocus: view=DecorView@5004509[MainActivity] next=DecorView@5004509[MainActivity] immDelegate=delegate{e79436c displayId=0} force=true package=com.anonymous.o2o
+2026-07-06 23:43:03.396 27816-27833 BLASTBufferQueue        com.anonymous.o2o                    D  [VRI[PopupWindow:2f14e4f]#5](f:0,a:1) destructor()
+2026-07-06 23:43:03.396 27816-27833 BufferQueueConsumer     com.anonymous.o2o                    D  [VRI[PopupWindow:2f14e4f]#5(BLAST Consumer)5](id:6ca800000005,api:0,p:-1,c:27816) disconnect
+2026-07-06 23:43:03.404 27816-27816 unknown:ReactNative     com.anonymous.o2o                    E  Exception in native call (Fix with AI)
+                                                                                                    com.facebook.react.common.DebugServerException: The development server returned response error code: 500
+                                                                                                    
+                                                                                                    URL: http://localhost:8081/index.bundle?platform=android&dev=true&minify=false&app=com.anonymous.o2o&modulesOnly=false&runModule=true
+                                                                                                    
+                                                                                                    Body:
+                                                                                                    <!DOCTYPE html>
+                                                                                                    <html lang="en">
+                                                                                                    <head>
+                                                                                                    <meta charset="utf-8">
+                                                                                                    <title>Error</title>
+                                                                                                    </head>
+                                                                                                    <body>
+                                                                                                    <pre>Error: Unable to resolve module ./index from D:\downloads\O2Os\O2O/.: <br><br>None of these files exist:<br> &nbsp;* index(.native|.android.js|.native.js|.js|.android.json|.native.json|.json|.android.ts|.native.ts|.ts|.android.tsx|.native.tsx|.tsx)<br> &nbsp;* index\index(.native|.android.js|.native.js|.js|.android.json|.native.json|.json|.android.ts|.native.ts|.ts|.android.tsx|.native.tsx|.tsx)<br> &nbsp; &nbsp;at ModuleResolver.resolveDependency (D:\downloads\O2Os\O2O\node_modules\metro\src\node-haste\DependencyGraph\ModuleResolution.js:136:15)<br> &nbsp; &nbsp;at DependencyGraph.resolveDependency (D:\downloads\O2Os\O2O\node_modules\metro\src\node-haste\DependencyGraph.js:231:43)<br> &nbsp; &nbsp;at D:\downloads\O2Os\O2O\node_modules\metro\src\lib\transformHelpers.js:129:24<br> &nbsp; &nbsp;at Server._resolveRelativePath (D:\downloads\O2Os\O2O\node_modules\metro\src\Server.js:1107:12)<br> &nbsp; &nbsp;at async Server.requestProcessor [as _processBundleRequest] (D:\downloads\O2Os\O2O\node_modules\metro\src\Server.js:450:37)<br> &nbsp; &nbsp;at async Server._processRequest (D:\downloads\O2Os\O2O\node_modules\metro\src\Server.js:406:9)</pre>
+                                                                                                    </body>
+                                                                                                    </html>
+                                                                                                    
+                                                                                                    	at com.facebook.react.devsupport.BundleDownloader.processBundleResult(BundleDownloader.java:264)
+                                                                                                    	at com.facebook.react.devsupport.BundleDownloader.access$200(BundleDownloader.java:34)
+                                                                                                    	at com.facebook.react.devsupport.BundleDownloader$1.onResponse(BundleDownloader.java:151)
+                                                                                                    	at okhttp3.internal.connection.RealCall$AsyncCall.run(RealCall.kt:519)
+                                                                                                    	at java.util.concurrent.ThreadPoolExecutor.runWorker(ThreadPoolExecutor.java:1100)
+                                                                                                    	at java.util.concurrent.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:624)
+                                                                                                    	at java.lang.Thread.run(Thread.java:1572)
+2026-07-06 23:43:03.414 27816-27816 unknown:ReactRootView   com.anonymous.o2o                    W  Unable to dispatch touch to JS as the catalyst instance has not been attached
+2026-07-06 23:43:03.414 27816-27816 unknown:ReactRootView   com.anonymous.o2o                    W  Unable to dispatch touch to JS as the catalyst instance has not been attached
+2026-07-06 23:43:03.468 27816-27816 unknown:ReactRootView   com.anonymous.o2o                    W  Unable to dispatch touch to JS as the catalyst instance has not been attached
+2026-07-06 23:43:03.487 27816-27816 BufferQueueConsumer     com.anonymous.o2o                    D  [](id:6ca800000006,api:0,p:-1,c:27816) connect: controlledByApp=false
+2026-07-06 23:43:03.554 27816-27839 BLASTBufferQueue        com.anonymous.o2o                    D  [VRI[MainActivity]#6](f:0,a:1) acquireNextBufferLocked size=1080x2400 mFrameNumber=1 applyTransaction=true mTimestamp=9453275527486(auto) mPendingTransactions.size=0 graphicBufferId=119468810305563 transform=0
+2026-07-06 23:43:03.556 27816-27839 Parcel                  com.anonymous.o2o                    W  Expecting binder but got null!
+2026-07-06 23:43:03.598 27816-27816 unknown:ReactRootView   com.anonymous.o2o                    W  Unable to dispatch touch to JS as the catalyst instance has not been attached
+2026-07-06 23:43:03.598 27816-27816 unknown:ReactRootView   com.anonymous.o2o                    W  Unable to dispatch touch to JS as the catalyst instance has not been attached
+2026-07-06 23:43:03.610 27816-27816 ImeFocusController      com.anonymous.o2o                    V  onWindowFocus: DecorView@56aa717[MainActivity] softInputMode=STATE_UNSPECIFIED|ADJUST_RESIZE|IS_FORWARD_NAVIGATION
+2026-07-06 23:43:03.611 27816-27816 ImeFocusController      com.anonymous.o2o                    D  onViewFocusChanged, view=DecorView@56aa717[MainActivity], mServedView=null
+2026-07-06 23:43:03.611 27816-27816 ImeFocusController      com.anonymous.o2o                    V  checkFocus: view=null next=DecorView@56aa717[MainActivity] immDelegate=delegate{e79436c displayId=0} force=false package=<none>
+2026-07-06 23:43:03.656 27816-27816 unknown:ReactRootView   com.anonymous.o2o                    W  Unable to dispatch touch to JS as the catalyst instance has not been attached
+2026-07-06 23:43:03.666 27816-27816 unknown:ReactRootView   com.anonymous.o2o                    W  Unable to dispatch touch to JS as the catalyst instance has not been attached
+2026-07-06 23:43:03.835 27816-27816 SurfaceComposerClient   com.anonymous.o2o                    I  XDR setRegion is not supported 0xb400006e6889ca10, 1, 0
+2026-07-06 23:43:03.847 27816-27833 BLASTBufferQueue        com.anonymous.o2o                    D  [VRI[MainActivity]#6](f:0,a:1) destructor()
+2026-07-06 23:43:03.847 27816-27833 BufferQueueConsumer     com.anonymous.o2o                    D  [VRI[MainActivity]#6(BLAST Consumer)6](id:6ca800000006,api:0,p:-1,c:27816) disconnect
+2026-07-06 23:43:03.876 27816-27848 unknown:ReactNative     com.anonymous.o2o                    W  Could not parse DebugServerException from: <!DOCTYPE html> (Fix with AI)
+                                                                                                    <html lang="en">
+                                                                                                    <head>
+                                                                                                    <meta charset="utf-8">
+                                                                                                    <title>Error</title>
+                                                                                                    </head>
+                                                                                                    <body>
+                                                                                                    <pre>Error: Unable to resolve module ./index from D:\downloads\O2Os\O2O/.: <br><br>None of these files exist:<br> &nbsp;* index(.native|.android.js|.native.js|.js|.android.json|.native.json|.json|.android.ts|.native.ts|.ts|.android.tsx|.native.tsx|.tsx)<br> &nbsp;* index\index(.native|.android.js|.native.js|.js|.android.json|.native.json|.json|.android.ts|.native.ts|.ts|.android.tsx|.native.tsx|.tsx)<br> &nbsp; &nbsp;at ModuleResolver.resolveDependency (D:\downloads\O2Os\O2O\node_modules\metro\src\node-haste\DependencyGraph\ModuleResolution.js:136:15)<br> &nbsp; &nbsp;at DependencyGraph.resolveDependency (D:\downloads\O2Os\O2O\node_modules\metro\src\node-haste\DependencyGraph.js:231:43)<br> &nbsp; &nbsp;at D:\downloads\O2Os\O2O\node_modules\metro\src\lib\transformHelpers.js:129:24<br> &nbsp; &nbsp;at Server._resolveRelativePath (D:\downloads\O2Os\O2O\node_modules\metro\src\Server.js:1107:12)<br> &nbsp; &nbsp;at async Server.requestProcessor [as _processBundleRequest] (D:\downloads\O2Os\O2O\node_modules\metro\src\Server.js:450:37)<br> &nbsp; &nbsp;at async Server._processRequest (D:\downloads\O2Os\O2O\node_modules\metro\src\Server.js:406:9)</pre>
+                                                                                                    </body>
+                                                                                                    </html>
+                                                                                                    
+                                                                                                    org.json.JSONException: Value <!DOCTYPE of type java.lang.String cannot be converted to JSONObject
+                                                                                                    	at org.json.JSON.typeMismatch(JSON.java:112)
+                                                                                                    	at org.json.JSONObject.<init>(JSONObject.java:172)
+                                                                                                    	at org.json.JSONObject.<init>(JSONObject.java:185)
+                                                                                                    	at com.facebook.react.common.DebugServerException.parse(DebugServerException.java:76)
+                                                                                                    	at com.facebook.react.devsupport.BundleDownloader.processBundleResult(BundleDownloader.java:251)
+                                                                                                    	at com.facebook.react.devsupport.BundleDownloader.access$200(BundleDownloader.java:34)
+                                                                                                    	at com.facebook.react.devsupport.BundleDownloader$1.onResponse(BundleDownloader.java:151)
+                                                                                                    	at okhttp3.internal.connection.RealCall$AsyncCall.run(RealCall.kt:519)
+                                                                                                    	at java.util.concurrent.ThreadPoolExecutor.runWorker(ThreadPoolExecutor.java:1100)
+                                                                                                    	at java.util.concurrent.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:624)
+                                                                                                    	at java.lang.Thread.run(Thread.java:1572)
+2026-07-06 23:43:03.877 27816-27848 unknown:ReactNative     com.anonymous.o2o                    E  Unable to download JS bundle (Fix with AI)
+                                                                                                    com.facebook.react.common.DebugServerException: The development server returned response error code: 500
+                                                                                                    
+                                                                                                    URL: http://localhost:8081/index.bundle?platform=android&dev=true&minify=false&app=com.anonymous.o2o&modulesOnly=false&runModule=true
+                                                                                                    
+                                                                                                    Body:
+                                                                                                    <!DOCTYPE html>
+                                                                                                    <html lang="en">
+                                                                                                    <head>
+                                                                                                    <meta charset="utf-8">
+                                                                                                    <title>Error</title>
+                                                                                                    </head>
+                                                                                                    <body>
+                                                                                                    <pre>Error: Unable to resolve module ./index from D:\downloads\O2Os\O2O/.: <br><br>None of these files exist:<br> &nbsp;* index(.native|.android.js|.native.js|.js|.android.json|.native.json|.json|.android.ts|.native.ts|.ts|.android.tsx|.native.tsx|.tsx)<br> &nbsp;* index\index(.native|.android.js|.native.js|.js|.android.json|.native.json|.json|.android.ts|.native.ts|.ts|.android.tsx|.native.tsx|.tsx)<br> &nbsp; &nbsp;at ModuleResolver.resolveDependency (D:\downloads\O2Os\O2O\node_modules\metro\src\node-haste\DependencyGraph\ModuleResolution.js:136:15)<br> &nbsp; &nbsp;at DependencyGraph.resolveDependency (D:\downloads\O2Os\O2O\node_modules\metro\src\node-haste\DependencyGraph.js:231:43)<br> &nbsp; &nbsp;at D:\downloads\O2Os\O2O\node_modules\metro\src\lib\transformHelpers.js:129:24<br> &nbsp; &nbsp;at Server._resolveRelativePath (D:\downloads\O2Os\O2O\node_modules\metro\src\Server.js:1107:12)<br> &nbsp; &nbsp;at async Server.requestProcessor [as _processBundleRequest] (D:\downloads\O2Os\O2O\node_modules\metro\src\Server.js:450:37)<br> &nbsp; &nbsp;at async Server._processRequest (D:\downloads\O2Os\O2O\node_modules\metro\src\Server.js:406:9)</pre>
+                                                                                                    </body>
+                                                                                                    </html>
+                                                                                                    
+                                                                                                    	at com.facebook.react.devsupport.BundleDownloader.processBundleResult(BundleDownloader.java:264)
+                                                                                                    	at com.facebook.react.devsupport.BundleDownloader.access$200(BundleDownloader.java:34)
+                                                                                                    	at com.facebook.react.devsupport.BundleDownloader$1.onResponse(BundleDownloader.java:151)
+                                                                                                    	at okhttp3.internal.connection.RealCall$AsyncCall.run(RealCall.kt:519)
+                                                                                                    	at java.util.concurrent.ThreadPoolExecutor.runWorker(ThreadPoolExecutor.java:1100)
+                                                                                                    	at java.util.concurrent.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:624)
+                                                                                                    	at java.lang.Thread.run(Thread.java:1572)
+2026-07-06 23:43:03.888 27816-27816 BufferQueueConsumer     com.anonymous.o2o                    D  [](id:6ca800000007,api:0,p:-1,c:27816) connect: controlledByApp=false
+2026-07-06 23:43:03.896 27816-27839 BLASTBufferQueue        com.anonymous.o2o                    D  [VRI[PopupWindow:6123c1e]#7](f:0,a:1) acquireNextBufferLocked size=1080x58 mFrameNumber=1 applyTransaction=true mTimestamp=9453617550332(auto) mPendingTransactions.size=0 graphicBufferId=119468810305565 transform=0
+2026-07-06 23:43:03.897 27816-27839 Parcel                  com.anonymous.o2o                    W  Expecting binder but got null!
+2026-07-06 23:43:03.913 27816-28015 BLASTBufferQueue        com.anonymous.o2o                    D  [VRI[PopupWindow:6123c1e]#7](f:0,a:1) destructor()
+2026-07-06 23:43:03.913 27816-28015 BufferQueueConsumer     com.anonymous.o2o                    D  [VRI[PopupWindow:6123c1e]#7(BLAST Consumer)7](id:6ca800000007,api:0,p:-1,c:27816) disconnect
+2026-07-06 23:43:03.922 27816-27816 unknown:ReactNative     com.anonymous.o2o                    E  Exception in native call (Fix with AI)
+                                                                                                    com.facebook.react.common.DebugServerException: The development server returned response error code: 500
+                                                                                                    
+                                                                                                    URL: http://localhost:8081/index.bundle?platform=android&dev=true&minify=false&app=com.anonymous.o2o&modulesOnly=false&runModule=true
+                                                                                                    
+                                                                                                    Body:
+                                                                                                    <!DOCTYPE html>
+                                                                                                    <html lang="en">
+                                                                                                    <head>
+                                                                                                    <meta charset="utf-8">
+                                                                                                    <title>Error</title>
+                                                                                                    </head>
+                                                                                                    <body>
+                                                                                                    <pre>Error: Unable to resolve module ./index from D:\downloads\O2Os\O2O/.: <br><br>None of these files exist:<br> &nbsp;* index(.native|.android.js|.native.js|.js|.android.json|.native.json|.json|.android.ts|.native.ts|.ts|.android.tsx|.native.tsx|.tsx)<br> &nbsp;* index\index(.native|.android.js|.native.js|.js|.android.json|.native.json|.json|.android.ts|.native.ts|.ts|.android.tsx|.native.tsx|.tsx)<br> &nbsp; &nbsp;at ModuleResolver.resolveDependency (D:\downloads\O2Os\O2O\node_modules\metro\src\node-haste\DependencyGraph\ModuleResolution.js:136:15)<br> &nbsp; &nbsp;at DependencyGraph.resolveDependency (D:\downloads\O2Os\O2O\node_modules\metro\src\node-haste\DependencyGraph.js:231:43)<br> &nbsp; &nbsp;at D:\downloads\O2Os\O2O\node_modules\metro\src\lib\transformHelpers.js:129:24<br> &nbsp; &nbsp;at Server._resolveRelativePath (D:\downloads\O2Os\O2O\node_modules\metro\src\Server.js:1107:12)<br> &nbsp; &nbsp;at async Server.requestProcessor [as _processBundleRequest] (D:\downloads\O2Os\O2O\node_modules\metro\src\Server.js:450:37)<br> &nbsp; &nbsp;at async Server._processRequest (D:\downloads\O2Os\O2O\node_modules\metro\src\Server.js:406:9)</pre>
+                                                                                                    </body>
+                                                                                                    </html>
+                                                                                                    
+                                                                                                    	at com.facebook.react.devsupport.BundleDownloader.processBundleResult(BundleDownloader.java:264)
+                                                                                                    	at com.facebook.react.devsupport.BundleDownloader.access$200(BundleDownloader.java:34)
+                                                                                                    	at com.facebook.react.devsupport.BundleDownloader$1.onResponse(BundleDownloader.java:151)
+                                                                                                    	at okhttp3.internal.connection.RealCall$AsyncCall.run(RealCall.kt:519)
+                                                                                                    	at java.util.concurrent.ThreadPoolExecutor.runWorker(ThreadPoolExecutor.java:1100)
+                                                                                                    	at java.util.concurrent.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:624)
+                                                                                                    	at java.lang.Thread.run(Thread.java:1572)
+2026-07-06 23:43:03.922 27816-27816 ImeFocusController      com.anonymous.o2o                    V  onWindowFocus: DecorView@5004509[MainActivity] softInputMode=STATE_UNSPECIFIED|ADJUST_RESIZE
+2026-07-06 23:43:03.923 27816-27816 ImeFocusController      com.anonymous.o2o                    D  onViewFocusChanged, view=DecorView@5004509[MainActivity], mServedView=DecorView@5004509[MainActivity]
+2026-07-06 23:43:03.923 27816-27816 ImeFocusController      com.anonymous.o2o                    V  checkFocus: view=DecorView@5004509[MainActivity] next=DecorView@5004509[MainActivity] immDelegate=delegate{e79436c displayId=0} force=true package=com.anonymous.o2o
+2026-07-06 23:43:03.969 27816-27816 BufferQueueConsumer     com.anonymous.o2o                    D  [](id:6ca800000008,api:0,p:-1,c:27816) connect: controlledByApp=false
+2026-07-06 23:43:04.005 27816-27839 BLASTBufferQueue        com.anonymous.o2o                    D  [VRI[MainActivity]#8](f:0,a:1) acquireNextBufferLocked size=1080x2400 mFrameNumber=1 applyTransaction=true mTimestamp=9453726073717(auto) mPendingTransactions.size=0 graphicBufferId=119468810305571 transform=0
+2026-07-06 23:43:04.006 27816-27839 Parcel                  com.anonymous.o2o                    W  Expecting binder but got null!
+2026-07-06 23:43:04.061 27816-27816 ImeFocusController      com.anonymous.o2o                    V  onWindowFocus: DecorView@ecd2b5c[MainActivity] softInputMode=STATE_UNSPECIFIED|ADJUST_RESIZE|IS_FORWARD_NAVIGATION
+2026-07-06 23:43:04.061 27816-27816 ImeFocusController      com.anonymous.o2o                    D  onViewFocusChanged, view=DecorView@ecd2b5c[MainActivity], mServedView=null
+2026-07-06 23:43:04.061 27816-27816 ImeFocusController      com.anonymous.o2o                    V  checkFocus: view=null next=DecorView@ecd2b5c[MainActivity] immDelegate=delegate{e79436c displayId=0} force=false package=<none>
+2026-07-06 23:43:05.433 27816-27816 SurfaceComposerClient   com.anonymous.o2o                    I  XDR setRegion is not supported 0xb400006e688fccb0, 1, 0
+2026-07-06 23:43:05.450 27816-27897 BLASTBufferQueue        com.anonymous.o2o                    D  [VRI[MainActivity]#8](f:0,a:1) destructor()
+2026-07-06 23:43:05.450 27816-27897 BufferQueueConsumer     com.anonymous.o2o                    D  [VRI[MainActivity]#8(BLAST Consumer)8](id:6ca800000008,api:0,p:-1,c:27816) disconnect
+2026-07-06 23:43:05.489 27816-27848 unknown:ReactNative     com.anonymous.o2o                    W  Could not parse DebugServerException from: <!DOCTYPE html> (Fix with AI)
+                                                                                                    <html lang="en">
+                                                                                                    <head>
+                                                                                                    <meta charset="utf-8">
+                                                                                                    <title>Error</title>
+                                                                                                    </head>
+                                                                                                    <body>
+                                                                                                    <pre>Error: Unable to resolve module ./index from D:\downloads\O2Os\O2O/.: <br><br>None of these files exist:<br> &nbsp;* index(.native|.android.js|.native.js|.js|.android.json|.native.json|.json|.android.ts|.native.ts|.ts|.android.tsx|.native.tsx|.tsx)<br> &nbsp;* index\index(.native|.android.js|.native.js|.js|.android.json|.native.json|.json|.android.ts|.native.ts|.ts|.android.tsx|.native.tsx|.tsx)<br> &nbsp; &nbsp;at ModuleResolver.resolveDependency (D:\downloads\O2Os\O2O\node_modules\metro\src\node-haste\DependencyGraph\ModuleResolution.js:136:15)<br> &nbsp; &nbsp;at DependencyGraph.resolveDependency (D:\downloads\O2Os\O2O\node_modules\metro\src\node-haste\DependencyGraph.js:231:43)<br> &nbsp; &nbsp;at D:\downloads\O2Os\O2O\node_modules\metro\src\lib\transformHelpers.js:129:24<br> &nbsp; &nbsp;at Server._resolveRelativePath (D:\downloads\O2Os\O2O\node_modules\metro\src\Server.js:1107:12)<br> &nbsp; &nbsp;at async Server.requestProcessor [as _processBundleRequest] (D:\downloads\O2Os\O2O\node_modules\metro\src\Server.js:450:37)<br> &nbsp; &nbsp;at async Server._processRequest (D:\downloads\O2Os\O2O\node_modules\metro\src\Server.js:406:9)</pre>
+                                                                                                    </body>
+                                                                                                    </html>
+                                                                                                    
+                                                                                                    org.json.JSONException: Value <!DOCTYPE of type java.lang.String cannot be converted to JSONObject
+                                                                                                    	at org.json.JSON.typeMismatch(JSON.java:112)
+                                                                                                    	at org.json.JSONObject.<init>(JSONObject.java:172)
+                                                                                                    	at org.json.JSONObject.<init>(JSONObject.java:185)
+                                                                                                    	at com.facebook.react.common.DebugServerException.parse(DebugServerException.java:76)
+                                                                                                    	at com.facebook.react.devsupport.BundleDownloader.processBundleResult(BundleDownloader.java:251)
+                                                                                                    	at com.facebook.react.devsupport.BundleDownloader.access$200(BundleDownloader.java:34)
+                                                                                                    	at com.facebook.react.devsupport.BundleDownloader$1.onResponse(BundleDownloader.java:151)
+                                                                                                    	at okhttp3.internal.connection.RealCall$AsyncCall.run(RealCall.kt:519)
+                                                                                                    	at java.util.concurrent.ThreadPoolExecutor.runWorker(ThreadPoolExecutor.java:1100)
+                                                                                                    	at java.util.concurrent.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:624)
+                                                                                                    	at java.lang.Thread.run(Thread.java:1572)
+2026-07-06 23:43:05.489 27816-27816 BufferQueueConsumer     com.anonymous.o2o                    D  [](id:6ca800000009,api:0,p:-1,c:27816) connect: controlledByApp=false
+2026-07-06 23:43:05.490 27816-27848 unknown:ReactNative     com.anonymous.o2o                    E  Unable to download JS bundle (Fix with AI)
+                                                                                                    com.facebook.react.common.DebugServerException: The development server returned response error code: 500
+                                                                                                    
+                                                                                                    URL: http://localhost:8081/index.bundle?platform=android&dev=true&minify=false&app=com.anonymous.o2o&modulesOnly=false&runModule=true
+                                                                                                    
+                                                                                                    Body:
+                                                                                                    <!DOCTYPE html>
+                                                                                                    <html lang="en">
+                                                                                                    <head>
+                                                                                                    <meta charset="utf-8">
+                                                                                                    <title>Error</title>
+                                                                                                    </head>
+                                                                                                    <body>
+                                                                                                    <pre>Error: Unable to resolve module ./index from D:\downloads\O2Os\O2O/.: <br><br>None of these files exist:<br> &nbsp;* index(.native|.android.js|.native.js|.js|.android.json|.native.json|.json|.android.ts|.native.ts|.ts|.android.tsx|.native.tsx|.tsx)<br> &nbsp;* index\index(.native|.android.js|.native.js|.js|.android.json|.native.json|.json|.android.ts|.native.ts|.ts|.android.tsx|.native.tsx|.tsx)<br> &nbsp; &nbsp;at ModuleResolver.resolveDependency (D:\downloads\O2Os\O2O\node_modules\metro\src\node-haste\DependencyGraph\ModuleResolution.js:136:15)<br> &nbsp; &nbsp;at DependencyGraph.resolveDependency (D:\downloads\O2Os\O2O\node_modules\metro\src\node-haste\DependencyGraph.js:231:43)<br> &nbsp; &nbsp;at D:\downloads\O2Os\O2O\node_modules\metro\src\lib\transformHelpers.js:129:24<br> &nbsp; &nbsp;at Server._resolveRelativePath (D:\downloads\O2Os\O2O\node_modules\metro\src\Server.js:1107:12)<br> &nbsp; &nbsp;at async Server.requestProcessor [as _processBundleRequest] (D:\downloads\O2Os\O2O\node_modules\metro\src\Server.js:450:37)<br> &nbsp; &nbsp;at async Server._processRequest (D:\downloads\O2Os\O2O\node_modules\metro\src\Server.js:406:9)</pre>
+                                                                                                    </body>
+                                                                                                    </html>
+                                                                                                    
+                                                                                                    	at com.facebook.react.devsupport.BundleDownloader.processBundleResult(BundleDownloader.java:264)
+                                                                                                    	at com.facebook.react.devsupport.BundleDownloader.access$200(BundleDownloader.java:34)
+                                                                                                    	at com.facebook.react.devsupport.BundleDownloader$1.onResponse(BundleDownloader.java:151)
+                                                                                                    	at okhttp3.internal.connection.RealCall$AsyncCall.run(RealCall.kt:519)
+                                                                                                    	at java.util.concurrent.ThreadPoolExecutor.runWorker(ThreadPoolExecutor.java:1100)
+                                                                                                    	at java.util.concurrent.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:624)
+                                                                                                    	at java.lang.Thread.run(Thread.java:1572)
+2026-07-06 23:43:05.496 27816-27839 BLASTBufferQueue        com.anonymous.o2o                    D  [VRI[PopupWindow:88643b6]#9](f:0,a:1) acquireNextBufferLocked size=1080x58 mFrameNumber=1 applyTransaction=true mTimestamp=9455217608409(auto) mPendingTransactions.size=0 graphicBufferId=119468810305572 transform=0
+2026-07-06 23:43:05.498 27816-27839 Parcel                  com.anonymous.o2o                    W  Expecting binder but got null!
+2026-07-06 23:43:05.499 27816-27816 ImeFocusController      com.anonymous.o2o                    V  onWindowFocus: DecorView@5004509[MainActivity] softInputMode=STATE_UNSPECIFIED|ADJUST_RESIZE
+2026-07-06 23:43:05.499 27816-27816 ImeFocusController      com.anonymous.o2o                    D  onViewFocusChanged, view=DecorView@5004509[MainActivity], mServedView=DecorView@5004509[MainActivity]
+2026-07-06 23:43:05.499 27816-27816 ImeFocusController      com.anonymous.o2o                    V  checkFocus: view=DecorView@5004509[MainActivity] next=DecorView@5004509[MainActivity] immDelegate=delegate{e79436c displayId=0} force=true package=com.anonymous.o2o
+2026-07-06 23:43:05.515 27816-27897 BLASTBufferQueue        com.anonymous.o2o                    D  [VRI[PopupWindow:88643b6]#9](f:0,a:1) destructor()
+2026-07-06 23:43:05.515 27816-27897 BufferQueueConsumer     com.anonymous.o2o                    D  [VRI[PopupWindow:88643b6]#9(BLAST Consumer)9](id:6ca800000009,api:0,p:-1,c:27816) disconnect
+2026-07-06 23:43:05.528 27816-27816 unknown:ReactNative     com.anonymous.o2o                    E  Exception in native call (Fix with AI)
+                                                                                                    com.facebook.react.common.DebugServerException: The development server returned response error code: 500
+                                                                                                    
+                                                                                                    URL: http://localhost:8081/index.bundle?platform=android&dev=true&minify=false&app=com.anonymous.o2o&modulesOnly=false&runModule=true
+                                                                                                    
+                                                                                                    Body:
+                                                                                                    <!DOCTYPE html>
+                                                                                                    <html lang="en">
+                                                                                                    <head>
+                                                                                                    <meta charset="utf-8">
+                                                                                                    <title>Error</title>
+                                                                                                    </head>
+                                                                                                    <body>
+                                                                                                    <pre>Error: Unable to resolve module ./index from D:\downloads\O2Os\O2O/.: <br><br>None of these files exist:<br> &nbsp;* index(.native|.android.js|.native.js|.js|.android.json|.native.json|.json|.android.ts|.native.ts|.ts|.android.tsx|.native.tsx|.tsx)<br> &nbsp;* index\index(.native|.android.js|.native.js|.js|.android.json|.native.json|.json|.android.ts|.native.ts|.ts|.android.tsx|.native.tsx|.tsx)<br> &nbsp; &nbsp;at ModuleResolver.resolveDependency (D:\downloads\O2Os\O2O\node_modules\metro\src\node-haste\DependencyGraph\ModuleResolution.js:136:15)<br> &nbsp; &nbsp;at DependencyGraph.resolveDependency (D:\downloads\O2Os\O2O\node_modules\metro\src\node-haste\DependencyGraph.js:231:43)<br> &nbsp; &nbsp;at D:\downloads\O2Os\O2O\node_modules\metro\src\lib\transformHelpers.js:129:24<br> &nbsp; &nbsp;at Server._resolveRelativePath (D:\downloads\O2Os\O2O\node_modules\metro\src\Server.js:1107:12)<br> &nbsp; &nbsp;at async Server.requestProcessor [as _processBundleRequest] (D:\downloads\O2Os\O2O\node_modules\metro\src\Server.js:450:37)<br> &nbsp; &nbsp;at async Server._processRequest (D:\downloads\O2Os\O2O\node_modules\metro\src\Server.js:406:9)</pre>
+                                                                                                    </body>
+                                                                                                    </html>
+                                                                                                    
+                                                                                                    	at com.facebook.react.devsupport.BundleDownloader.processBundleResult(BundleDownloader.java:264)
+                                                                                                    	at com.facebook.react.devsupport.BundleDownloader.access$200(BundleDownloader.java:34)
+                                                                                                    	at com.facebook.react.devsupport.BundleDownloader$1.onResponse(BundleDownloader.java:151)
+                                                                                                    	at okhttp3.internal.connection.RealCall$AsyncCall.run(RealCall.kt:519)
+                                                                                                    	at java.util.concurrent.ThreadPoolExecutor.runWorker(ThreadPoolExecutor.java:1100)
+                                                                                                    	at java.util.concurrent.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:624)
+                                                                                                    	at java.lang.Thread.run(Thread.java:1572)
+2026-07-06 23:43:05.584 27816-27816 BufferQueueConsumer     com.anonymous.o2o                    D  [](id:6ca80000000a,api:0,p:-1,c:27816) connect: controlledByApp=false
+2026-07-06 23:43:05.638 27816-27839 BLASTBufferQueue        com.anonymous.o2o                    D  [VRI[MainActivity]#10](f:0,a:1) acquireNextBufferLocked size=1080x2400 mFrameNumber=1 applyTransaction=true mTimestamp=9455358721332(auto) mPendingTransactions.size=0 graphicBufferId=119468810305579 transform=0
+2026-07-06 23:43:05.639 27816-27839 Parcel                  com.anonymous.o2o                    W  Expecting binder but got null!
+2026-07-06 23:43:05.696 27816-27816 ImeFocusController      com.anonymous.o2o                    V  onWindowFocus: DecorView@38c4ab4[MainActivity] softInputMode=STATE_UNSPECIFIED|ADJUST_RESIZE|IS_FORWARD_NAVIGATION
+2026-07-06 23:43:05.696 27816-27816 ImeFocusController      com.anonymous.o2o                    D  onViewFocusChanged, view=DecorView@38c4ab4[MainActivity], mServedView=null
+2026-07-06 23:43:05.696 27816-27816 ImeFocusController      com.anonymous.o2o                    V  checkFocus: view=null next=DecorView@38c4ab4[MainActivity] immDelegate=delegate{e79436c displayId=0} force=false package=<none>
+2026-07-06 23:43:06.953 27816-27816 SurfaceComposerClient   com.anonymous.o2o                    I  XDR setRegion is not supported 0xb400006e68884e90, 1, 0
+2026-07-06 23:43:06.964 27816-27833 BLASTBufferQueue        com.anonymous.o2o                    D  [VRI[MainActivity]#10](f:0,a:1) destructor()
+2026-07-06 23:43:06.964 27816-27833 BufferQueueConsumer     com.anonymous.o2o                    D  [VRI[MainActivity]#10(BLAST Consumer)10](id:6ca80000000a,api:0,p:-1,c:27816) disconnect
+2026-07-06 23:43:07.012 27816-27816 ImeFocusController      com.anonymous.o2o                    V  onWindowFocus: DecorView@5004509[MainActivity] softInputMode=STATE_UNSPECIFIED|ADJUST_RESIZE
+2026-07-06 23:43:07.012 27816-27816 ImeFocusController      com.anonymous.o2o                    D  onViewFocusChanged, view=DecorView@5004509[MainActivity], mServedView=DecorView@5004509[MainActivity]
+2026-07-06 23:43:07.013 27816-27816 ImeFocusController      com.anonymous.o2o                    V  checkFocus: view=DecorView@5004509[MainActivity] next=DecorView@5004509[MainActivity] immDelegate=delegate{e79436c displayId=0} force=true package=com.anonymous.o2o
