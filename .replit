@@ -10,6 +10,10 @@ channel = "stable-25_05"
 
 [userenv.shared]
 PORT = "3001"
+ADMIN_EMAIL = "admin@o2o.com"
+ADMIN_NAME = "Super Admin"
+CLOUDINARY_CLOUD_NAME = "dwakrzkzj"
+CLOUDINARY_API_KEY = "o2o"
 
 [workflows]
 runButton = "Project"
