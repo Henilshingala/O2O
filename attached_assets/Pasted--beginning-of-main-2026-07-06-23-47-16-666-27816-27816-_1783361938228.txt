@@ -1,0 +1,487 @@
+--------- beginning of main
+2026-07-06 23:47:16.666 27816-27816 BLASTBufferQueue        com.anonymous.o2o                    D  [VRI[MainActivity]#0](f:0,a:1) destructor()
+2026-07-06 23:47:16.666 27816-27816 BufferQueueConsumer     com.anonymous.o2o                    D  [VRI[MainActivity]#0(BLAST Consumer)0](id:6ca800000000,api:0,p:-1,c:27816) disconnect
+--------- beginning of system
+---------------------------- PROCESS STARTED (28871) for package com.anonymous.o2o ----------------------------
+2026-07-06 23:47:50.314 28871-28871 NetworkSecurityConfig   com.anonymous.o2o                    D  No Network Security Config specified, using platform default
+2026-07-06 23:47:50.316 28871-28871 NetworkSecurityConfig   com.anonymous.o2o                    D  No Network Security Config specified, using platform default
+2026-07-06 23:47:50.601 28871-28871 Process                 com.anonymous.o2o                    I  Sending signal. PID: 28871 SIG: 9
+---------------------------- PROCESS ENDED (28871) for package com.anonymous.o2o ----------------------------
+---------------------------- PROCESS STARTED (28981) for package com.anonymous.o2o ----------------------------
+2026-07-06 23:47:51.913 28981-28981 ApkSoSource             com.anonymous.o2o                    D  not allowing consideration of lib/arm64-v8a/libbutter.so: deferring to libdir
+2026-07-06 23:47:51.913 28981-28981 ApkSoSource             com.anonymous.o2o                    D  not allowing consideration of lib/arm64-v8a/libc++_shared.so: deferring to libdir
+2026-07-06 23:47:51.914 28981-28981 ApkSoSource             com.anonymous.o2o                    D  not allowing consideration of lib/arm64-v8a/libfabricjni.so: deferring to libdir
+2026-07-06 23:47:51.914 28981-28981 ApkSoSource             com.anonymous.o2o                    D  not allowing consideration of lib/arm64-v8a/libfb.so: deferring to libdir
+2026-07-06 23:47:51.914 28981-28981 ApkSoSource             com.anonymous.o2o                    D  not allowing consideration of lib/arm64-v8a/libfbjni.so: deferring to libdir
+2026-07-06 23:47:51.914 28981-28981 ApkSoSource             com.anonymous.o2o                    D  not allowing consideration of lib/arm64-v8a/libfolly_futures.so: deferring to libdir
+2026-07-06 23:47:51.915 28981-28981 ApkSoSource             com.anonymous.o2o                    D  not allowing consideration of lib/arm64-v8a/libfolly_json.so: deferring to libdir
+2026-07-06 23:47:51.915 28981-28981 ApkSoSource             com.anonymous.o2o                    D  not allowing consideration of lib/arm64-v8a/libglog.so: deferring to libdir
+2026-07-06 23:47:51.915 28981-28981 ApkSoSource             com.anonymous.o2o                    D  not allowing consideration of lib/arm64-v8a/libglog_init.so: deferring to libdir
+2026-07-06 23:47:51.915 28981-28981 ApkSoSource             com.anonymous.o2o                    D  not allowing consideration of lib/arm64-v8a/libhermes-executor-debug.so: deferring to libdir
+2026-07-06 23:47:51.916 28981-28981 ApkSoSource             com.anonymous.o2o                    D  not allowing consideration of lib/arm64-v8a/libhermes-executor-release.so: deferring to libdir
+2026-07-06 23:47:51.916 28981-28981 ApkSoSource             com.anonymous.o2o                    D  not allowing consideration of lib/arm64-v8a/libhermes.so: deferring to libdir
+2026-07-06 23:47:51.916 28981-28981 ApkSoSource             com.anonymous.o2o                    D  not allowing consideration of lib/arm64-v8a/libimagepipeline.so: deferring to libdir
+2026-07-06 23:47:51.916 28981-28981 ApkSoSource             com.anonymous.o2o                    D  not allowing consideration of lib/arm64-v8a/libjscexecutor.so: deferring to libdir
+2026-07-06 23:47:51.916 28981-28981 ApkSoSource             com.anonymous.o2o                    D  not allowing consideration of lib/arm64-v8a/libjsi.so: deferring to libdir
+2026-07-06 23:47:51.917 28981-28981 ApkSoSource             com.anonymous.o2o                    D  not allowing consideration of lib/arm64-v8a/libjsijniprofiler.so: deferring to libdir
+2026-07-06 23:47:51.917 28981-28981 ApkSoSource             com.anonymous.o2o                    D  not allowing consideration of lib/arm64-v8a/libjsinspector.so: deferring to libdir
+2026-07-06 23:47:51.917 28981-28981 ApkSoSource             com.anonymous.o2o                    D  not allowing consideration of lib/arm64-v8a/liblogger.so: deferring to libdir
+2026-07-06 23:47:51.917 28981-28981 ApkSoSource             com.anonymous.o2o                    D  not allowing consideration of lib/arm64-v8a/libmapbufferjni.so: deferring to libdir
+2026-07-06 23:47:51.918 28981-28981 ApkSoSource             com.anonymous.o2o                    D  not allowing consideration of lib/arm64-v8a/libnative-filters.so: deferring to libdir
+2026-07-06 23:47:51.918 28981-28981 ApkSoSource             com.anonymous.o2o                    D  not allowing consideration of lib/arm64-v8a/libnative-imagetranscoder.so: deferring to libdir
+2026-07-06 23:47:51.918 28981-28981 ApkSoSource             com.anonymous.o2o                    D  not allowing consideration of lib/arm64-v8a/libreact_codegen_rncore.so: deferring to libdir
+2026-07-06 23:47:51.918 28981-28981 ApkSoSource             com.anonymous.o2o                    D  not allowing consideration of lib/arm64-v8a/libreact_config.so: deferring to libdir
+2026-07-06 23:47:51.919 28981-28981 ApkSoSource             com.anonymous.o2o                    D  not allowing consideration of lib/arm64-v8a/libreact_debug.so: deferring to libdir
+2026-07-06 23:47:51.919 28981-28981 ApkSoSource             com.anonymous.o2o                    D  not allowing consideration of lib/arm64-v8a/libreact_nativemodule_core.so: deferring to libdir
+2026-07-06 23:47:51.919 28981-28981 ApkSoSource             com.anonymous.o2o                    D  not allowing consideration of lib/arm64-v8a/libreact_render_animations.so: deferring to libdir
+2026-07-06 23:47:51.919 28981-28981 ApkSoSource             com.anonymous.o2o                    D  not allowing consideration of lib/arm64-v8a/libreact_render_attributedstring.so: deferring to libdir
+2026-07-06 23:47:51.920 28981-28981 ApkSoSource             com.anonymous.o2o                    D  not allowing consideration of lib/arm64-v8a/libreact_render_componentregistry.so: deferring to libdir
+2026-07-06 23:47:51.920 28981-28981 ApkSoSource             com.anonymous.o2o                    D  not allowing consideration of lib/arm64-v8a/libreact_render_core.so: deferring to libdir
+2026-07-06 23:47:51.920 28981-28981 ApkSoSource             com.anonymous.o2o                    D  not allowing consideration of lib/arm64-v8a/libreact_render_debug.so: deferring to libdir
+2026-07-06 23:47:51.920 28981-28981 ApkSoSource             com.anonymous.o2o                    D  not allowing consideration of lib/arm64-v8a/libreact_render_graphics.so: deferring to libdir
+2026-07-06 23:47:51.922 28981-28981 ApkSoSource             com.anonymous.o2o                    D  not allowing consideration of lib/arm64-v8a/libreact_render_imagemanager.so: deferring to libdir
+2026-07-06 23:47:51.922 28981-28981 ApkSoSource             com.anonymous.o2o                    D  not allowing consideration of lib/arm64-v8a/libreact_render_leakchecker.so: deferring to libdir
+2026-07-06 23:47:51.922 28981-28981 ApkSoSource             com.anonymous.o2o                    D  not allowing consideration of lib/arm64-v8a/libreact_render_mapbuffer.so: deferring to libdir
+2026-07-06 23:47:51.923 28981-28981 ApkSoSource             com.anonymous.o2o                    D  not allowing consideration of lib/arm64-v8a/libreact_render_mounting.so: deferring to libdir
+2026-07-06 23:47:51.923 28981-28981 ApkSoSource             com.anonymous.o2o                    D  not allowing consideration of lib/arm64-v8a/libreact_render_runtimescheduler.so: deferring to libdir
+2026-07-06 23:47:51.923 28981-28981 ApkSoSource             com.anonymous.o2o                    D  not allowing consideration of lib/arm64-v8a/libreact_render_scheduler.so: deferring to libdir
+2026-07-06 23:47:51.923 28981-28981 ApkSoSource             com.anonymous.o2o                    D  not allowing consideration of lib/arm64-v8a/libreact_render_telemetry.so: deferring to libdir
+2026-07-06 23:47:51.924 28981-28981 ApkSoSource             com.anonymous.o2o                    D  not allowing consideration of lib/arm64-v8a/libreact_render_templateprocessor.so: deferring to libdir
+2026-07-06 23:47:51.924 28981-28981 ApkSoSource             com.anonymous.o2o                    D  not allowing consideration of lib/arm64-v8a/libreact_render_textlayoutmanager.so: deferring to libdir
+2026-07-06 23:47:51.924 28981-28981 ApkSoSource             com.anonymous.o2o                    D  not allowing consideration of lib/arm64-v8a/libreact_render_uimanager.so: deferring to libdir
+2026-07-06 23:47:51.925 28981-28981 ApkSoSource             com.anonymous.o2o                    D  not allowing consideration of lib/arm64-v8a/libreact_utils.so: deferring to libdir
+2026-07-06 23:47:51.925 28981-28981 ApkSoSource             com.anonymous.o2o                    D  not allowing consideration of lib/arm64-v8a/libreactnativeblob.so: deferring to libdir
+2026-07-06 23:47:51.925 28981-28981 ApkSoSource             com.anonymous.o2o                    D  not allowing consideration of lib/arm64-v8a/libreactnativejni.so: deferring to libdir
+2026-07-06 23:47:51.925 28981-28981 ApkSoSource             com.anonymous.o2o                    D  not allowing consideration of lib/arm64-v8a/libreactperfloggerjni.so: deferring to libdir
+2026-07-06 23:47:51.926 28981-28981 ApkSoSource             com.anonymous.o2o                    D  not allowing consideration of lib/arm64-v8a/libreanimated.so: deferring to libdir
+2026-07-06 23:47:51.926 28981-28981 ApkSoSource             com.anonymous.o2o                    D  not allowing consideration of lib/arm64-v8a/librrc_image.so: deferring to libdir
+2026-07-06 23:47:51.926 28981-28981 ApkSoSource             com.anonymous.o2o                    D  not allowing consideration of lib/arm64-v8a/librrc_root.so: deferring to libdir
+2026-07-06 23:47:51.926 28981-28981 ApkSoSource             com.anonymous.o2o                    D  not allowing consideration of lib/arm64-v8a/librrc_text.so: deferring to libdir
+2026-07-06 23:47:51.926 28981-28981 ApkSoSource             com.anonymous.o2o                    D  not allowing consideration of lib/arm64-v8a/librrc_unimplementedview.so: deferring to libdir
+2026-07-06 23:47:51.927 28981-28981 ApkSoSource             com.anonymous.o2o                    D  not allowing consideration of lib/arm64-v8a/librrc_view.so: deferring to libdir
+2026-07-06 23:47:51.927 28981-28981 ApkSoSource             com.anonymous.o2o                    D  not allowing consideration of lib/arm64-v8a/libruntimeexecutor.so: deferring to libdir
+2026-07-06 23:47:51.927 28981-28981 ApkSoSource             com.anonymous.o2o                    D  not allowing consideration of lib/arm64-v8a/libturbomodulejsijni.so: deferring to libdir
+2026-07-06 23:47:51.927 28981-28981 ApkSoSource             com.anonymous.o2o                    D  not allowing consideration of lib/arm64-v8a/libyoga.so: deferring to libdir
+2026-07-06 23:47:51.928 28981-28981 fb-UnpackingSoSource    com.anonymous.o2o                    V  regenerating DSO store com.facebook.soloader.ApkSoSource
+2026-07-06 23:47:51.928 28981-28981 fb-UnpackingSoSource    com.anonymous.o2o                    V  Finished regenerating DSO store com.facebook.soloader.ApkSoSource
+2026-07-06 23:47:51.929 28981-28981 fb-UnpackingSoSource    com.anonymous.o2o                    V  starting syncer worker
+2026-07-06 23:47:51.932 28981-28981 fb-UnpackingSoSource    com.anonymous.o2o                    V  releasing dso store lock for /data/user/0/com.anonymous.o2o/lib-main (from syncer thread)
+2026-07-06 23:47:51.932 28981-28981 fb-UnpackingSoSource    com.anonymous.o2o                    V  not releasing dso store lock for /data/user/0/com.anonymous.o2o/lib-main (syncer thread started)
+2026-07-06 23:47:51.989 28981-28981 AppCompatDelegate       com.anonymous.o2o                    D  Checking for metadata for AppLocalesMetadataHolderService : Service not found
+2026-07-06 23:47:52.041 28981-28981 SoLoader                com.anonymous.o2o                    D  libjscexecutor.so not found on /data/data/com.anonymous.o2o/lib-main
+2026-07-06 23:47:52.041 28981-28981 SoLoader                com.anonymous.o2o                    D  libjscexecutor.so found on /data/app/~~JptdIzhfLfevtn2ft7Q7fQ==/com.anonymous.o2o-vbOXqXGKc0mEHF7c1Ep6Yw==/lib/arm64
+2026-07-06 23:47:52.042 28981-28981 SoLoader                com.anonymous.o2o                    D  Not resolving dependencies for libjscexecutor.so
+2026-07-06 23:47:52.043 28981-28981 nativeloader            com.anonymous.o2o                    D  Load /data/app/~~JptdIzhfLfevtn2ft7Q7fQ==/com.anonymous.o2o-vbOXqXGKc0mEHF7c1Ep6Yw==/lib/arm64/libjscexecutor.so using class loader ns clns-4 (caller=/data/app/~~JptdIzhfLfevtn2ft7Q7fQ==/com.anonymous.o2o-vbOXqXGKc0mEHF7c1Ep6Yw==/base.apk): dlopen failed: library "libjsc.so" not found: needed by /data/app/~~JptdIzhfLfevtn2ft7Q7fQ==/com.anonymous.o2o-vbOXqXGKc0mEHF7c1Ep6Yw==/lib/arm64/libjscexecutor.so in namespace clns-4
+2026-07-06 23:47:52.044 28981-28981 System.err              com.anonymous.o2o                    W  java.lang.UnsatisfiedLinkError: dlopen failed: library "libjsc.so" not found: needed by /data/app/~~JptdIzhfLfevtn2ft7Q7fQ==/com.anonymous.o2o-vbOXqXGKc0mEHF7c1Ep6Yw==/lib/arm64/libjscexecutor.so in namespace clns-4
+2026-07-06 23:47:52.044 28981-28981 System.err              com.anonymous.o2o                    W  	at java.lang.Runtime.load0(Runtime.java:962)
+2026-07-06 23:47:52.044 28981-28981 System.err              com.anonymous.o2o                    W  	at java.lang.System.load(System.java:1729)
+2026-07-06 23:47:52.044 28981-28981 System.err              com.anonymous.o2o                    W  	at com.facebook.soloader.SoLoader$1.load(SoLoader.java:529)
+2026-07-06 23:47:52.044 28981-28981 System.err              com.anonymous.o2o                    W  	at com.facebook.soloader.DirectorySoSource.loadLibraryFrom(DirectorySoSource.java:110)
+2026-07-06 23:47:52.044 28981-28981 System.err              com.anonymous.o2o                    W  	at com.facebook.soloader.DirectorySoSource.loadLibrary(DirectorySoSource.java:63)
+2026-07-06 23:47:52.044 28981-28981 System.err              com.anonymous.o2o                    W  	at com.facebook.soloader.ApplicationSoSource.loadLibrary(ApplicationSoSource.java:91)
+2026-07-06 23:47:52.044 28981-28981 System.err              com.anonymous.o2o                    W  	at com.facebook.soloader.SoLoader.doLoadLibraryBySoName(SoLoader.java:1038)
+2026-07-06 23:47:52.044 28981-28981 System.err              com.anonymous.o2o                    W  	at com.facebook.soloader.SoLoader.loadLibraryBySoNameImpl(SoLoader.java:914)
+2026-07-06 23:47:52.044 28981-28981 System.err              com.anonymous.o2o                    W  	at com.facebook.soloader.SoLoader.loadLibraryBySoName(SoLoader.java:826)
+2026-07-06 23:47:52.044 28981-28981 System.err              com.anonymous.o2o                    W  	at com.facebook.soloader.SoLoader.loadLibrary(SoLoader.java:773)
+2026-07-06 23:47:52.044 28981-28981 System.err              com.anonymous.o2o                    W  	at com.facebook.soloader.SoLoader.loadLibrary(SoLoader.java:743)
+2026-07-06 23:47:52.044 28981-28981 System.err              com.anonymous.o2o                    W  	at com.facebook.react.jscexecutor.JSCExecutor.loadLibrary(JSCExecutor.java:24)
+2026-07-06 23:47:52.044 28981-28981 System.err              com.anonymous.o2o                    W  	at com.facebook.react.jscexecutor.JSCExecutor.<clinit>(JSCExecutor.java:20)
+2026-07-06 23:47:52.045 28981-28981 System.err              com.anonymous.o2o                    W  	at com.facebook.react.ReactInstanceManagerBuilder.getDefaultJSExecutorFactory(ReactInstanceManagerBuilder.java:388)
+2026-07-06 23:47:52.045 28981-28981 System.err              com.anonymous.o2o                    W  	at com.facebook.react.ReactInstanceManagerBuilder.build(ReactInstanceManagerBuilder.java:344)
+2026-07-06 23:47:52.045 28981-28981 System.err              com.anonymous.o2o                    W  	at com.facebook.react.ReactNativeHost.createReactInstanceManager(ReactNativeHost.java:95)
+2026-07-06 23:47:52.045 28981-28981 System.err              com.anonymous.o2o                    W  	at com.facebook.react.ReactNativeHost.getReactInstanceManager(ReactNativeHost.java:42)
+2026-07-06 23:47:52.045 28981-28981 System.err              com.anonymous.o2o                    W  	at com.facebook.react.ReactDelegate.loadApp(ReactDelegate.java:104)
+2026-07-06 23:47:52.045 28981-28981 System.err              com.anonymous.o2o                    W  	at com.facebook.react.ReactActivityDelegate.loadApp(ReactActivityDelegate.java:91)
+2026-07-06 23:47:52.045 28981-28981 System.err              com.anonymous.o2o                    W  	at com.facebook.react.ReactActivityDelegate.onCreate(ReactActivityDelegate.java:86)
+2026-07-06 23:47:52.045 28981-28981 System.err              com.anonymous.o2o                    W  	at com.facebook.react.ReactActivity.onCreate(ReactActivity.java:46)
+2026-07-06 23:47:52.045 28981-28981 System.err              com.anonymous.o2o                    W  	at android.app.Activity.performCreate(Activity.java:8696)
+2026-07-06 23:47:52.045 28981-28981 System.err              com.anonymous.o2o                    W  	at android.app.Activity.performCreate(Activity.java:8665)
+2026-07-06 23:47:52.045 28981-28981 System.err              com.anonymous.o2o                    W  	at android.app.Instrumentation.callActivityOnCreate(Instrumentation.java:1384)
+2026-07-06 23:47:52.045 28981-28981 System.err              com.anonymous.o2o                    W  	at android.app.ActivityThread.performLaunchActivity(ActivityThread.java:3947)
+2026-07-06 23:47:52.045 28981-28981 System.err              com.anonymous.o2o                    W  	at android.app.ActivityThread.handleLaunchActivity(ActivityThread.java:4111)
+2026-07-06 23:47:52.045 28981-28981 System.err              com.anonymous.o2o                    W  	at android.app.servertransaction.LaunchActivityItem.execute(LaunchActivityItem.java:101)
+2026-07-06 23:47:52.045 28981-28981 System.err              com.anonymous.o2o                    W  	at android.app.servertransaction.TransactionExecutor.executeCallbacks(TransactionExecutor.java:135)
+2026-07-06 23:47:52.045 28981-28981 System.err              com.anonymous.o2o                    W  	at android.app.servertransaction.TransactionExecutor.execute(TransactionExecutor.java:95)
+2026-07-06 23:47:52.045 28981-28981 System.err              com.anonymous.o2o                    W  	at android.app.ActivityThread$H.handleMessage(ActivityThread.java:2526)
+2026-07-06 23:47:52.046 28981-28981 System.err              com.anonymous.o2o                    W  	at android.os.Handler.dispatchMessage(Handler.java:106)
+2026-07-06 23:47:52.046 28981-28981 System.err              com.anonymous.o2o                    W  	at android.os.Looper.loopOnce(Looper.java:223)
+2026-07-06 23:47:52.046 28981-28981 System.err              com.anonymous.o2o                    W  	at android.os.Looper.loop(Looper.java:324)
+2026-07-06 23:47:52.046 28981-28981 System.err              com.anonymous.o2o                    W  	at android.app.ActivityThread.main(ActivityThread.java:8481)
+2026-07-06 23:47:52.046 28981-28981 System.err              com.anonymous.o2o                    W  	at java.lang.reflect.Method.invoke(Native Method)
+2026-07-06 23:47:52.046 28981-28981 System.err              com.anonymous.o2o                    W  	at com.android.internal.os.RuntimeInit$MethodAndArgsCaller.run(RuntimeInit.java:582)
+2026-07-06 23:47:52.046 28981-28981 System.err              com.anonymous.o2o                    W  	at com.android.internal.os.ZygoteInit.main(ZygoteInit.java:1061)
+2026-07-06 23:47:52.046 28981-28981 SoLoader                com.anonymous.o2o                    E  couldn't find DSO to load: libjscexecutor.so caused by: dlopen failed: library "libjsc.so" not found: needed by /data/app/~~JptdIzhfLfevtn2ft7Q7fQ==/com.anonymous.o2o-vbOXqXGKc0mEHF7c1Ep6Yw==/lib/arm64/libjscexecutor.so in namespace clns-4 result: 0
+2026-07-06 23:47:52.052 28981-28981 SoLoader                com.anonymous.o2o                    D  libhermes.so not found on /data/data/com.anonymous.o2o/lib-main
+2026-07-06 23:47:52.052 28981-28981 SoLoader                com.anonymous.o2o                    D  libhermes.so found on /data/app/~~JptdIzhfLfevtn2ft7Q7fQ==/com.anonymous.o2o-vbOXqXGKc0mEHF7c1Ep6Yw==/lib/arm64
+2026-07-06 23:47:52.052 28981-28981 SoLoader                com.anonymous.o2o                    D  Not resolving dependencies for libhermes.so
+2026-07-06 23:47:52.055 28981-28981 nativeloader            com.anonymous.o2o                    D  Load /data/app/~~JptdIzhfLfevtn2ft7Q7fQ==/com.anonymous.o2o-vbOXqXGKc0mEHF7c1Ep6Yw==/lib/arm64/libhermes.so using class loader ns clns-4 (caller=/data/app/~~JptdIzhfLfevtn2ft7Q7fQ==/com.anonymous.o2o-vbOXqXGKc0mEHF7c1Ep6Yw==/base.apk): ok
+2026-07-06 23:47:52.056 28981-28981 SoLoader                com.anonymous.o2o                    D  libhermes-executor-debug.so not found on /data/data/com.anonymous.o2o/lib-main
+2026-07-06 23:47:52.057 28981-28981 SoLoader                com.anonymous.o2o                    D  libhermes-executor-debug.so found on /data/app/~~JptdIzhfLfevtn2ft7Q7fQ==/com.anonymous.o2o-vbOXqXGKc0mEHF7c1Ep6Yw==/lib/arm64
+2026-07-06 23:47:52.057 28981-28981 SoLoader                com.anonymous.o2o                    D  Not resolving dependencies for libhermes-executor-debug.so
+2026-07-06 23:47:52.064 28981-28981 nativeloader            com.anonymous.o2o                    D  Load /data/app/~~JptdIzhfLfevtn2ft7Q7fQ==/com.anonymous.o2o-vbOXqXGKc0mEHF7c1Ep6Yw==/lib/arm64/libhermes-executor-debug.so using class loader ns clns-4 (caller=/data/app/~~JptdIzhfLfevtn2ft7Q7fQ==/com.anonymous.o2o-vbOXqXGKc0mEHF7c1Ep6Yw==/base.apk): ok
+2026-07-06 23:47:52.280 28981-28981 m.anonymous.o2o         com.anonymous.o2o                    I  hiddenapi: Accessing hidden method Landroid/view/View;->computeFitSystemWindows(Landroid/graphics/Rect;Landroid/graphics/Rect;)Z (runtime_flags=0, domain=platform, api=unsupported) from Landroidx/appcompat/widget/ViewUtils; (domain=app, TargetSdkVersion=35) using reflection: allowed
+2026-07-06 23:47:52.280 28981-28981 m.anonymous.o2o         com.anonymous.o2o                    I  hiddenapi: Accessing hidden method Landroid/view/ViewGroup;->makeOptionalFitsSystemWindows()V (runtime_flags=0, domain=platform, api=unsupported) from Landroidx/appcompat/widget/ViewUtils; (domain=app, TargetSdkVersion=35) using reflection: allowed
+2026-07-06 23:47:52.306 28981-28981 MSYNC3-Var...efreshRate com.anonymous.o2o                    I  Variable refreshrate is disabled
+2026-07-06 23:47:52.311 28981-29028 nativeloader            com.anonymous.o2o                    D  Load libpowerhalwrap_jni.so using system ns (caller=/system/framework/mediatek-framework.jar): ok
+2026-07-06 23:47:52.312 28981-29028 PowerHalWrapper         com.anonymous.o2o                    I  PowerHalWrapper.getInstance 
+2026-07-06 23:47:52.316 28981-28981 libc                    com.anonymous.o2o                    W  Access denied finding property "ro.vendor.perf.scroll_opt.heavy_app"
+2026-07-06 23:47:52.343 28981-28981 unknown:ReactNative     com.anonymous.o2o                    W  Packager connection already open, nooping.
+2026-07-06 23:47:52.364 28981-28981 BufferQueueConsumer     com.anonymous.o2o                    D  [](id:713500000000,api:0,p:-1,c:28981) connect: controlledByApp=false
+2026-07-06 23:47:52.366 28981-28981 FBI                     com.anonymous.o2o                    E  Can't load library: dlopen failed: library "libmagtsync.so" not found
+2026-07-06 23:47:52.389 28981-29013 skia                    com.anonymous.o2o                    D  GrGLMakeAssembledInterface verStr OpenGL ES 3.2 v1.r32p1-00bet5.a87a909447f91dbbba43e39a03b14f82
+2026-07-06 23:47:52.390 28981-29013 skia                    com.anonymous.o2o                    D  GrGLMakeAssembledGLESInterface verStr OpenGL ES 3.2 v1.r32p1-00bet5.a87a909447f91dbbba43e39a03b14f82
+2026-07-06 23:47:52.390 28981-29013 skia                    com.anonymous.o2o                    D  extensions init verString=OpenGL ES 3.2 v1.r32p1-00bet5.a87a909447f91dbbba43e39a03b14f82
+2026-07-06 23:47:52.411 28981-29048 ion                     com.anonymous.o2o                    E  ioctl c0044901 failed with code -1: Invalid argument
+2026-07-06 23:47:52.411 28981-29013 hw-ProcessState         com.anonymous.o2o                    D  Binder ioctl to enable oneway spam detection failed: Invalid argument
+2026-07-06 23:47:52.429 28981-29013 BLASTBufferQueue        com.anonymous.o2o                    D  [VRI[MainActivity]#0](f:0,a:1) acquireNextBufferLocked size=1080x2400 mFrameNumber=1 applyTransaction=true mTimestamp=9742149939888(auto) mPendingTransactions.size=0 graphicBufferId=124472447205376 transform=0
+2026-07-06 23:47:52.431 28981-29013 Parcel                  com.anonymous.o2o                    W  Expecting binder but got null!
+2026-07-06 23:47:52.450 28981-28981 Compatibil...geReporter com.anonymous.o2o                    D  Compat change id reported: 210923482; UID 10890; state: ENABLED
+2026-07-06 23:47:52.514 28981-28981 BufferQueueConsumer     com.anonymous.o2o                    D  [](id:713500000001,api:0,p:-1,c:28981) connect: controlledByApp=false
+2026-07-06 23:47:52.541 28981-29013 BLASTBufferQueue        com.anonymous.o2o                    D  [VRI[PopupWindow:beda728]#1](f:0,a:1) acquireNextBufferLocked size=1080x58 mFrameNumber=1 applyTransaction=true mTimestamp=9742262458657(auto) mPendingTransactions.size=0 graphicBufferId=124472447205383 transform=0
+2026-07-06 23:47:52.542 28981-29013 Parcel                  com.anonymous.o2o                    W  Expecting binder but got null!
+2026-07-06 23:47:52.546 28981-28981 ImeFocusController      com.anonymous.o2o                    V  onWindowFocus: DecorView@34a4ff8[MainActivity] softInputMode=STATE_UNSPECIFIED|ADJUST_RESIZE|IS_FORWARD_NAVIGATION
+2026-07-06 23:47:52.546 28981-28981 ImeFocusController      com.anonymous.o2o                    V  Restarting due to isRestartOnNextWindowFocus as true
+2026-07-06 23:47:52.546 28981-28981 ImeFocusController      com.anonymous.o2o                    D  onViewFocusChanged, view=DecorView@34a4ff8[MainActivity], mServedView=null
+2026-07-06 23:47:52.547 28981-28981 ImeFocusController      com.anonymous.o2o                    V  checkFocus: view=null next=DecorView@34a4ff8[MainActivity] immDelegate=delegate{acb9ec3 displayId=0} force=true package=<none>
+2026-07-06 23:47:52.581 28981-28997 ActivityThread          com.anonymous.o2o                    V  updateVmProcessStateForGc sceneId =1 state=196608
+2026-07-06 23:47:53.349 28981-29026 SoLoader                com.anonymous.o2o                    D  libreactnativejni.so not found on /data/data/com.anonymous.o2o/lib-main
+2026-07-06 23:47:53.350 28981-29026 SoLoader                com.anonymous.o2o                    D  libreactnativejni.so found on /data/app/~~JptdIzhfLfevtn2ft7Q7fQ==/com.anonymous.o2o-vbOXqXGKc0mEHF7c1Ep6Yw==/lib/arm64
+2026-07-06 23:47:53.350 28981-29026 SoLoader                com.anonymous.o2o                    D  Not resolving dependencies for libreactnativejni.so
+2026-07-06 23:47:53.351 28981-29026 nativeloader            com.anonymous.o2o                    D  Load /data/app/~~JptdIzhfLfevtn2ft7Q7fQ==/com.anonymous.o2o-vbOXqXGKc0mEHF7c1Ep6Yw==/lib/arm64/libreactnativejni.so using class loader ns clns-4 (caller=/data/app/~~JptdIzhfLfevtn2ft7Q7fQ==/com.anonymous.o2o-vbOXqXGKc0mEHF7c1Ep6Yw==/base.apk): ok
+2026-07-06 23:47:53.354 28981-29026 SoLoader                com.anonymous.o2o                    D  libfbjni.so not found on /data/data/com.anonymous.o2o/lib-main
+2026-07-06 23:47:53.355 28981-29026 SoLoader                com.anonymous.o2o                    D  libfbjni.so found on /data/app/~~JptdIzhfLfevtn2ft7Q7fQ==/com.anonymous.o2o-vbOXqXGKc0mEHF7c1Ep6Yw==/lib/arm64
+2026-07-06 23:47:53.355 28981-29026 SoLoader                com.anonymous.o2o                    D  Not resolving dependencies for libfbjni.so
+2026-07-06 23:47:53.357 28981-29026 nativeloader            com.anonymous.o2o                    D  Load /data/app/~~JptdIzhfLfevtn2ft7Q7fQ==/com.anonymous.o2o-vbOXqXGKc0mEHF7c1Ep6Yw==/lib/arm64/libfbjni.so using class loader ns clns-4 (caller=/data/app/~~JptdIzhfLfevtn2ft7Q7fQ==/com.anonymous.o2o-vbOXqXGKc0mEHF7c1Ep6Yw==/base.apk): ok
+2026-07-06 23:47:53.880 28981-28989 m.anonymous.o2o         com.anonymous.o2o                    I  Compiler allocated 5600KB to compile void android.view.ViewRootImpl.performTraversals()
+2026-07-06 23:48:08.664 28981-28981 BLASTBufferQueue        com.anonymous.o2o                    D  [VRI[PopupWindow:beda728]#1](f:0,a:1) destructor()
+2026-07-06 23:48:08.664 28981-28981 BufferQueueConsumer     com.anonymous.o2o                    D  [VRI[PopupWindow:beda728]#1(BLAST Consumer)1](id:713500000001,api:0,p:-1,c:28981) disconnect
+2026-07-06 23:48:08.696 28981-29119 RNFusedLocation         com.anonymous.o2o                    I  RNFusedLocation initialized
+2026-07-06 23:48:10.766 28981-29119 unknown:ReactContext    com.anonymous.o2o                    W  initializeMessageQueueThreads() is called.
+2026-07-06 23:48:10.776 28981-28981 unknown:ReactNative     com.anonymous.o2o                    W  Packager connection already open, nooping.
+2026-07-06 23:48:10.899 28981-29121 unknown:Vi...rtyUpdater com.anonymous.o2o                    W  Could not find generated setter for class com.facebook.react.views.drawer.ReactDrawerLayoutManager
+2026-07-06 23:48:10.913 28981-29121 unknown:Vi...rtyUpdater com.anonymous.o2o                    W  Could not find generated setter for class com.facebook.react.uimanager.LayoutShadowNode
+2026-07-06 23:48:10.921 28981-29121 unknown:Vi...rtyUpdater com.anonymous.o2o                    W  Could not find generated setter for class com.facebook.react.views.scroll.ReactHorizontalScrollViewManager
+2026-07-06 23:48:10.928 28981-29121 unknown:Vi...rtyUpdater com.anonymous.o2o                    W  Could not find generated setter for class com.facebook.react.views.scroll.ReactHorizontalScrollContainerViewManager
+2026-07-06 23:48:10.930 28981-29121 unknown:Vi...rtyUpdater com.anonymous.o2o                    W  Could not find generated setter for class com.facebook.react.views.progressbar.ReactProgressBarViewManager
+2026-07-06 23:48:10.933 28981-29121 unknown:Vi...rtyUpdater com.anonymous.o2o                    W  Could not find generated setter for class com.facebook.react.views.progressbar.ProgressBarShadowNode
+2026-07-06 23:48:10.937 28981-29121 unknown:Vi...rtyUpdater com.anonymous.o2o                    W  Could not find generated setter for class com.facebook.react.views.scroll.ReactScrollViewManager
+2026-07-06 23:48:10.943 28981-29121 unknown:Vi...rtyUpdater com.anonymous.o2o                    W  Could not find generated setter for class com.facebook.react.views.slider.ReactSliderManager
+2026-07-06 23:48:10.947 28981-29121 unknown:Vi...rtyUpdater com.anonymous.o2o                    W  Could not find generated setter for class com.facebook.react.views.slider.ReactSliderManager$ReactSliderShadowNode
+2026-07-06 23:48:10.948 28981-29121 unknown:Vi...rtyUpdater com.anonymous.o2o                    W  Could not find generated setter for class com.facebook.react.views.switchview.ReactSwitchManager
+2026-07-06 23:48:10.952 28981-29121 unknown:Vi...rtyUpdater com.anonymous.o2o                    W  Could not find generated setter for class com.facebook.react.views.switchview.ReactSwitchManager$ReactSwitchShadowNode
+2026-07-06 23:48:10.953 28981-29121 unknown:Vi...rtyUpdater com.anonymous.o2o                    W  Could not find generated setter for class com.facebook.react.views.swiperefresh.SwipeRefreshLayoutManager
+2026-07-06 23:48:10.956 28981-29121 unknown:Vi...rtyUpdater com.anonymous.o2o                    W  Could not find generated setter for class com.facebook.react.views.text.frescosupport.FrescoBasedReactTextInlineImageViewManager
+2026-07-06 23:48:10.957 28981-29121 unknown:Vi...rtyUpdater com.anonymous.o2o                    W  Could not find generated setter for class com.facebook.react.views.text.frescosupport.FrescoBasedReactTextInlineImageShadowNode
+2026-07-06 23:48:10.960 28981-29121 unknown:Vi...rtyUpdater com.anonymous.o2o                    W  Could not find generated setter for class com.facebook.react.views.image.ReactImageManager
+2026-07-06 23:48:10.963 28981-29121 unknown:Vi...rtyUpdater com.anonymous.o2o                    W  Could not find generated setter for class com.facebook.react.views.modal.ReactModalHostManager
+2026-07-06 23:48:10.966 28981-29121 unknown:Vi...rtyUpdater com.anonymous.o2o                    W  Could not find generated setter for class com.facebook.react.views.modal.ModalHostShadowNode
+2026-07-06 23:48:10.967 28981-29121 unknown:Vi...rtyUpdater com.anonymous.o2o                    W  Could not find generated setter for class com.facebook.react.views.text.ReactRawTextManager
+2026-07-06 23:48:10.968 28981-29121 unknown:Vi...rtyUpdater com.anonymous.o2o                    W  Could not find generated setter for class com.facebook.react.views.text.ReactRawTextShadowNode
+2026-07-06 23:48:10.969 28981-29121 unknown:Vi...rtyUpdater com.anonymous.o2o                    W  Could not find generated setter for class com.facebook.react.views.textinput.ReactTextInputManager
+2026-07-06 23:48:10.975 28981-29121 unknown:Vi...rtyUpdater com.anonymous.o2o                    W  Could not find generated setter for class com.facebook.react.views.textinput.ReactTextInputShadowNode
+2026-07-06 23:48:10.980 28981-29121 unknown:Vi...rtyUpdater com.anonymous.o2o                    W  Could not find generated setter for class com.facebook.react.views.text.ReactTextViewManager
+2026-07-06 23:48:10.983 28981-29121 unknown:Vi...rtyUpdater com.anonymous.o2o                    W  Could not find generated setter for class com.facebook.react.views.text.ReactTextShadowNode
+2026-07-06 23:48:10.984 28981-29121 unknown:Vi...rtyUpdater com.anonymous.o2o                    W  Could not find generated setter for class com.facebook.react.views.view.ReactViewManager
+2026-07-06 23:48:10.988 28981-29121 unknown:Vi...rtyUpdater com.anonymous.o2o                    W  Could not find generated setter for class com.facebook.react.views.text.ReactVirtualTextViewManager
+2026-07-06 23:48:10.989 28981-29121 unknown:Vi...rtyUpdater com.anonymous.o2o                    W  Could not find generated setter for class com.facebook.react.views.text.ReactVirtualTextShadowNode
+2026-07-06 23:48:10.990 28981-29121 unknown:Vi...rtyUpdater com.anonymous.o2o                    W  Could not find generated setter for class com.facebook.react.views.unimplementedview.ReactUnimplementedViewManager
+2026-07-06 23:48:10.992 28981-29121 unknown:Vi...rtyUpdater com.anonymous.o2o                    W  Could not find generated setter for class com.th3rdwave.safeareacontext.SafeAreaProviderManager
+2026-07-06 23:48:10.994 28981-29121 unknown:Vi...rtyUpdater com.anonymous.o2o                    W  Could not find generated setter for class com.th3rdwave.safeareacontext.SafeAreaViewManager
+2026-07-06 23:48:10.995 28981-29121 unknown:Vi...rtyUpdater com.anonymous.o2o                    W  Could not find generated setter for class com.th3rdwave.safeareacontext.SafeAreaViewShadowNode
+2026-07-06 23:48:10.997 28981-29121 unknown:Vi...rtyUpdater com.anonymous.o2o                    W  Could not find generated setter for class com.swmansion.rnscreens.ScreenContainerViewManager
+2026-07-06 23:48:10.998 28981-29121 unknown:Vi...rtyUpdater com.anonymous.o2o                    W  Could not find generated setter for class com.swmansion.rnscreens.ScreenViewManager
+2026-07-06 23:48:11.001 28981-29121 unknown:Vi...rtyUpdater com.anonymous.o2o                    W  Could not find generated setter for class com.swmansion.rnscreens.ScreenStackViewManager
+2026-07-06 23:48:11.002 28981-29121 unknown:Vi...rtyUpdater com.anonymous.o2o                    W  Could not find generated setter for class com.swmansion.rnscreens.ScreenStackHeaderConfigViewManager
+2026-07-06 23:48:11.005 28981-29121 unknown:Vi...rtyUpdater com.anonymous.o2o                    W  Could not find generated setter for class com.swmansion.rnscreens.ScreenStackHeaderSubviewManager
+2026-07-06 23:48:11.007 28981-29121 unknown:Vi...rtyUpdater com.anonymous.o2o                    W  Could not find generated setter for class com.swmansion.rnscreens.SearchBarManager
+2026-07-06 23:48:11.009 28981-29121 unknown:Vi...rtyUpdater com.anonymous.o2o                    W  Could not find generated setter for class com.horcrux.svg.RenderableViewManager$GroupViewManager
+2026-07-06 23:48:11.014 28981-29121 unknown:Vi...rtyUpdater com.anonymous.o2o                    W  Could not find generated setter for class com.horcrux.svg.RenderableViewManager$RenderableShadowNode
+2026-07-06 23:48:11.016 28981-29121 unknown:Vi...rtyUpdater com.anonymous.o2o                    W  Could not find generated setter for class com.horcrux.svg.RenderableViewManager$PathViewManager
+2026-07-06 23:48:11.018 28981-29121 unknown:Vi...rtyUpdater com.anonymous.o2o                    W  Could not find generated setter for class com.horcrux.svg.RenderableViewManager$CircleViewManager
+2026-07-06 23:48:11.019 28981-29121 unknown:Vi...rtyUpdater com.anonymous.o2o                    W  Could not find generated setter for class com.horcrux.svg.RenderableViewManager$EllipseViewManager
+2026-07-06 23:48:11.021 28981-29121 unknown:Vi...rtyUpdater com.anonymous.o2o                    W  Could not find generated setter for class com.horcrux.svg.RenderableViewManager$LineViewManager
+2026-07-06 23:48:11.022 28981-29121 unknown:Vi...rtyUpdater com.anonymous.o2o                    W  Could not find generated setter for class com.horcrux.svg.RenderableViewManager$RectViewManager
+2026-07-06 23:48:11.024 28981-29121 unknown:Vi...rtyUpdater com.anonymous.o2o                    W  Could not find generated setter for class com.horcrux.svg.RenderableViewManager$TextViewManager
+2026-07-06 23:48:11.026 28981-29121 unknown:Vi...rtyUpdater com.anonymous.o2o                    W  Could not find generated setter for class com.horcrux.svg.RenderableViewManager$TSpanViewManager
+2026-07-06 23:48:11.027 28981-29121 unknown:Vi...rtyUpdater com.anonymous.o2o                    W  Could not find generated setter for class com.horcrux.svg.RenderableViewManager$TextPathViewManager
+2026-07-06 23:48:11.028 28981-29121 unknown:Vi...rtyUpdater com.anonymous.o2o                    W  Could not find generated setter for class com.horcrux.svg.RenderableViewManager$ImageViewManager
+2026-07-06 23:48:11.030 28981-29121 unknown:Vi...rtyUpdater com.anonymous.o2o                    W  Could not find generated setter for class com.horcrux.svg.RenderableViewManager$ClipPathViewManager
+2026-07-06 23:48:11.031 28981-29121 unknown:Vi...rtyUpdater com.anonymous.o2o                    W  Could not find generated setter for class com.horcrux.svg.RenderableViewManager$DefsViewManager
+2026-07-06 23:48:11.032 28981-29121 unknown:Vi...rtyUpdater com.anonymous.o2o                    W  Could not find generated setter for class com.horcrux.svg.RenderableViewManager$UseViewManager
+2026-07-06 23:48:11.033 28981-29121 unknown:Vi...rtyUpdater com.anonymous.o2o                    W  Could not find generated setter for class com.horcrux.svg.RenderableViewManager$SymbolManager
+2026-07-06 23:48:11.035 28981-29121 unknown:Vi...rtyUpdater com.anonymous.o2o                    W  Could not find generated setter for class com.horcrux.svg.RenderableViewManager$LinearGradientManager
+2026-07-06 23:48:11.036 28981-29121 unknown:Vi...rtyUpdater com.anonymous.o2o                    W  Could not find generated setter for class com.horcrux.svg.RenderableViewManager$RadialGradientManager
+2026-07-06 23:48:11.038 28981-29121 unknown:Vi...rtyUpdater com.anonymous.o2o                    W  Could not find generated setter for class com.horcrux.svg.RenderableViewManager$PatternManager
+2026-07-06 23:48:11.040 28981-29121 unknown:Vi...rtyUpdater com.anonymous.o2o                    W  Could not find generated setter for class com.horcrux.svg.RenderableViewManager$MaskManager
+2026-07-06 23:48:11.042 28981-29121 unknown:Vi...rtyUpdater com.anonymous.o2o                    W  Could not find generated setter for class com.horcrux.svg.RenderableViewManager$ForeignObjectManager
+2026-07-06 23:48:11.043 28981-29121 unknown:Vi...rtyUpdater com.anonymous.o2o                    W  Could not find generated setter for class com.horcrux.svg.RenderableViewManager$MarkerManager
+2026-07-06 23:48:11.045 28981-29121 unknown:Vi...rtyUpdater com.anonymous.o2o                    W  Could not find generated setter for class com.horcrux.svg.SvgViewManager
+2026-07-06 23:48:11.047 28981-29121 unknown:Vi...rtyUpdater com.anonymous.o2o                    W  Could not find generated setter for class com.reactnativecommunity.blurview.BlurViewManager
+2026-07-06 23:48:11.048 28981-29121 unknown:Vi...rtyUpdater com.anonymous.o2o                    W  Could not find generated setter for class com.swmansion.gesturehandler.react.RNGestureHandlerRootViewManager
+2026-07-06 23:48:11.049 28981-29121 unknown:Vi...rtyUpdater com.anonymous.o2o                    W  Could not find generated setter for class com.swmansion.gesturehandler.react.RNGestureHandlerButtonViewManager
+2026-07-06 23:48:11.051 28981-29121 unknown:Vi...rtyUpdater com.anonymous.o2o                    W  Could not find generated setter for class com.BV.LinearGradient.LinearGradientManager
+2026-07-06 23:48:11.062 28981-29121 m.anonymous.o2o         com.anonymous.o2o                    I  hiddenapi: Accessing hidden field Ljava/lang/reflect/Field;->accessFlags:I (runtime_flags=0, domain=core-platform, api=unsupported) from Lcom/swmansion/reanimated/layoutReanimation/ReanimatedNativeHierarchyManager; (domain=app, TargetSdkVersion=35) using reflection: allowed
+2026-07-06 23:48:11.064 28981-29121 unknown:ReactContext    com.anonymous.o2o                    W  initializeMessageQueueThreads() is called.
+2026-07-06 23:48:11.067 28981-29121 SoLoader                com.anonymous.o2o                    D  libyoga.so not found on /data/data/com.anonymous.o2o/lib-main
+2026-07-06 23:48:11.068 28981-29121 SoLoader                com.anonymous.o2o                    D  libyoga.so found on /data/app/~~JptdIzhfLfevtn2ft7Q7fQ==/com.anonymous.o2o-vbOXqXGKc0mEHF7c1Ep6Yw==/lib/arm64
+2026-07-06 23:48:11.068 28981-29121 SoLoader                com.anonymous.o2o                    D  Not resolving dependencies for libyoga.so
+2026-07-06 23:48:11.069 28981-29121 nativeloader            com.anonymous.o2o                    D  Load /data/app/~~JptdIzhfLfevtn2ft7Q7fQ==/com.anonymous.o2o-vbOXqXGKc0mEHF7c1Ep6Yw==/lib/arm64/libyoga.so using class loader ns clns-4 (caller=/data/app/~~JptdIzhfLfevtn2ft7Q7fQ==/com.anonymous.o2o-vbOXqXGKc0mEHF7c1Ep6Yw==/base.apk): ok
+2026-07-06 23:48:11.338 28981-29120 SoLoader                com.anonymous.o2o                    D  libreactnativeblob.so not found on /data/data/com.anonymous.o2o/lib-main
+2026-07-06 23:48:11.339 28981-29120 SoLoader                com.anonymous.o2o                    D  libreactnativeblob.so found on /data/app/~~JptdIzhfLfevtn2ft7Q7fQ==/com.anonymous.o2o-vbOXqXGKc0mEHF7c1Ep6Yw==/lib/arm64
+2026-07-06 23:48:11.339 28981-29120 SoLoader                com.anonymous.o2o                    D  Not resolving dependencies for libreactnativeblob.so
+2026-07-06 23:48:11.340 28981-29120 nativeloader            com.anonymous.o2o                    D  Load /data/app/~~JptdIzhfLfevtn2ft7Q7fQ==/com.anonymous.o2o-vbOXqXGKc0mEHF7c1Ep6Yw==/lib/arm64/libreactnativeblob.so using class loader ns clns-4 (caller=/data/app/~~JptdIzhfLfevtn2ft7Q7fQ==/com.anonymous.o2o-vbOXqXGKc0mEHF7c1Ep6Yw==/base.apk): ok
+2026-07-06 23:48:11.369 28981-29121 WebViewFactory          com.anonymous.o2o                    I  Loading com.google.android.webview version 149.0.7827.163 (code 782716303)
+2026-07-06 23:48:11.385 28981-29121 ApplicationLoaders      com.anonymous.o2o                    D  Returning zygote-cached class loader: /system/framework/android.test.base.jar
+2026-07-06 23:48:11.397 28981-29121 nativeloader            com.anonymous.o2o                    D  Configuring clns-5 for other apk /data/app/~~GBfPuZi4anb1fBUodLD6sQ==/com.google.android.webview-aoPy1mhAWI1-X12GGD3k8w==/base.apk. target_sdk_version=36, uses_libraries=, library_path=/data/app/~~GBfPuZi4anb1fBUodLD6sQ==/com.google.android.webview-aoPy1mhAWI1-X12GGD3k8w==/lib/arm64:/data/app/~~GBfPuZi4anb1fBUodLD6sQ==/com.google.android.webview-aoPy1mhAWI1-X12GGD3k8w==/base.apk!/lib/arm64-v8a, permitted_path=/data:/mnt/expand
+2026-07-06 23:48:11.439 28981-29120 nativeloader            com.anonymous.o2o                    D  Load /data/app/~~JptdIzhfLfevtn2ft7Q7fQ==/com.anonymous.o2o-vbOXqXGKc0mEHF7c1Ep6Yw==/lib/arm64/libreanimated.so using class loader ns clns-4 (caller=/data/app/~~JptdIzhfLfevtn2ft7Q7fQ==/com.anonymous.o2o-vbOXqXGKc0mEHF7c1Ep6Yw==/base.apk!classes2.dex): ok
+2026-07-06 23:48:11.439 28981-29120 SoLoader                com.anonymous.o2o                    D  libturbomodulejsijni.so not found on /data/data/com.anonymous.o2o/lib-main
+2026-07-06 23:48:11.440 28981-29120 SoLoader                com.anonymous.o2o                    D  libturbomodulejsijni.so found on /data/app/~~JptdIzhfLfevtn2ft7Q7fQ==/com.anonymous.o2o-vbOXqXGKc0mEHF7c1Ep6Yw==/lib/arm64
+2026-07-06 23:48:11.440 28981-29120 SoLoader                com.anonymous.o2o                    D  Not resolving dependencies for libturbomodulejsijni.so
+2026-07-06 23:48:11.441 28981-29120 nativeloader            com.anonymous.o2o                    D  Load /data/app/~~JptdIzhfLfevtn2ft7Q7fQ==/com.anonymous.o2o-vbOXqXGKc0mEHF7c1Ep6Yw==/lib/arm64/libturbomodulejsijni.so using class loader ns clns-4 (caller=/data/app/~~JptdIzhfLfevtn2ft7Q7fQ==/com.anonymous.o2o-vbOXqXGKc0mEHF7c1Ep6Yw==/base.apk): ok
+2026-07-06 23:48:11.468 28981-29121 cr_WVCFactoryProvider   com.anonymous.o2o                    I  version=149.0.7827.163 (782716303) minSdkVersion=29 multiprocess=true packageId=127 splits=<none>
+2026-07-06 23:48:11.482 28981-29121 nativeloader            com.anonymous.o2o                    D  Load /data/app/~~GBfPuZi4anb1fBUodLD6sQ==/com.google.android.webview-aoPy1mhAWI1-X12GGD3k8w==/base.apk!/lib/arm64-v8a/libwebviewchromium.so using class loader ns clns-5 (caller=/data/app/~~GBfPuZi4anb1fBUodLD6sQ==/com.google.android.webview-aoPy1mhAWI1-X12GGD3k8w==/base.apk): ok
+2026-07-06 23:48:11.487 28981-29121 nativeloader            com.anonymous.o2o                    D  Load /system/lib64/libwebviewchromium_plat_support.so using class loader ns clns-5 (caller=/data/app/~~GBfPuZi4anb1fBUodLD6sQ==/com.google.android.webview-aoPy1mhAWI1-X12GGD3k8w==/base.apk): ok
+2026-07-06 23:48:11.497 28981-29134 chromium                com.anonymous.o2o                    I  [0706/234811.494366:INFO:android_webview/browser/variations/variations_seed_loader.cc:67] Failed to open file for reading.: No such file or directory (2)
+2026-07-06 23:48:11.498 28981-29134 chromium                com.anonymous.o2o                    I  [0706/234811.498486:INFO:android_webview/browser/variations/variations_seed_loader.cc:67] Failed to open file for reading.: No such file or directory (2)
+2026-07-06 23:48:11.530 28981-29121 cr_LibraryLoader        com.anonymous.o2o                    I  Successfully loaded native library
+2026-07-06 23:48:11.536 28981-29121 cr_CachingUmaRecorder   com.anonymous.o2o                    I  Flushed 41 samples from 19 histograms, 0 samples were dropped.
+2026-07-06 23:48:11.981 28981-29120 ReactNativeJS           com.anonymous.o2o                    I  Running "main" with {"rootTag":1}
+2026-07-06 23:48:12.468 28981-29120 ReactNativeJS           com.anonymous.o2o                    E  TypeError: undefined is not a function
+                                                                                                    
+                                                                                                    This error is located at:
+                                                                                                        in DataProvider (at _layout.tsx:143)
+                                                                                                        in SocketProvider (at _layout.tsx:142)
+                                                                                                        in AuthProvider (at _layout.tsx:141)
+                                                                                                        in RNGestureHandlerRootView (at GestureHandlerRootView.android.tsx:23)
+                                                                                                        in GestureHandlerRootView (at _layout.tsx:140)
+                                                                                                        in SafeKeyboardProvider (at _layout.tsx:139)
+                                                                                                        in QueryClientProvider (at _layout.tsx:138)
+                                                                                                        in ErrorBoundary (at _layout.tsx:137)
+                                                                                                        in RNCSafeAreaProvider (at SafeAreaContext.tsx:76)
+                                                                                                        in SafeAreaProvider (at _layout.tsx:136)
+                                                                                                        in RootLayout (at renderApplication.js:50)
+                                                                                                        in RCTView (at View.js:32)
+                                                                                                        in View (at AppContainer.js:92)
+                                                                                                        in RCTView (at View.js:32)
+                                                                                                        in View (at AppContainer.js:119)
+                                                                                                        in AppContainer (at renderApplication.js:43)
+                                                                                                        in main(RootComponent) (at renderApplication.js:60), js engine: hermes
+2026-07-06 23:48:13.811 28981-28981 unknown:ReactContext    com.anonymous.o2o                    W  initializeMessageQueueThreads() is called.
+2026-07-06 23:48:13.823 28981-28981 BufferQueueConsumer     com.anonymous.o2o                    D  [](id:713500000002,api:0,p:-1,c:28981) connect: controlledByApp=false
+2026-07-06 23:48:13.833 28981-29013 BLASTBufferQueue        com.anonymous.o2o                    D  [VRI[MainActivity]#2](f:0,a:1) acquireNextBufferLocked size=1080x2400 mFrameNumber=1 applyTransaction=true mTimestamp=9763553665735(auto) mPendingTransactions.size=0 graphicBufferId=124472447205384 transform=0
+2026-07-06 23:48:13.834 28981-29013 Parcel                  com.anonymous.o2o                    W  Expecting binder but got null!
+2026-07-06 23:48:13.869 28981-29147 SoLoader                com.anonymous.o2o                    D  libimagepipeline.so not found on /data/data/com.anonymous.o2o/lib-main
+2026-07-06 23:48:13.869 28981-29147 SoLoader                com.anonymous.o2o                    D  libimagepipeline.so found on /data/app/~~JptdIzhfLfevtn2ft7Q7fQ==/com.anonymous.o2o-vbOXqXGKc0mEHF7c1Ep6Yw==/lib/arm64
+2026-07-06 23:48:13.869 28981-29147 SoLoader                com.anonymous.o2o                    D  Not resolving dependencies for libimagepipeline.so
+2026-07-06 23:48:13.870 28981-29147 nativeloader            com.anonymous.o2o                    D  Load /data/app/~~JptdIzhfLfevtn2ft7Q7fQ==/com.anonymous.o2o-vbOXqXGKc0mEHF7c1Ep6Yw==/lib/arm64/libimagepipeline.so using class loader ns clns-4 (caller=/data/app/~~JptdIzhfLfevtn2ft7Q7fQ==/com.anonymous.o2o-vbOXqXGKc0mEHF7c1Ep6Yw==/base.apk): ok
+2026-07-06 23:48:13.915 28981-28981 ImeFocusController      com.anonymous.o2o                    V  onWindowFocus: DecorView@c99f86d[MainActivity] softInputMode=STATE_UNSPECIFIED|ADJUST_PAN|IS_FORWARD_NAVIGATION
+2026-07-06 23:48:13.915 28981-28981 ImeFocusController      com.anonymous.o2o                    D  onViewFocusChanged, view=DecorView@c99f86d[MainActivity], mServedView=null
+2026-07-06 23:48:13.915 28981-28981 ImeFocusController      com.anonymous.o2o                    V  checkFocus: view=null next=DecorView@c99f86d[MainActivity] immDelegate=delegate{acb9ec3 displayId=0} force=false package=<none>
+2026-07-06 23:48:14.132 28981-28981 Compatibil...geReporter com.anonymous.o2o                    D  Compat change id reported: 171228096; UID 10890; state: ENABLED
+2026-07-06 23:48:14.137 28981-28981 m.anonymous.o2o         com.anonymous.o2o                    I  hiddenapi: Accessing hidden field Landroid/widget/ScrollView;->mScroller:Landroid/widget/OverScroller; (runtime_flags=0, domain=platform, api=unsupported) from Lcom/facebook/react/views/scroll/ReactScrollView; (domain=app, TargetSdkVersion=35) using reflection: allowed
+2026-07-06 23:48:24.354 28981-28994 ActivityThread          com.anonymous.o2o                    V  updateVmProcessStateForGc sceneId =0 state=196864
+2026-07-06 23:48:25.303 28981-28994 ActivityThread          com.anonymous.o2o                    V  updateVmProcessStateForGc sceneId =0 state=196608
+2026-07-06 23:48:25.330 28981-29028 libPerfCtl              com.anonymous.o2o                    I  fbcNotifySbeRescue ret=-1
+2026-07-06 23:48:26.205 28981-28994 ActivityThread          com.anonymous.o2o                    V  updateVmProcessStateForGc sceneId =0 state=196864
+2026-07-06 23:48:26.275 28981-29028 libPerfCtl              com.anonymous.o2o                    I  fbcNotifySbeRescue ret=-1
+2026-07-06 23:48:26.308 28981-29028 libPerfCtl              com.anonymous.o2o                    I  fbcNotifySbeRescue ret=-1
+2026-07-06 23:48:26.311 28981-28994 ActivityThread          com.anonymous.o2o                    V  updateVmProcessStateForGc sceneId =0 state=196608
+2026-07-06 23:48:26.341 28981-29028 libPerfCtl              com.anonymous.o2o                    I  fbcNotifySbeRescue ret=-1
+2026-07-06 23:48:26.375 28981-29028 libPerfCtl              com.anonymous.o2o                    I  fbcNotifySbeRescue ret=-1
+2026-07-06 23:48:26.408 28981-29028 libPerfCtl              com.anonymous.o2o                    I  fbcNotifySbeRescue ret=-1
+2026-07-06 23:48:26.424 28981-29028 libPerfCtl              com.anonymous.o2o                    I  fbcNotifySbeRescue ret=-1
+2026-07-06 23:48:26.442 28981-29028 libPerfCtl              com.anonymous.o2o                    I  fbcNotifySbeRescue ret=-1
+2026-07-06 23:48:26.475 28981-29028 libPerfCtl              com.anonymous.o2o                    I  fbcNotifySbeRescue ret=-1
+2026-07-06 23:48:26.491 28981-29028 libPerfCtl              com.anonymous.o2o                    I  fbcNotifySbeRescue ret=-1
+2026-07-06 23:48:26.510 28981-29028 libPerfCtl              com.anonymous.o2o                    I  fbcNotifySbeRescue ret=-1
+2026-07-06 23:48:26.542 28981-29028 libPerfCtl              com.anonymous.o2o                    I  fbcNotifySbeRescue ret=-1
+2026-07-06 23:48:26.591 28981-29028 libPerfCtl              com.anonymous.o2o                    I  fbcNotifySbeRescue ret=-1
+2026-07-06 23:48:26.608 28981-29028 libPerfCtl              com.anonymous.o2o                    I  fbcNotifySbeRescue ret=-1
+2026-07-06 23:48:26.625 28981-29028 libPerfCtl              com.anonymous.o2o                    I  fbcNotifySbeRescue ret=-1
+2026-07-06 23:48:26.643 28981-29028 libPerfCtl              com.anonymous.o2o                    I  fbcNotifySbeRescue ret=-1
+2026-07-06 23:48:26.674 28981-29028 libPerfCtl              com.anonymous.o2o                    I  fbcNotifySbeRescue ret=-1
+2026-07-06 23:48:26.708 28981-29028 libPerfCtl              com.anonymous.o2o                    I  fbcNotifySbeRescue ret=-1
+2026-07-06 23:48:26.726 28981-29028 libPerfCtl              com.anonymous.o2o                    I  fbcNotifySbeRescue ret=-1
+2026-07-06 23:48:26.759 28981-28997 ActivityThread          com.anonymous.o2o                    V  updateVmProcessStateForGc sceneId =0 state=196864
+2026-07-06 23:48:26.767 28981-29028 libPerfCtl              com.anonymous.o2o                    I  fbcNotifySbeRescue ret=-1
+2026-07-06 23:48:26.775 28981-28997 ActivityThread          com.anonymous.o2o                    V  updateVmProcessStateForGc sceneId =0 state=196608
+2026-07-06 23:48:27.483 28981-28981 SurfaceComposerClient   com.anonymous.o2o                    I  XDR setRegion is not supported 0xb400006e68babe80, 1, 0
+2026-07-06 23:48:27.532 28981-28997 BLASTBufferQueue        com.anonymous.o2o                    D  [VRI[MainActivity]#2](f:0,a:1) destructor()
+2026-07-06 23:48:27.532 28981-28997 BufferQueueConsumer     com.anonymous.o2o                    D  [VRI[MainActivity]#2(BLAST Consumer)2](id:713500000002,api:0,p:-1,c:28981) disconnect
+2026-07-06 23:48:27.546 28981-28981 ImeFocusController      com.anonymous.o2o                    V  onWindowFocus: DecorView@34a4ff8[MainActivity] softInputMode=STATE_UNSPECIFIED|ADJUST_RESIZE
+2026-07-06 23:48:27.546 28981-28981 ImeFocusController      com.anonymous.o2o                    D  onViewFocusChanged, view=DecorView@34a4ff8[MainActivity], mServedView=DecorView@34a4ff8[MainActivity]
+2026-07-06 23:48:27.546 28981-28981 ImeFocusController      com.anonymous.o2o                    V  checkFocus: view=DecorView@34a4ff8[MainActivity] next=DecorView@34a4ff8[MainActivity] immDelegate=delegate{acb9ec3 displayId=0} force=true package=com.anonymous.o2o
+2026-07-06 23:48:28.647 28981-28994 ActivityThread          com.anonymous.o2o                    V  updateVmProcessStateForGc sceneId =0 state=196864
+2026-07-06 23:48:29.608 28981-28981 BufferQueueConsumer     com.anonymous.o2o                    D  [](id:713500000003,api:0,p:-1,c:28981) connect: controlledByApp=false
+2026-07-06 23:48:29.616 28981-29013 BLASTBufferQueue        com.anonymous.o2o                    D  [VRI[PopupWindow:69917db]#3](f:0,a:1) acquireNextBufferLocked size=1080x58 mFrameNumber=1 applyTransaction=true mTimestamp=9779336665428(auto) mPendingTransactions.size=0 graphicBufferId=124472447205389 transform=0
+2026-07-06 23:48:29.619 28981-29013 Parcel                  com.anonymous.o2o                    W  Expecting binder but got null!
+2026-07-06 23:48:30.390 28981-28997 ActivityThread          com.anonymous.o2o                    V  updateVmProcessStateForGc sceneId =0 state=196608
+2026-07-06 23:48:33.852 28981-28981 BLASTBufferQueue        com.anonymous.o2o                    D  [VRI[PopupWindow:69917db]#3](f:0,a:1) destructor()
+2026-07-06 23:48:33.852 28981-28981 BufferQueueConsumer     com.anonymous.o2o                    D  [VRI[PopupWindow:69917db]#3(BLAST Consumer)3](id:713500000003,api:0,p:-1,c:28981) disconnect
+2026-07-06 23:48:33.879 28981-28981 unknown:ReactNative     com.anonymous.o2o                    W  Packager connection already open, nooping.
+2026-07-06 23:48:33.882 28981-29121 unknown:Re...JavaModule com.anonymous.o2o                    E  Unhandled SoftException (Fix with AI)
+                                                                                                    java.lang.RuntimeException: Catalyst Instance has already disappeared: requested by DeviceInfo
+                                                                                                    	at com.facebook.react.bridge.ReactContextBaseJavaModule.getReactApplicationContextIfActiveOrWarn(ReactContextBaseJavaModule.java:66)
+                                                                                                    	at com.facebook.react.modules.deviceinfo.DeviceInfoModule.invalidate(DeviceInfoModule.java:114)
+                                                                                                    	at com.facebook.react.bridge.ModuleHolder.destroy(ModuleHolder.java:110)
+                                                                                                    	at com.facebook.react.bridge.NativeModuleRegistry.notifyJSInstanceDestroy(NativeModuleRegistry.java:108)
+                                                                                                    	at com.facebook.react.bridge.CatalystInstanceImpl$1.run(CatalystInstanceImpl.java:368)
+                                                                                                    	at android.os.Handler.handleCallback(Handler.java:942)
+                                                                                                    	at android.os.Handler.dispatchMessage(Handler.java:99)
+                                                                                                    	at com.facebook.react.bridge.queue.MessageQueueThreadHandler.dispatchMessage(MessageQueueThreadHandler.java:27)
+                                                                                                    	at android.os.Looper.loopOnce(Looper.java:223)
+                                                                                                    	at android.os.Looper.loop(Looper.java:324)
+                                                                                                    	at com.facebook.react.bridge.queue.MessageQueueThreadImpl$4.run(MessageQueueThreadImpl.java:228)
+                                                                                                    	at java.lang.Thread.run(Thread.java:1572)
+2026-07-06 23:48:33.885 28981-29121 unknown:Re...JavaModule com.anonymous.o2o                    E  Unhandled SoftException (Fix with AI)
+                                                                                                    java.lang.RuntimeException: Catalyst Instance has already disappeared: requested by AppState
+                                                                                                    	at com.facebook.react.bridge.ReactContextBaseJavaModule.getReactApplicationContextIfActiveOrWarn(ReactContextBaseJavaModule.java:66)
+                                                                                                    	at com.facebook.react.modules.appstate.AppStateModule.invalidate(AppStateModule.java:127)
+                                                                                                    	at com.facebook.react.bridge.ModuleHolder.destroy(ModuleHolder.java:110)
+                                                                                                    	at com.facebook.react.bridge.NativeModuleRegistry.notifyJSInstanceDestroy(NativeModuleRegistry.java:108)
+                                                                                                    	at com.facebook.react.bridge.CatalystInstanceImpl$1.run(CatalystInstanceImpl.java:368)
+                                                                                                    	at android.os.Handler.handleCallback(Handler.java:942)
+                                                                                                    	at android.os.Handler.dispatchMessage(Handler.java:99)
+                                                                                                    	at com.facebook.react.bridge.queue.MessageQueueThreadHandler.dispatchMessage(MessageQueueThreadHandler.java:27)
+                                                                                                    	at android.os.Looper.loopOnce(Looper.java:223)
+                                                                                                    	at android.os.Looper.loop(Looper.java:324)
+                                                                                                    	at com.facebook.react.bridge.queue.MessageQueueThreadImpl$4.run(MessageQueueThreadImpl.java:228)
+                                                                                                    	at java.lang.Thread.run(Thread.java:1572)
+2026-07-06 23:48:33.886 28981-29121 unknown:Re...JavaModule com.anonymous.o2o                    E  Unhandled SoftException (Fix with AI)
+                                                                                                    java.lang.RuntimeException: Catalyst Instance has already disappeared: requested by NativeAnimatedModule
+                                                                                                    	at com.facebook.react.bridge.ReactContextBaseJavaModule.getReactApplicationContextIfActiveOrWarn(ReactContextBaseJavaModule.java:66)
+                                                                                                    	at com.facebook.react.animated.NativeAnimatedModule.invalidate(NativeAnimatedModule.java:897)
+                                                                                                    	at com.facebook.react.bridge.ModuleHolder.destroy(ModuleHolder.java:110)
+                                                                                                    	at com.facebook.react.bridge.NativeModuleRegistry.notifyJSInstanceDestroy(NativeModuleRegistry.java:108)
+                                                                                                    	at com.facebook.react.bridge.CatalystInstanceImpl$1.run(CatalystInstanceImpl.java:368)
+                                                                                                    	at android.os.Handler.handleCallback(Handler.java:942)
+                                                                                                    	at android.os.Handler.dispatchMessage(Handler.java:99)
+                                                                                                    	at com.facebook.react.bridge.queue.MessageQueueThreadHandler.dispatchMessage(MessageQueueThreadHandler.java:27)
+                                                                                                    	at android.os.Looper.loopOnce(Looper.java:223)
+                                                                                                    	at android.os.Looper.loop(Looper.java:324)
+                                                                                                    	at com.facebook.react.bridge.queue.MessageQueueThreadImpl$4.run(MessageQueueThreadImpl.java:228)
+                                                                                                    	at java.lang.Thread.run(Thread.java:1572)
+2026-07-06 23:48:33.888 28981-29121 unknown:Re...JavaModule com.anonymous.o2o                    E  Unhandled SoftException (Fix with AI)
+                                                                                                    java.lang.RuntimeException: Catalyst Instance has already disappeared: requested by FrescoModule
+                                                                                                    	at com.facebook.react.bridge.ReactContextBaseJavaModule.getReactApplicationContextIfActiveOrWarn(ReactContextBaseJavaModule.java:66)
+                                                                                                    	at com.facebook.react.modules.fresco.FrescoModule.invalidate(FrescoModule.java:202)
+                                                                                                    	at com.facebook.react.bridge.ModuleHolder.destroy(ModuleHolder.java:110)
+                                                                                                    	at com.facebook.react.bridge.NativeModuleRegistry.notifyJSInstanceDestroy(NativeModuleRegistry.java:108)
+                                                                                                    	at com.facebook.react.bridge.CatalystInstanceImpl$1.run(CatalystInstanceImpl.java:368)
+                                                                                                    	at android.os.Handler.handleCallback(Handler.java:942)
+                                                                                                    	at android.os.Handler.dispatchMessage(Handler.java:99)
+                                                                                                    	at com.facebook.react.bridge.queue.MessageQueueThreadHandler.dispatchMessage(MessageQueueThreadHandler.java:27)
+                                                                                                    	at android.os.Looper.loopOnce(Looper.java:223)
+                                                                                                    	at android.os.Looper.loop(Looper.java:324)
+                                                                                                    	at com.facebook.react.bridge.queue.MessageQueueThreadImpl$4.run(MessageQueueThreadImpl.java:228)
+                                                                                                    	at java.lang.Thread.run(Thread.java:1572)
+2026-07-06 23:48:33.888 28981-28981 unknown:Re...nceManager com.anonymous.o2o                    E  destroyRootView called
+2026-07-06 23:48:33.888 28981-28981 unknown:Re...nceManager com.anonymous.o2o                    E  destroyRootView called, unmountReactApplication
+2026-07-06 23:48:33.898 28981-29221 RNFusedLocation         com.anonymous.o2o                    I  RNFusedLocation initialized
+2026-07-06 23:48:35.978 28981-29221 unknown:ReactContext    com.anonymous.o2o                    W  initializeMessageQueueThreads() is called.
+2026-07-06 23:48:35.982 28981-29223 unknown:Vi...rtyUpdater com.anonymous.o2o                    W  Could not find generated setter for class com.facebook.react.views.drawer.ReactDrawerLayoutManager
+2026-07-06 23:48:35.983 28981-28981 unknown:ReactNative     com.anonymous.o2o                    W  Packager connection already open, nooping.
+2026-07-06 23:48:35.987 28981-29223 unknown:Vi...rtyUpdater com.anonymous.o2o                    W  Could not find generated setter for class com.facebook.react.uimanager.LayoutShadowNode
+2026-07-06 23:48:35.990 28981-29231 RNFusedLocation         com.anonymous.o2o                    I  RNFusedLocation initialized
+2026-07-06 23:48:35.991 28981-29223 unknown:Vi...rtyUpdater com.anonymous.o2o                    W  Could not find generated setter for class com.facebook.react.views.scroll.ReactHorizontalScrollViewManager
+2026-07-06 23:48:35.995 28981-29223 unknown:Vi...rtyUpdater com.anonymous.o2o                    W  Could not find generated setter for class com.facebook.react.views.scroll.ReactHorizontalScrollContainerViewManager
+2026-07-06 23:48:35.996 28981-29223 unknown:Vi...rtyUpdater com.anonymous.o2o                    W  Could not find generated setter for class com.facebook.react.views.progressbar.ReactProgressBarViewManager
+2026-07-06 23:48:35.997 28981-29223 unknown:Vi...rtyUpdater com.anonymous.o2o                    W  Could not find generated setter for class com.facebook.react.views.progressbar.ProgressBarShadowNode
+2026-07-06 23:48:35.998 28981-29223 unknown:Vi...rtyUpdater com.anonymous.o2o                    W  Could not find generated setter for class com.facebook.react.views.scroll.ReactScrollViewManager
+2026-07-06 23:48:36.000 28981-29223 unknown:Vi...rtyUpdater com.anonymous.o2o                    W  Could not find generated setter for class com.facebook.react.views.slider.ReactSliderManager
+2026-07-06 23:48:36.002 28981-29223 unknown:Vi...rtyUpdater com.anonymous.o2o                    W  Could not find generated setter for class com.facebook.react.views.slider.ReactSliderManager$ReactSliderShadowNode
+2026-07-06 23:48:36.002 28981-29223 unknown:Vi...rtyUpdater com.anonymous.o2o                    W  Could not find generated setter for class com.facebook.react.views.switchview.ReactSwitchManager
+2026-07-06 23:48:36.003 28981-29223 unknown:Vi...rtyUpdater com.anonymous.o2o                    W  Could not find generated setter for class com.facebook.react.views.switchview.ReactSwitchManager$ReactSwitchShadowNode
+2026-07-06 23:48:36.007 28981-29223 unknown:Vi...rtyUpdater com.anonymous.o2o                    W  Could not find generated setter for class com.facebook.react.views.swiperefresh.SwipeRefreshLayoutManager
+2026-07-06 23:48:36.010 28981-29223 unknown:Vi...rtyUpdater com.anonymous.o2o                    W  Could not find generated setter for class com.facebook.react.views.text.frescosupport.FrescoBasedReactTextInlineImageViewManager
+2026-07-06 23:48:36.011 28981-29223 unknown:Vi...rtyUpdater com.anonymous.o2o                    W  Could not find generated setter for class com.facebook.react.views.text.frescosupport.FrescoBasedReactTextInlineImageShadowNode
+2026-07-06 23:48:36.012 28981-29223 unknown:Vi...rtyUpdater com.anonymous.o2o                    W  Could not find generated setter for class com.facebook.react.views.image.ReactImageManager
+2026-07-06 23:48:36.015 28981-29223 unknown:Vi...rtyUpdater com.anonymous.o2o                    W  Could not find generated setter for class com.facebook.react.views.modal.ReactModalHostManager
+2026-07-06 23:48:36.018 28981-29223 unknown:Vi...rtyUpdater com.anonymous.o2o                    W  Could not find generated setter for class com.facebook.react.views.modal.ModalHostShadowNode
+2026-07-06 23:48:36.019 28981-29223 unknown:Vi...rtyUpdater com.anonymous.o2o                    W  Could not find generated setter for class com.facebook.react.views.text.ReactRawTextManager
+2026-07-06 23:48:36.019 28981-29223 unknown:Vi...rtyUpdater com.anonymous.o2o                    W  Could not find generated setter for class com.facebook.react.views.text.ReactRawTextShadowNode
+2026-07-06 23:48:36.020 28981-29223 unknown:Vi...rtyUpdater com.anonymous.o2o                    W  Could not find generated setter for class com.facebook.react.views.textinput.ReactTextInputManager
+2026-07-06 23:48:36.026 28981-29223 unknown:Vi...rtyUpdater com.anonymous.o2o                    W  Could not find generated setter for class com.facebook.react.views.textinput.ReactTextInputShadowNode
+2026-07-06 23:48:36.029 28981-29223 unknown:Vi...rtyUpdater com.anonymous.o2o                    W  Could not find generated setter for class com.facebook.react.views.text.ReactTextViewManager
+2026-07-06 23:48:36.031 28981-29223 unknown:Vi...rtyUpdater com.anonymous.o2o                    W  Could not find generated setter for class com.facebook.react.views.text.ReactTextShadowNode
+2026-07-06 23:48:36.033 28981-29223 unknown:Vi...rtyUpdater com.anonymous.o2o                    W  Could not find generated setter for class com.facebook.react.views.view.ReactViewManager
+2026-07-06 23:48:36.037 28981-29223 unknown:Vi...rtyUpdater com.anonymous.o2o                    W  Could not find generated setter for class com.facebook.react.views.text.ReactVirtualTextViewManager
+2026-07-06 23:48:36.037 28981-29223 unknown:Vi...rtyUpdater com.anonymous.o2o                    W  Could not find generated setter for class com.facebook.react.views.text.ReactVirtualTextShadowNode
+2026-07-06 23:48:36.039 28981-29223 unknown:Vi...rtyUpdater com.anonymous.o2o                    W  Could not find generated setter for class com.facebook.react.views.unimplementedview.ReactUnimplementedViewManager
+2026-07-06 23:48:36.040 28981-29223 unknown:Vi...rtyUpdater com.anonymous.o2o                    W  Could not find generated setter for class com.th3rdwave.safeareacontext.SafeAreaProviderManager
+2026-07-06 23:48:36.042 28981-29223 unknown:Vi...rtyUpdater com.anonymous.o2o                    W  Could not find generated setter for class com.th3rdwave.safeareacontext.SafeAreaViewManager
+2026-07-06 23:48:36.043 28981-29223 unknown:Vi...rtyUpdater com.anonymous.o2o                    W  Could not find generated setter for class com.th3rdwave.safeareacontext.SafeAreaViewShadowNode
+2026-07-06 23:48:36.045 28981-29223 unknown:Vi...rtyUpdater com.anonymous.o2o                    W  Could not find generated setter for class com.swmansion.rnscreens.ScreenContainerViewManager
+2026-07-06 23:48:36.046 28981-29223 unknown:Vi...rtyUpdater com.anonymous.o2o                    W  Could not find generated setter for class com.swmansion.rnscreens.ScreenViewManager
+2026-07-06 23:48:36.048 28981-29223 unknown:Vi...rtyUpdater com.anonymous.o2o                    W  Could not find generated setter for class com.swmansion.rnscreens.ScreenStackViewManager
+2026-07-06 23:48:36.049 28981-29223 unknown:Vi...rtyUpdater com.anonymous.o2o                    W  Could not find generated setter for class com.swmansion.rnscreens.ScreenStackHeaderConfigViewManager
+2026-07-06 23:48:36.052 28981-29223 unknown:Vi...rtyUpdater com.anonymous.o2o                    W  Could not find generated setter for class com.swmansion.rnscreens.ScreenStackHeaderSubviewManager
+2026-07-06 23:48:36.053 28981-29223 unknown:Vi...rtyUpdater com.anonymous.o2o                    W  Could not find generated setter for class com.swmansion.rnscreens.SearchBarManager
+2026-07-06 23:48:36.055 28981-29223 unknown:Vi...rtyUpdater com.anonymous.o2o                    W  Could not find generated setter for class com.horcrux.svg.RenderableViewManager$GroupViewManager
+2026-07-06 23:48:36.059 28981-29223 unknown:Vi...rtyUpdater com.anonymous.o2o                    W  Could not find generated setter for class com.horcrux.svg.RenderableViewManager$RenderableShadowNode
+2026-07-06 23:48:36.061 28981-29223 unknown:Vi...rtyUpdater com.anonymous.o2o                    W  Could not find generated setter for class com.horcrux.svg.RenderableViewManager$PathViewManager
+2026-07-06 23:48:36.063 28981-29223 unknown:Vi...rtyUpdater com.anonymous.o2o                    W  Could not find generated setter for class com.horcrux.svg.RenderableViewManager$CircleViewManager
+2026-07-06 23:48:36.064 28981-29223 unknown:Vi...rtyUpdater com.anonymous.o2o                    W  Could not find generated setter for class com.horcrux.svg.RenderableViewManager$EllipseViewManager
+2026-07-06 23:48:36.066 28981-29223 unknown:Vi...rtyUpdater com.anonymous.o2o                    W  Could not find generated setter for class com.horcrux.svg.RenderableViewManager$LineViewManager
+2026-07-06 23:48:36.067 28981-29223 unknown:Vi...rtyUpdater com.anonymous.o2o                    W  Could not find generated setter for class com.horcrux.svg.RenderableViewManager$RectViewManager
+2026-07-06 23:48:36.069 28981-29223 unknown:Vi...rtyUpdater com.anonymous.o2o                    W  Could not find generated setter for class com.horcrux.svg.RenderableViewManager$TextViewManager
+2026-07-06 23:48:36.076 28981-29223 unknown:Vi...rtyUpdater com.anonymous.o2o                    W  Could not find generated setter for class com.horcrux.svg.RenderableViewManager$TSpanViewManager
+2026-07-06 23:48:36.077 28981-29223 unknown:Vi...rtyUpdater com.anonymous.o2o                    W  Could not find generated setter for class com.horcrux.svg.RenderableViewManager$TextPathViewManager
+2026-07-06 23:48:36.079 28981-29223 unknown:Vi...rtyUpdater com.anonymous.o2o                    W  Could not find generated setter for class com.horcrux.svg.RenderableViewManager$ImageViewManager
+2026-07-06 23:48:36.080 28981-29223 unknown:Vi...rtyUpdater com.anonymous.o2o                    W  Could not find generated setter for class com.horcrux.svg.RenderableViewManager$ClipPathViewManager
+2026-07-06 23:48:36.081 28981-29223 unknown:Vi...rtyUpdater com.anonymous.o2o                    W  Could not find generated setter for class com.horcrux.svg.RenderableViewManager$DefsViewManager
+2026-07-06 23:48:36.082 28981-29223 unknown:Vi...rtyUpdater com.anonymous.o2o                    W  Could not find generated setter for class com.horcrux.svg.RenderableViewManager$UseViewManager
+2026-07-06 23:48:36.083 28981-29223 unknown:Vi...rtyUpdater com.anonymous.o2o                    W  Could not find generated setter for class com.horcrux.svg.RenderableViewManager$SymbolManager
+2026-07-06 23:48:36.084 28981-29223 unknown:Vi...rtyUpdater com.anonymous.o2o                    W  Could not find generated setter for class com.horcrux.svg.RenderableViewManager$LinearGradientManager
+2026-07-06 23:48:36.085 28981-29223 unknown:Vi...rtyUpdater com.anonymous.o2o                    W  Could not find generated setter for class com.horcrux.svg.RenderableViewManager$RadialGradientManager
+2026-07-06 23:48:36.086 28981-29223 unknown:Vi...rtyUpdater com.anonymous.o2o                    W  Could not find generated setter for class com.horcrux.svg.RenderableViewManager$PatternManager
+2026-07-06 23:48:36.087 28981-29223 unknown:Vi...rtyUpdater com.anonymous.o2o                    W  Could not find generated setter for class com.horcrux.svg.RenderableViewManager$MaskManager
+2026-07-06 23:48:36.088 28981-29223 unknown:Vi...rtyUpdater com.anonymous.o2o                    W  Could not find generated setter for class com.horcrux.svg.RenderableViewManager$ForeignObjectManager
+2026-07-06 23:48:36.089 28981-29223 unknown:Vi...rtyUpdater com.anonymous.o2o                    W  Could not find generated setter for class com.horcrux.svg.RenderableViewManager$MarkerManager
+2026-07-06 23:48:36.090 28981-29223 unknown:Vi...rtyUpdater com.anonymous.o2o                    W  Could not find generated setter for class com.horcrux.svg.SvgViewManager
+2026-07-06 23:48:36.092 28981-29223 unknown:Vi...rtyUpdater com.anonymous.o2o                    W  Could not find generated setter for class com.reactnativecommunity.blurview.BlurViewManager
+2026-07-06 23:48:36.093 28981-29223 unknown:Vi...rtyUpdater com.anonymous.o2o                    W  Could not find generated setter for class com.swmansion.gesturehandler.react.RNGestureHandlerRootViewManager
+2026-07-06 23:48:36.093 28981-29223 unknown:Vi...rtyUpdater com.anonymous.o2o                    W  Could not find generated setter for class com.swmansion.gesturehandler.react.RNGestureHandlerButtonViewManager
+2026-07-06 23:48:36.094 28981-29223 unknown:Vi...rtyUpdater com.anonymous.o2o                    W  Could not find generated setter for class com.BV.LinearGradient.LinearGradientManager
+2026-07-06 23:48:36.095 28981-29223 unknown:ReactContext    com.anonymous.o2o                    W  initializeMessageQueueThreads() is called.
+2026-07-06 23:48:37.056 28981-29222 ReactNativeJS           com.anonymous.o2o                    I  Running "main" with {"rootTag":21}
+2026-07-06 23:48:37.458 28981-29222 ReactNativeJS           com.anonymous.o2o                    E  TypeError: undefined is not a function
+                                                                                                    
+                                                                                                    This error is located at:
+                                                                                                        in DataProvider (at _layout.tsx:143)
+                                                                                                        in SocketProvider (at _layout.tsx:142)
+                                                                                                        in AuthProvider (at _layout.tsx:141)
+                                                                                                        in RNGestureHandlerRootView (at GestureHandlerRootView.android.tsx:23)
+                                                                                                        in GestureHandlerRootView (at _layout.tsx:140)
+                                                                                                        in SafeKeyboardProvider (at _layout.tsx:139)
+                                                                                                        in QueryClientProvider (at _layout.tsx:138)
+                                                                                                        in ErrorBoundary (at _layout.tsx:137)
+                                                                                                        in RNCSafeAreaProvider (at SafeAreaContext.tsx:76)
+                                                                                                        in SafeAreaProvider (at _layout.tsx:136)
+                                                                                                        in RootLayout (at renderApplication.js:50)
+                                                                                                        in RCTView (at View.js:32)
+                                                                                                        in View (at AppContainer.js:92)
+                                                                                                        in RCTView (at View.js:32)
+                                                                                                        in View (at AppContainer.js:119)
+                                                                                                        in AppContainer (at renderApplication.js:43)
+                                                                                                        in main(RootComponent) (at renderApplication.js:60), js engine: hermes
+2026-07-06 23:48:38.057 28981-29231 unknown:ReactContext    com.anonymous.o2o                    W  initializeMessageQueueThreads() is called.
+2026-07-06 23:48:38.061 28981-28981 unknown:ReactNative     com.anonymous.o2o                    W  Packager connection already open, nooping.
+2026-07-06 23:48:38.656 28981-28981 unknown:ReactContext    com.anonymous.o2o                    W  initializeMessageQueueThreads() is called.
+2026-07-06 23:48:38.665 28981-28981 BufferQueueConsumer     com.anonymous.o2o                    D  [](id:713500000004,api:0,p:-1,c:28981) connect: controlledByApp=false
+2026-07-06 23:48:38.672 28981-29013 BLASTBufferQueue        com.anonymous.o2o                    D  [VRI[MainActivity]#4](f:0,a:1) acquireNextBufferLocked size=1080x2400 mFrameNumber=1 applyTransaction=true mTimestamp=9788393480121(auto) mPendingTransactions.size=0 graphicBufferId=124472447205392 transform=0
+2026-07-06 23:48:38.673 28981-29013 Parcel                  com.anonymous.o2o                    W  Expecting binder but got null!
+2026-07-06 23:48:38.730 28981-28981 ImeFocusController      com.anonymous.o2o                    V  onWindowFocus: DecorView@f77448d[MainActivity] softInputMode=STATE_UNSPECIFIED|ADJUST_PAN|IS_FORWARD_NAVIGATION
+2026-07-06 23:48:38.730 28981-28981 ImeFocusController      com.anonymous.o2o                    D  onViewFocusChanged, view=DecorView@f77448d[MainActivity], mServedView=null
+2026-07-06 23:48:38.730 28981-28981 ImeFocusController      com.anonymous.o2o                    V  checkFocus: view=null next=DecorView@f77448d[MainActivity] immDelegate=delegate{acb9ec3 displayId=0} force=false package=<none>
+2026-07-06 23:48:39.950 28981-28981 unknown:ReactNative     com.anonymous.o2o                    E  Got DOWN touch before receiving UP or CANCEL from last gesture
+2026-07-06 23:48:40.397 28981-28981 unknown:ReactNative     com.anonymous.o2o                    E  Got DOWN touch before receiving UP or CANCEL from last gesture
+2026-07-06 23:48:41.198 28981-28981 unknown:ReactNative     com.anonymous.o2o                    E  Got DOWN touch before receiving UP or CANCEL from last gesture
+2026-07-06 23:48:41.511 28981-28981 unknown:ReactNative     com.anonymous.o2o                    E  Got DOWN touch before receiving UP or CANCEL from last gesture
+2026-07-06 23:48:42.431 28981-28981 unknown:ReactNative     com.anonymous.o2o                    E  Got DOWN touch before receiving UP or CANCEL from last gesture
+2026-07-06 23:48:43.155 28981-28981 unknown:ReactNative     com.anonymous.o2o                    E  Got DOWN touch before receiving UP or CANCEL from last gesture
+2026-07-06 23:48:43.883 28981-28981 unknown:ReactNative     com.anonymous.o2o                    E  Got DOWN touch before receiving UP or CANCEL from last gesture
+2026-07-06 23:48:44.484 28981-28981 unknown:ReactNative     com.anonymous.o2o                    E  Got DOWN touch before receiving UP or CANCEL from last gesture
+2026-07-06 23:48:44.677 28981-28981 unknown:ReactNative     com.anonymous.o2o                    E  Got DOWN touch before receiving UP or CANCEL from last gesture
+2026-07-06 23:48:44.833 28981-28981 unknown:ReactNative     com.anonymous.o2o                    E  Got DOWN touch before receiving UP or CANCEL from last gesture
+2026-07-06 23:48:44.968 28981-28981 unknown:ReactNative     com.anonymous.o2o                    E  Got DOWN touch before receiving UP or CANCEL from last gesture
