@@ -8,7 +8,7 @@ import { db } from "@workspace/db";
 import { bids } from "@workspace/db/schema";
 import { eq, and, lt } from "drizzle-orm";
 
-const rawPort = process.env["PORT"] || "5000";
+const rawPort = process.env["PORT"] || "3001";
 const port = Number(rawPort);
 
 if (Number.isNaN(port) || port <= 0) {

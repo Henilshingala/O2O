@@ -15,15 +15,17 @@ export default defineConfig({
     emptyOutDir: true,
   },
   server: {
-    port: 5173,
+    host: "0.0.0.0",
+    port: 5000,
+    allowedHosts: true,
     proxy: {
       "/api": {
-        target: "https://o2o-rphb.onrender.com",
+        target: "http://localhost:3001",
         changeOrigin: true,
         secure: false,
       },
       "/uploads": {
-        target: "https://o2o-rphb.onrender.com",
+        target: "http://localhost:3001",
         changeOrigin: true,
         secure: false,
       },
