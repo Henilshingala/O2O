@@ -1,0 +1,300 @@
+--------- beginning of main
+--------- beginning of system
+---------------------------- PROCESS STARTED (29916) for package com.anonymous.o2o ----------------------------
+---------------------------- PROCESS ENDED (29916) for package com.anonymous.o2o ----------------------------
+2026-07-06 23:56:51.122 29916-29916 Process                 com.anonymous.o2o                    I  Sending signal. PID: 29916 SIG: 9
+---------------------------- PROCESS STARTED (30046) for package com.anonymous.o2o ----------------------------
+2026-07-06 23:56:52.198 30046-30046 nativeloader            com.anonymous.o2o                    D  Configuring clns-4 for other apk /data/app/~~u8yREG8Uvnlpb0ftXQTvyA==/com.anonymous.o2o-rmyH-TlAAsRBrHhLOcyK1A==/base.apk. target_sdk_version=35, uses_libraries=, library_path=/data/app/~~u8yREG8Uvnlpb0ftXQTvyA==/com.anonymous.o2o-rmyH-TlAAsRBrHhLOcyK1A==/lib/arm64:/data/app/~~u8yREG8Uvnlpb0ftXQTvyA==/com.anonymous.o2o-rmyH-TlAAsRBrHhLOcyK1A==/base.apk!/lib/arm64-v8a, permitted_path=/data:/mnt/expand:/data/user/0/com.anonymous.o2o
+2026-07-06 23:56:52.217 30046-30046 nativeloader            com.anonymous.o2o                    D  Load libframework-connectivity-jni.so using APEX ns com_android_tethering for caller /apex/com.android.tethering/javalib/framework-connectivity.jar: ok
+2026-07-06 23:56:52.221 30046-30046 GraphicsEnvironment     com.anonymous.o2o                    V  ANGLE Developer option for 'com.anonymous.o2o' set to: 'default'
+2026-07-06 23:56:52.221 30046-30046 GraphicsEnvironment     com.anonymous.o2o                    V  ANGLE GameManagerService for com.anonymous.o2o: false
+2026-07-06 23:56:52.222 30046-30046 GraphicsEnvironment     com.anonymous.o2o                    V  App is not on the allowlist for updatable production driver.
+2026-07-06 23:56:52.231 30046-30046 NetworkSecurityConfig   com.anonymous.o2o                    D  No Network Security Config specified, using platform default
+2026-07-06 23:56:52.232 30046-30046 NetworkSecurityConfig   com.anonymous.o2o                    D  No Network Security Config specified, using platform default
+2026-07-06 23:56:52.258 30046-30046 fb-UnpackingSoSource    com.anonymous.o2o                    V  locked dso store /data/user/0/com.anonymous.o2o/lib-main
+2026-07-06 23:56:52.261 30046-30046 fb-UnpackingSoSource    com.anonymous.o2o                    V  deps mismatch on deps store: regenerating
+2026-07-06 23:56:52.261 30046-30046 fb-UnpackingSoSource    com.anonymous.o2o                    V  so store dirty: regenerating
+2026-07-06 23:56:52.404 30046-30046 ApkSoSource             com.anonymous.o2o                    D  not allowing consideration of lib/arm64-v8a/libbutter.so: deferring to libdir
+2026-07-06 23:56:52.404 30046-30046 ApkSoSource             com.anonymous.o2o                    D  not allowing consideration of lib/arm64-v8a/libc++_shared.so: deferring to libdir
+2026-07-06 23:56:52.404 30046-30046 ApkSoSource             com.anonymous.o2o                    D  not allowing consideration of lib/arm64-v8a/libfabricjni.so: deferring to libdir
+2026-07-06 23:56:52.405 30046-30046 ApkSoSource             com.anonymous.o2o                    D  not allowing consideration of lib/arm64-v8a/libfb.so: deferring to libdir
+2026-07-06 23:56:52.405 30046-30046 ApkSoSource             com.anonymous.o2o                    D  not allowing consideration of lib/arm64-v8a/libfbjni.so: deferring to libdir
+2026-07-06 23:56:52.405 30046-30046 ApkSoSource             com.anonymous.o2o                    D  not allowing consideration of lib/arm64-v8a/libfolly_futures.so: deferring to libdir
+2026-07-06 23:56:52.405 30046-30046 ApkSoSource             com.anonymous.o2o                    D  not allowing consideration of lib/arm64-v8a/libfolly_json.so: deferring to libdir
+2026-07-06 23:56:52.405 30046-30046 ApkSoSource             com.anonymous.o2o                    D  not allowing consideration of lib/arm64-v8a/libglog.so: deferring to libdir
+2026-07-06 23:56:52.406 30046-30046 ApkSoSource             com.anonymous.o2o                    D  not allowing consideration of lib/arm64-v8a/libglog_init.so: deferring to libdir
+2026-07-06 23:56:52.406 30046-30046 ApkSoSource             com.anonymous.o2o                    D  not allowing consideration of lib/arm64-v8a/libhermes-executor-debug.so: deferring to libdir
+2026-07-06 23:56:52.406 30046-30046 ApkSoSource             com.anonymous.o2o                    D  not allowing consideration of lib/arm64-v8a/libhermes-executor-release.so: deferring to libdir
+2026-07-06 23:56:52.406 30046-30046 ApkSoSource             com.anonymous.o2o                    D  not allowing consideration of lib/arm64-v8a/libhermes.so: deferring to libdir
+2026-07-06 23:56:52.406 30046-30046 ApkSoSource             com.anonymous.o2o                    D  not allowing consideration of lib/arm64-v8a/libimagepipeline.so: deferring to libdir
+2026-07-06 23:56:52.407 30046-30046 ApkSoSource             com.anonymous.o2o                    D  not allowing consideration of lib/arm64-v8a/libjscexecutor.so: deferring to libdir
+2026-07-06 23:56:52.407 30046-30046 ApkSoSource             com.anonymous.o2o                    D  not allowing consideration of lib/arm64-v8a/libjsi.so: deferring to libdir
+2026-07-06 23:56:52.407 30046-30046 ApkSoSource             com.anonymous.o2o                    D  not allowing consideration of lib/arm64-v8a/libjsijniprofiler.so: deferring to libdir
+2026-07-06 23:56:52.407 30046-30046 ApkSoSource             com.anonymous.o2o                    D  not allowing consideration of lib/arm64-v8a/libjsinspector.so: deferring to libdir
+2026-07-06 23:56:52.407 30046-30046 ApkSoSource             com.anonymous.o2o                    D  not allowing consideration of lib/arm64-v8a/liblogger.so: deferring to libdir
+2026-07-06 23:56:52.408 30046-30046 ApkSoSource             com.anonymous.o2o                    D  not allowing consideration of lib/arm64-v8a/libmapbufferjni.so: deferring to libdir
+2026-07-06 23:56:52.408 30046-30046 ApkSoSource             com.anonymous.o2o                    D  not allowing consideration of lib/arm64-v8a/libnative-filters.so: deferring to libdir
+2026-07-06 23:56:52.408 30046-30046 ApkSoSource             com.anonymous.o2o                    D  not allowing consideration of lib/arm64-v8a/libnative-imagetranscoder.so: deferring to libdir
+2026-07-06 23:56:52.408 30046-30046 ApkSoSource             com.anonymous.o2o                    D  not allowing consideration of lib/arm64-v8a/libreact_codegen_rncore.so: deferring to libdir
+2026-07-06 23:56:52.408 30046-30046 ApkSoSource             com.anonymous.o2o                    D  not allowing consideration of lib/arm64-v8a/libreact_config.so: deferring to libdir
+2026-07-06 23:56:52.409 30046-30046 ApkSoSource             com.anonymous.o2o                    D  not allowing consideration of lib/arm64-v8a/libreact_debug.so: deferring to libdir
+2026-07-06 23:56:52.409 30046-30046 ApkSoSource             com.anonymous.o2o                    D  not allowing consideration of lib/arm64-v8a/libreact_nativemodule_core.so: deferring to libdir
+2026-07-06 23:56:52.409 30046-30046 ApkSoSource             com.anonymous.o2o                    D  not allowing consideration of lib/arm64-v8a/libreact_render_animations.so: deferring to libdir
+2026-07-06 23:56:52.409 30046-30046 ApkSoSource             com.anonymous.o2o                    D  not allowing consideration of lib/arm64-v8a/libreact_render_attributedstring.so: deferring to libdir
+2026-07-06 23:56:52.410 30046-30046 ApkSoSource             com.anonymous.o2o                    D  not allowing consideration of lib/arm64-v8a/libreact_render_componentregistry.so: deferring to libdir
+2026-07-06 23:56:52.410 30046-30046 ApkSoSource             com.anonymous.o2o                    D  not allowing consideration of lib/arm64-v8a/libreact_render_core.so: deferring to libdir
+2026-07-06 23:56:52.410 30046-30046 ApkSoSource             com.anonymous.o2o                    D  not allowing consideration of lib/arm64-v8a/libreact_render_debug.so: deferring to libdir
+2026-07-06 23:56:52.410 30046-30046 ApkSoSource             com.anonymous.o2o                    D  not allowing consideration of lib/arm64-v8a/libreact_render_graphics.so: deferring to libdir
+2026-07-06 23:56:52.410 30046-30046 ApkSoSource             com.anonymous.o2o                    D  not allowing consideration of lib/arm64-v8a/libreact_render_imagemanager.so: deferring to libdir
+2026-07-06 23:56:52.411 30046-30046 ApkSoSource             com.anonymous.o2o                    D  not allowing consideration of lib/arm64-v8a/libreact_render_leakchecker.so: deferring to libdir
+2026-07-06 23:56:52.411 30046-30046 ApkSoSource             com.anonymous.o2o                    D  not allowing consideration of lib/arm64-v8a/libreact_render_mapbuffer.so: deferring to libdir
+2026-07-06 23:56:52.411 30046-30046 ApkSoSource             com.anonymous.o2o                    D  not allowing consideration of lib/arm64-v8a/libreact_render_mounting.so: deferring to libdir
+2026-07-06 23:56:52.411 30046-30046 ApkSoSource             com.anonymous.o2o                    D  not allowing consideration of lib/arm64-v8a/libreact_render_runtimescheduler.so: deferring to libdir
+2026-07-06 23:56:52.413 30046-30046 ApkSoSource             com.anonymous.o2o                    D  not allowing consideration of lib/arm64-v8a/libreact_render_scheduler.so: deferring to libdir
+2026-07-06 23:56:52.413 30046-30046 ApkSoSource             com.anonymous.o2o                    D  not allowing consideration of lib/arm64-v8a/libreact_render_telemetry.so: deferring to libdir
+2026-07-06 23:56:52.413 30046-30046 ApkSoSource             com.anonymous.o2o                    D  not allowing consideration of lib/arm64-v8a/libreact_render_templateprocessor.so: deferring to libdir
+2026-07-06 23:56:52.414 30046-30046 ApkSoSource             com.anonymous.o2o                    D  not allowing consideration of lib/arm64-v8a/libreact_render_textlayoutmanager.so: deferring to libdir
+2026-07-06 23:56:52.414 30046-30046 ApkSoSource             com.anonymous.o2o                    D  not allowing consideration of lib/arm64-v8a/libreact_render_uimanager.so: deferring to libdir
+2026-07-06 23:56:52.414 30046-30046 ApkSoSource             com.anonymous.o2o                    D  not allowing consideration of lib/arm64-v8a/libreact_utils.so: deferring to libdir
+2026-07-06 23:56:52.414 30046-30046 ApkSoSource             com.anonymous.o2o                    D  not allowing consideration of lib/arm64-v8a/libreactnativeblob.so: deferring to libdir
+2026-07-06 23:56:52.415 30046-30046 ApkSoSource             com.anonymous.o2o                    D  not allowing consideration of lib/arm64-v8a/libreactnativejni.so: deferring to libdir
+2026-07-06 23:56:52.415 30046-30046 ApkSoSource             com.anonymous.o2o                    D  not allowing consideration of lib/arm64-v8a/libreactperfloggerjni.so: deferring to libdir
+2026-07-06 23:56:52.415 30046-30046 ApkSoSource             com.anonymous.o2o                    D  not allowing consideration of lib/arm64-v8a/libreanimated.so: deferring to libdir
+2026-07-06 23:56:52.415 30046-30046 ApkSoSource             com.anonymous.o2o                    D  not allowing consideration of lib/arm64-v8a/librrc_image.so: deferring to libdir
+2026-07-06 23:56:52.415 30046-30046 ApkSoSource             com.anonymous.o2o                    D  not allowing consideration of lib/arm64-v8a/librrc_root.so: deferring to libdir
+2026-07-06 23:56:52.416 30046-30046 ApkSoSource             com.anonymous.o2o                    D  not allowing consideration of lib/arm64-v8a/librrc_text.so: deferring to libdir
+2026-07-06 23:56:52.416 30046-30046 ApkSoSource             com.anonymous.o2o                    D  not allowing consideration of lib/arm64-v8a/librrc_unimplementedview.so: deferring to libdir
+2026-07-06 23:56:52.416 30046-30046 ApkSoSource             com.anonymous.o2o                    D  not allowing consideration of lib/arm64-v8a/librrc_view.so: deferring to libdir
+2026-07-06 23:56:52.416 30046-30046 ApkSoSource             com.anonymous.o2o                    D  not allowing consideration of lib/arm64-v8a/libruntimeexecutor.so: deferring to libdir
+2026-07-06 23:56:52.417 30046-30046 ApkSoSource             com.anonymous.o2o                    D  not allowing consideration of lib/arm64-v8a/libturbomodulejsijni.so: deferring to libdir
+2026-07-06 23:56:52.417 30046-30046 ApkSoSource             com.anonymous.o2o                    D  not allowing consideration of lib/arm64-v8a/libyoga.so: deferring to libdir
+2026-07-06 23:56:52.417 30046-30046 fb-UnpackingSoSource    com.anonymous.o2o                    V  regenerating DSO store com.facebook.soloader.ApkSoSource
+2026-07-06 23:56:52.418 30046-30046 fb-UnpackingSoSource    com.anonymous.o2o                    V  Finished regenerating DSO store com.facebook.soloader.ApkSoSource
+2026-07-06 23:56:52.418 30046-30046 fb-UnpackingSoSource    com.anonymous.o2o                    V  starting syncer worker
+2026-07-06 23:56:52.421 30046-30046 fb-UnpackingSoSource    com.anonymous.o2o                    V  releasing dso store lock for /data/user/0/com.anonymous.o2o/lib-main (from syncer thread)
+2026-07-06 23:56:52.421 30046-30046 fb-UnpackingSoSource    com.anonymous.o2o                    V  not releasing dso store lock for /data/user/0/com.anonymous.o2o/lib-main (syncer thread started)
+2026-07-06 23:56:52.469 30046-30046 AppCompatDelegate       com.anonymous.o2o                    D  Checking for metadata for AppLocalesMetadataHolderService : Service not found
+2026-07-06 23:56:52.543 30046-30046 SoLoader                com.anonymous.o2o                    D  libjscexecutor.so not found on /data/data/com.anonymous.o2o/lib-main
+2026-07-06 23:56:52.543 30046-30046 SoLoader                com.anonymous.o2o                    D  libjscexecutor.so found on /data/app/~~u8yREG8Uvnlpb0ftXQTvyA==/com.anonymous.o2o-rmyH-TlAAsRBrHhLOcyK1A==/lib/arm64
+2026-07-06 23:56:52.543 30046-30046 SoLoader                com.anonymous.o2o                    D  Not resolving dependencies for libjscexecutor.so
+2026-07-06 23:56:52.545 30046-30046 nativeloader            com.anonymous.o2o                    D  Load /data/app/~~u8yREG8Uvnlpb0ftXQTvyA==/com.anonymous.o2o-rmyH-TlAAsRBrHhLOcyK1A==/lib/arm64/libjscexecutor.so using class loader ns clns-4 (caller=/data/app/~~u8yREG8Uvnlpb0ftXQTvyA==/com.anonymous.o2o-rmyH-TlAAsRBrHhLOcyK1A==/base.apk): dlopen failed: library "libjsc.so" not found: needed by /data/app/~~u8yREG8Uvnlpb0ftXQTvyA==/com.anonymous.o2o-rmyH-TlAAsRBrHhLOcyK1A==/lib/arm64/libjscexecutor.so in namespace clns-4
+2026-07-06 23:56:52.545 30046-30046 System.err              com.anonymous.o2o                    W  java.lang.UnsatisfiedLinkError: dlopen failed: library "libjsc.so" not found: needed by /data/app/~~u8yREG8Uvnlpb0ftXQTvyA==/com.anonymous.o2o-rmyH-TlAAsRBrHhLOcyK1A==/lib/arm64/libjscexecutor.so in namespace clns-4
+2026-07-06 23:56:52.546 30046-30046 System.err              com.anonymous.o2o                    W  	at java.lang.Runtime.load0(Runtime.java:962)
+2026-07-06 23:56:52.546 30046-30046 System.err              com.anonymous.o2o                    W  	at java.lang.System.load(System.java:1729)
+2026-07-06 23:56:52.546 30046-30046 System.err              com.anonymous.o2o                    W  	at com.facebook.soloader.SoLoader$1.load(SoLoader.java:529)
+2026-07-06 23:56:52.546 30046-30046 System.err              com.anonymous.o2o                    W  	at com.facebook.soloader.DirectorySoSource.loadLibraryFrom(DirectorySoSource.java:110)
+2026-07-06 23:56:52.546 30046-30046 System.err              com.anonymous.o2o                    W  	at com.facebook.soloader.DirectorySoSource.loadLibrary(DirectorySoSource.java:63)
+2026-07-06 23:56:52.546 30046-30046 System.err              com.anonymous.o2o                    W  	at com.facebook.soloader.ApplicationSoSource.loadLibrary(ApplicationSoSource.java:91)
+2026-07-06 23:56:52.546 30046-30046 System.err              com.anonymous.o2o                    W  	at com.facebook.soloader.SoLoader.doLoadLibraryBySoName(SoLoader.java:1038)
+2026-07-06 23:56:52.546 30046-30046 System.err              com.anonymous.o2o                    W  	at com.facebook.soloader.SoLoader.loadLibraryBySoNameImpl(SoLoader.java:914)
+2026-07-06 23:56:52.546 30046-30046 System.err              com.anonymous.o2o                    W  	at com.facebook.soloader.SoLoader.loadLibraryBySoName(SoLoader.java:826)
+2026-07-06 23:56:52.546 30046-30046 System.err              com.anonymous.o2o                    W  	at com.facebook.soloader.SoLoader.loadLibrary(SoLoader.java:773)
+2026-07-06 23:56:52.546 30046-30046 System.err              com.anonymous.o2o                    W  	at com.facebook.soloader.SoLoader.loadLibrary(SoLoader.java:743)
+2026-07-06 23:56:52.546 30046-30046 System.err              com.anonymous.o2o                    W  	at com.facebook.react.jscexecutor.JSCExecutor.loadLibrary(JSCExecutor.java:24)
+2026-07-06 23:56:52.546 30046-30046 System.err              com.anonymous.o2o                    W  	at com.facebook.react.jscexecutor.JSCExecutor.<clinit>(JSCExecutor.java:20)
+2026-07-06 23:56:52.546 30046-30046 System.err              com.anonymous.o2o                    W  	at com.facebook.react.ReactInstanceManagerBuilder.getDefaultJSExecutorFactory(ReactInstanceManagerBuilder.java:388)
+2026-07-06 23:56:52.546 30046-30046 System.err              com.anonymous.o2o                    W  	at com.facebook.react.ReactInstanceManagerBuilder.build(ReactInstanceManagerBuilder.java:344)
+2026-07-06 23:56:52.546 30046-30046 System.err              com.anonymous.o2o                    W  	at com.facebook.react.ReactNativeHost.createReactInstanceManager(ReactNativeHost.java:95)
+2026-07-06 23:56:52.546 30046-30046 System.err              com.anonymous.o2o                    W  	at com.facebook.react.ReactNativeHost.getReactInstanceManager(ReactNativeHost.java:42)
+2026-07-06 23:56:52.547 30046-30046 System.err              com.anonymous.o2o                    W  	at com.facebook.react.ReactDelegate.loadApp(ReactDelegate.java:104)
+2026-07-06 23:56:52.547 30046-30046 System.err              com.anonymous.o2o                    W  	at com.facebook.react.ReactActivityDelegate.loadApp(ReactActivityDelegate.java:91)
+2026-07-06 23:56:52.547 30046-30046 System.err              com.anonymous.o2o                    W  	at com.facebook.react.ReactActivityDelegate.onCreate(ReactActivityDelegate.java:86)
+2026-07-06 23:56:52.547 30046-30046 System.err              com.anonymous.o2o                    W  	at com.facebook.react.ReactActivity.onCreate(ReactActivity.java:46)
+2026-07-06 23:56:52.547 30046-30046 System.err              com.anonymous.o2o                    W  	at android.app.Activity.performCreate(Activity.java:8696)
+2026-07-06 23:56:52.547 30046-30046 System.err              com.anonymous.o2o                    W  	at android.app.Activity.performCreate(Activity.java:8665)
+2026-07-06 23:56:52.547 30046-30046 System.err              com.anonymous.o2o                    W  	at android.app.Instrumentation.callActivityOnCreate(Instrumentation.java:1384)
+2026-07-06 23:56:52.547 30046-30046 System.err              com.anonymous.o2o                    W  	at android.app.ActivityThread.performLaunchActivity(ActivityThread.java:3947)
+2026-07-06 23:56:52.547 30046-30046 System.err              com.anonymous.o2o                    W  	at android.app.ActivityThread.handleLaunchActivity(ActivityThread.java:4111)
+2026-07-06 23:56:52.547 30046-30046 System.err              com.anonymous.o2o                    W  	at android.app.servertransaction.LaunchActivityItem.execute(LaunchActivityItem.java:101)
+2026-07-06 23:56:52.547 30046-30046 System.err              com.anonymous.o2o                    W  	at android.app.servertransaction.TransactionExecutor.executeCallbacks(TransactionExecutor.java:135)
+2026-07-06 23:56:52.547 30046-30046 System.err              com.anonymous.o2o                    W  	at android.app.servertransaction.TransactionExecutor.execute(TransactionExecutor.java:95)
+2026-07-06 23:56:52.547 30046-30046 System.err              com.anonymous.o2o                    W  	at android.app.ActivityThread$H.handleMessage(ActivityThread.java:2526)
+2026-07-06 23:56:52.547 30046-30046 System.err              com.anonymous.o2o                    W  	at android.os.Handler.dispatchMessage(Handler.java:106)
+2026-07-06 23:56:52.547 30046-30046 System.err              com.anonymous.o2o                    W  	at android.os.Looper.loopOnce(Looper.java:223)
+2026-07-06 23:56:52.547 30046-30046 System.err              com.anonymous.o2o                    W  	at android.os.Looper.loop(Looper.java:324)
+2026-07-06 23:56:52.547 30046-30046 System.err              com.anonymous.o2o                    W  	at android.app.ActivityThread.main(ActivityThread.java:8481)
+2026-07-06 23:56:52.547 30046-30046 System.err              com.anonymous.o2o                    W  	at java.lang.reflect.Method.invoke(Native Method)
+2026-07-06 23:56:52.547 30046-30046 System.err              com.anonymous.o2o                    W  	at com.android.internal.os.RuntimeInit$MethodAndArgsCaller.run(RuntimeInit.java:582)
+2026-07-06 23:56:52.548 30046-30046 System.err              com.anonymous.o2o                    W  	at com.android.internal.os.ZygoteInit.main(ZygoteInit.java:1061)
+2026-07-06 23:56:52.548 30046-30046 SoLoader                com.anonymous.o2o                    E  couldn't find DSO to load: libjscexecutor.so caused by: dlopen failed: library "libjsc.so" not found: needed by /data/app/~~u8yREG8Uvnlpb0ftXQTvyA==/com.anonymous.o2o-rmyH-TlAAsRBrHhLOcyK1A==/lib/arm64/libjscexecutor.so in namespace clns-4 result: 0
+2026-07-06 23:56:52.551 30046-30046 SoLoader                com.anonymous.o2o                    D  libhermes.so not found on /data/data/com.anonymous.o2o/lib-main
+2026-07-06 23:56:52.552 30046-30046 SoLoader                com.anonymous.o2o                    D  libhermes.so found on /data/app/~~u8yREG8Uvnlpb0ftXQTvyA==/com.anonymous.o2o-rmyH-TlAAsRBrHhLOcyK1A==/lib/arm64
+2026-07-06 23:56:52.552 30046-30046 SoLoader                com.anonymous.o2o                    D  Not resolving dependencies for libhermes.so
+2026-07-06 23:56:52.555 30046-30046 nativeloader            com.anonymous.o2o                    D  Load /data/app/~~u8yREG8Uvnlpb0ftXQTvyA==/com.anonymous.o2o-rmyH-TlAAsRBrHhLOcyK1A==/lib/arm64/libhermes.so using class loader ns clns-4 (caller=/data/app/~~u8yREG8Uvnlpb0ftXQTvyA==/com.anonymous.o2o-rmyH-TlAAsRBrHhLOcyK1A==/base.apk): ok
+2026-07-06 23:56:52.556 30046-30046 SoLoader                com.anonymous.o2o                    D  libhermes-executor-debug.so not found on /data/data/com.anonymous.o2o/lib-main
+2026-07-06 23:56:52.556 30046-30046 SoLoader                com.anonymous.o2o                    D  libhermes-executor-debug.so found on /data/app/~~u8yREG8Uvnlpb0ftXQTvyA==/com.anonymous.o2o-rmyH-TlAAsRBrHhLOcyK1A==/lib/arm64
+2026-07-06 23:56:52.556 30046-30046 SoLoader                com.anonymous.o2o                    D  Not resolving dependencies for libhermes-executor-debug.so
+2026-07-06 23:56:52.565 30046-30046 nativeloader            com.anonymous.o2o                    D  Load /data/app/~~u8yREG8Uvnlpb0ftXQTvyA==/com.anonymous.o2o-rmyH-TlAAsRBrHhLOcyK1A==/lib/arm64/libhermes-executor-debug.so using class loader ns clns-4 (caller=/data/app/~~u8yREG8Uvnlpb0ftXQTvyA==/com.anonymous.o2o-rmyH-TlAAsRBrHhLOcyK1A==/base.apk): ok
+2026-07-06 23:56:52.778 30046-30046 m.anonymous.o2o         com.anonymous.o2o                    I  hiddenapi: Accessing hidden method Landroid/view/View;->computeFitSystemWindows(Landroid/graphics/Rect;Landroid/graphics/Rect;)Z (runtime_flags=0, domain=platform, api=unsupported) from Landroidx/appcompat/widget/ViewUtils; (domain=app, TargetSdkVersion=35) using reflection: allowed
+2026-07-06 23:56:52.778 30046-30046 m.anonymous.o2o         com.anonymous.o2o                    I  hiddenapi: Accessing hidden method Landroid/view/ViewGroup;->makeOptionalFitsSystemWindows()V (runtime_flags=0, domain=platform, api=unsupported) from Landroidx/appcompat/widget/ViewUtils; (domain=app, TargetSdkVersion=35) using reflection: allowed
+2026-07-06 23:56:52.807 30046-30046 MSYNC3-Var...efreshRate com.anonymous.o2o                    I  Variable refreshrate is disabled
+2026-07-06 23:56:52.808 30046-30115 nativeloader            com.anonymous.o2o                    D  Load libpowerhalwrap_jni.so using system ns (caller=/system/framework/mediatek-framework.jar): ok
+2026-07-06 23:56:52.808 30046-30115 PowerHalWrapper         com.anonymous.o2o                    I  PowerHalWrapper.getInstance 
+2026-07-06 23:56:52.818 30046-30046 libc                    com.anonymous.o2o                    W  Access denied finding property "ro.vendor.perf.scroll_opt.heavy_app"
+2026-07-06 23:56:52.842 30046-30046 unknown:ReactNative     com.anonymous.o2o                    W  Packager connection already open, nooping.
+2026-07-06 23:56:52.855 30046-30046 BufferQueueConsumer     com.anonymous.o2o                    D  [](id:755e00000000,api:0,p:-1,c:30046) connect: controlledByApp=false
+2026-07-06 23:56:52.876 30046-30046 FBI                     com.anonymous.o2o                    E  Can't load library: dlopen failed: library "libmagtsync.so" not found
+2026-07-06 23:56:52.897 30046-30093 skia                    com.anonymous.o2o                    D  GrGLMakeAssembledInterface verStr OpenGL ES 3.2 v1.r32p1-00bet5.a87a909447f91dbbba43e39a03b14f82
+2026-07-06 23:56:52.897 30046-30093 skia                    com.anonymous.o2o                    D  GrGLMakeAssembledGLESInterface verStr OpenGL ES 3.2 v1.r32p1-00bet5.a87a909447f91dbbba43e39a03b14f82
+2026-07-06 23:56:52.897 30046-30093 skia                    com.anonymous.o2o                    D  extensions init verString=OpenGL ES 3.2 v1.r32p1-00bet5.a87a909447f91dbbba43e39a03b14f82
+2026-07-06 23:56:52.911 30046-30138 ion                     com.anonymous.o2o                    E  ioctl c0044901 failed with code -1: Invalid argument
+2026-07-06 23:56:52.912 30046-30093 hw-ProcessState         com.anonymous.o2o                    D  Binder ioctl to enable oneway spam detection failed: Invalid argument
+2026-07-06 23:56:52.953 30046-30093 BLASTBufferQueue        com.anonymous.o2o                    D  [VRI[MainActivity]#0](f:0,a:1) acquireNextBufferLocked size=1080x2400 mFrameNumber=1 applyTransaction=true mTimestamp=10282674538381(auto) mPendingTransactions.size=0 graphicBufferId=129046587375616 transform=0
+2026-07-06 23:56:52.959 30046-30093 Parcel                  com.anonymous.o2o                    W  Expecting binder but got null!
+2026-07-06 23:56:52.976 30046-30046 Compatibil...geReporter com.anonymous.o2o                    D  Compat change id reported: 210923482; UID 10891; state: ENABLED
+2026-07-06 23:56:53.034 30046-30046 BufferQueueConsumer     com.anonymous.o2o                    D  [](id:755e00000001,api:0,p:-1,c:30046) connect: controlledByApp=false
+2026-07-06 23:56:53.073 30046-30093 BLASTBufferQueue        com.anonymous.o2o                    D  [VRI[PopupWindow:b54b727]#1](f:0,a:1) acquireNextBufferLocked size=1080x58 mFrameNumber=1 applyTransaction=true mTimestamp=10282794209381(auto) mPendingTransactions.size=0 graphicBufferId=129046587375623 transform=0
+2026-07-06 23:56:53.074 30046-30093 Parcel                  com.anonymous.o2o                    W  Expecting binder but got null!
+2026-07-06 23:56:53.081 30046-30046 ImeFocusController      com.anonymous.o2o                    V  onWindowFocus: DecorView@c621336[MainActivity] softInputMode=STATE_UNSPECIFIED|ADJUST_RESIZE|IS_FORWARD_NAVIGATION
+2026-07-06 23:56:53.081 30046-30046 ImeFocusController      com.anonymous.o2o                    V  Restarting due to isRestartOnNextWindowFocus as true
+2026-07-06 23:56:53.081 30046-30046 ImeFocusController      com.anonymous.o2o                    D  onViewFocusChanged, view=DecorView@c621336[MainActivity], mServedView=null
+2026-07-06 23:56:53.082 30046-30046 ImeFocusController      com.anonymous.o2o                    V  checkFocus: view=null next=DecorView@c621336[MainActivity] immDelegate=delegate{6c99bbe displayId=0} force=true package=<none>
+2026-07-06 23:56:53.100 30046-30060 ActivityThread          com.anonymous.o2o                    V  updateVmProcessStateForGc sceneId =1 state=196608
+2026-07-06 23:56:54.039 30046-30113 SoLoader                com.anonymous.o2o                    D  libreactnativejni.so not found on /data/data/com.anonymous.o2o/lib-main
+2026-07-06 23:56:54.040 30046-30113 SoLoader                com.anonymous.o2o                    D  libreactnativejni.so found on /data/app/~~u8yREG8Uvnlpb0ftXQTvyA==/com.anonymous.o2o-rmyH-TlAAsRBrHhLOcyK1A==/lib/arm64
+2026-07-06 23:56:54.040 30046-30113 SoLoader                com.anonymous.o2o                    D  Not resolving dependencies for libreactnativejni.so
+2026-07-06 23:56:54.041 30046-30113 nativeloader            com.anonymous.o2o                    D  Load /data/app/~~u8yREG8Uvnlpb0ftXQTvyA==/com.anonymous.o2o-rmyH-TlAAsRBrHhLOcyK1A==/lib/arm64/libreactnativejni.so using class loader ns clns-4 (caller=/data/app/~~u8yREG8Uvnlpb0ftXQTvyA==/com.anonymous.o2o-rmyH-TlAAsRBrHhLOcyK1A==/base.apk): ok
+2026-07-06 23:56:54.044 30046-30113 SoLoader                com.anonymous.o2o                    D  libfbjni.so not found on /data/data/com.anonymous.o2o/lib-main
+2026-07-06 23:56:54.044 30046-30113 SoLoader                com.anonymous.o2o                    D  libfbjni.so found on /data/app/~~u8yREG8Uvnlpb0ftXQTvyA==/com.anonymous.o2o-rmyH-TlAAsRBrHhLOcyK1A==/lib/arm64
+2026-07-06 23:56:54.044 30046-30113 SoLoader                com.anonymous.o2o                    D  Not resolving dependencies for libfbjni.so
+2026-07-06 23:56:54.045 30046-30113 nativeloader            com.anonymous.o2o                    D  Load /data/app/~~u8yREG8Uvnlpb0ftXQTvyA==/com.anonymous.o2o-rmyH-TlAAsRBrHhLOcyK1A==/lib/arm64/libfbjni.so using class loader ns clns-4 (caller=/data/app/~~u8yREG8Uvnlpb0ftXQTvyA==/com.anonymous.o2o-rmyH-TlAAsRBrHhLOcyK1A==/base.apk): ok
+2026-07-06 23:56:54.443 30046-30051 m.anonymous.o2o         com.anonymous.o2o                    I  Compiler allocated 5600KB to compile void android.view.ViewRootImpl.performTraversals()
+2026-07-06 23:56:59.429 30046-30046 BLASTBufferQueue        com.anonymous.o2o                    D  [VRI[PopupWindow:b54b727]#1](f:0,a:1) destructor()
+2026-07-06 23:56:59.429 30046-30046 BufferQueueConsumer     com.anonymous.o2o                    D  [VRI[PopupWindow:b54b727]#1(BLAST Consumer)1](id:755e00000001,api:0,p:-1,c:30046) disconnect
+2026-07-06 23:56:59.446 30046-30283 RNFusedLocation         com.anonymous.o2o                    I  RNFusedLocation initialized
+2026-07-06 23:57:01.512 30046-30283 unknown:ReactContext    com.anonymous.o2o                    W  initializeMessageQueueThreads() is called.
+2026-07-06 23:57:01.530 30046-30046 unknown:ReactNative     com.anonymous.o2o                    W  Packager connection already open, nooping.
+2026-07-06 23:57:01.659 30046-30285 unknown:Vi...rtyUpdater com.anonymous.o2o                    W  Could not find generated setter for class com.facebook.react.views.drawer.ReactDrawerLayoutManager
+2026-07-06 23:57:01.669 30046-30285 unknown:Vi...rtyUpdater com.anonymous.o2o                    W  Could not find generated setter for class com.facebook.react.uimanager.LayoutShadowNode
+2026-07-06 23:57:01.675 30046-30285 unknown:Vi...rtyUpdater com.anonymous.o2o                    W  Could not find generated setter for class com.facebook.react.views.scroll.ReactHorizontalScrollViewManager
+2026-07-06 23:57:01.680 30046-30285 unknown:Vi...rtyUpdater com.anonymous.o2o                    W  Could not find generated setter for class com.facebook.react.views.scroll.ReactHorizontalScrollContainerViewManager
+2026-07-06 23:57:01.682 30046-30285 unknown:Vi...rtyUpdater com.anonymous.o2o                    W  Could not find generated setter for class com.facebook.react.views.progressbar.ReactProgressBarViewManager
+2026-07-06 23:57:01.684 30046-30285 unknown:Vi...rtyUpdater com.anonymous.o2o                    W  Could not find generated setter for class com.facebook.react.views.progressbar.ProgressBarShadowNode
+2026-07-06 23:57:01.687 30046-30285 unknown:Vi...rtyUpdater com.anonymous.o2o                    W  Could not find generated setter for class com.facebook.react.views.scroll.ReactScrollViewManager
+2026-07-06 23:57:01.691 30046-30285 unknown:Vi...rtyUpdater com.anonymous.o2o                    W  Could not find generated setter for class com.facebook.react.views.slider.ReactSliderManager
+2026-07-06 23:57:01.695 30046-30285 unknown:Vi...rtyUpdater com.anonymous.o2o                    W  Could not find generated setter for class com.facebook.react.views.slider.ReactSliderManager$ReactSliderShadowNode
+2026-07-06 23:57:01.696 30046-30285 unknown:Vi...rtyUpdater com.anonymous.o2o                    W  Could not find generated setter for class com.facebook.react.views.switchview.ReactSwitchManager
+2026-07-06 23:57:01.699 30046-30285 unknown:Vi...rtyUpdater com.anonymous.o2o                    W  Could not find generated setter for class com.facebook.react.views.switchview.ReactSwitchManager$ReactSwitchShadowNode
+2026-07-06 23:57:01.700 30046-30285 unknown:Vi...rtyUpdater com.anonymous.o2o                    W  Could not find generated setter for class com.facebook.react.views.swiperefresh.SwipeRefreshLayoutManager
+2026-07-06 23:57:01.703 30046-30285 unknown:Vi...rtyUpdater com.anonymous.o2o                    W  Could not find generated setter for class com.facebook.react.views.text.frescosupport.FrescoBasedReactTextInlineImageViewManager
+2026-07-06 23:57:01.704 30046-30285 unknown:Vi...rtyUpdater com.anonymous.o2o                    W  Could not find generated setter for class com.facebook.react.views.text.frescosupport.FrescoBasedReactTextInlineImageShadowNode
+2026-07-06 23:57:01.706 30046-30285 unknown:Vi...rtyUpdater com.anonymous.o2o                    W  Could not find generated setter for class com.facebook.react.views.image.ReactImageManager
+2026-07-06 23:57:01.710 30046-30285 unknown:Vi...rtyUpdater com.anonymous.o2o                    W  Could not find generated setter for class com.facebook.react.views.modal.ReactModalHostManager
+2026-07-06 23:57:01.713 30046-30285 unknown:Vi...rtyUpdater com.anonymous.o2o                    W  Could not find generated setter for class com.facebook.react.views.modal.ModalHostShadowNode
+2026-07-06 23:57:01.714 30046-30285 unknown:Vi...rtyUpdater com.anonymous.o2o                    W  Could not find generated setter for class com.facebook.react.views.text.ReactRawTextManager
+2026-07-06 23:57:01.715 30046-30285 unknown:Vi...rtyUpdater com.anonymous.o2o                    W  Could not find generated setter for class com.facebook.react.views.text.ReactRawTextShadowNode
+2026-07-06 23:57:01.716 30046-30285 unknown:Vi...rtyUpdater com.anonymous.o2o                    W  Could not find generated setter for class com.facebook.react.views.textinput.ReactTextInputManager
+2026-07-06 23:57:01.723 30046-30285 unknown:Vi...rtyUpdater com.anonymous.o2o                    W  Could not find generated setter for class com.facebook.react.views.textinput.ReactTextInputShadowNode
+2026-07-06 23:57:01.726 30046-30285 unknown:Vi...rtyUpdater com.anonymous.o2o                    W  Could not find generated setter for class com.facebook.react.views.text.ReactTextViewManager
+2026-07-06 23:57:01.727 30046-30285 unknown:Vi...rtyUpdater com.anonymous.o2o                    W  Could not find generated setter for class com.facebook.react.views.text.ReactTextShadowNode
+2026-07-06 23:57:01.728 30046-30285 unknown:Vi...rtyUpdater com.anonymous.o2o                    W  Could not find generated setter for class com.facebook.react.views.view.ReactViewManager
+2026-07-06 23:57:01.729 30046-30285 unknown:Vi...rtyUpdater com.anonymous.o2o                    W  Could not find generated setter for class com.facebook.react.views.text.ReactVirtualTextViewManager
+2026-07-06 23:57:01.729 30046-30285 unknown:Vi...rtyUpdater com.anonymous.o2o                    W  Could not find generated setter for class com.facebook.react.views.text.ReactVirtualTextShadowNode
+2026-07-06 23:57:01.730 30046-30285 unknown:Vi...rtyUpdater com.anonymous.o2o                    W  Could not find generated setter for class com.facebook.react.views.unimplementedview.ReactUnimplementedViewManager
+2026-07-06 23:57:01.731 30046-30285 unknown:Vi...rtyUpdater com.anonymous.o2o                    W  Could not find generated setter for class com.th3rdwave.safeareacontext.SafeAreaProviderManager
+2026-07-06 23:57:01.731 30046-30285 unknown:Vi...rtyUpdater com.anonymous.o2o                    W  Could not find generated setter for class com.th3rdwave.safeareacontext.SafeAreaViewManager
+2026-07-06 23:57:01.732 30046-30285 unknown:Vi...rtyUpdater com.anonymous.o2o                    W  Could not find generated setter for class com.th3rdwave.safeareacontext.SafeAreaViewShadowNode
+2026-07-06 23:57:01.733 30046-30285 unknown:Vi...rtyUpdater com.anonymous.o2o                    W  Could not find generated setter for class com.swmansion.rnscreens.ScreenContainerViewManager
+2026-07-06 23:57:01.733 30046-30285 unknown:Vi...rtyUpdater com.anonymous.o2o                    W  Could not find generated setter for class com.swmansion.rnscreens.ScreenViewManager
+2026-07-06 23:57:01.734 30046-30285 unknown:Vi...rtyUpdater com.anonymous.o2o                    W  Could not find generated setter for class com.swmansion.rnscreens.ScreenStackViewManager
+2026-07-06 23:57:01.735 30046-30285 unknown:Vi...rtyUpdater com.anonymous.o2o                    W  Could not find generated setter for class com.swmansion.rnscreens.ScreenStackHeaderConfigViewManager
+2026-07-06 23:57:01.736 30046-30285 unknown:Vi...rtyUpdater com.anonymous.o2o                    W  Could not find generated setter for class com.swmansion.rnscreens.ScreenStackHeaderSubviewManager
+2026-07-06 23:57:01.736 30046-30285 unknown:Vi...rtyUpdater com.anonymous.o2o                    W  Could not find generated setter for class com.swmansion.rnscreens.SearchBarManager
+2026-07-06 23:57:01.737 30046-30285 unknown:Vi...rtyUpdater com.anonymous.o2o                    W  Could not find generated setter for class com.horcrux.svg.RenderableViewManager$GroupViewManager
+2026-07-06 23:57:01.739 30046-30285 unknown:Vi...rtyUpdater com.anonymous.o2o                    W  Could not find generated setter for class com.horcrux.svg.RenderableViewManager$RenderableShadowNode
+2026-07-06 23:57:01.740 30046-30285 unknown:Vi...rtyUpdater com.anonymous.o2o                    W  Could not find generated setter for class com.horcrux.svg.RenderableViewManager$PathViewManager
+2026-07-06 23:57:01.740 30046-30285 unknown:Vi...rtyUpdater com.anonymous.o2o                    W  Could not find generated setter for class com.horcrux.svg.RenderableViewManager$CircleViewManager
+2026-07-06 23:57:01.741 30046-30285 unknown:Vi...rtyUpdater com.anonymous.o2o                    W  Could not find generated setter for class com.horcrux.svg.RenderableViewManager$EllipseViewManager
+2026-07-06 23:57:01.742 30046-30285 unknown:Vi...rtyUpdater com.anonymous.o2o                    W  Could not find generated setter for class com.horcrux.svg.RenderableViewManager$LineViewManager
+2026-07-06 23:57:01.742 30046-30285 unknown:Vi...rtyUpdater com.anonymous.o2o                    W  Could not find generated setter for class com.horcrux.svg.RenderableViewManager$RectViewManager
+2026-07-06 23:57:01.743 30046-30285 unknown:Vi...rtyUpdater com.anonymous.o2o                    W  Could not find generated setter for class com.horcrux.svg.RenderableViewManager$TextViewManager
+2026-07-06 23:57:01.744 30046-30285 unknown:Vi...rtyUpdater com.anonymous.o2o                    W  Could not find generated setter for class com.horcrux.svg.RenderableViewManager$TSpanViewManager
+2026-07-06 23:57:01.745 30046-30285 unknown:Vi...rtyUpdater com.anonymous.o2o                    W  Could not find generated setter for class com.horcrux.svg.RenderableViewManager$TextPathViewManager
+2026-07-06 23:57:01.745 30046-30285 unknown:Vi...rtyUpdater com.anonymous.o2o                    W  Could not find generated setter for class com.horcrux.svg.RenderableViewManager$ImageViewManager
+2026-07-06 23:57:01.746 30046-30285 unknown:Vi...rtyUpdater com.anonymous.o2o                    W  Could not find generated setter for class com.horcrux.svg.RenderableViewManager$ClipPathViewManager
+2026-07-06 23:57:01.746 30046-30285 unknown:Vi...rtyUpdater com.anonymous.o2o                    W  Could not find generated setter for class com.horcrux.svg.RenderableViewManager$DefsViewManager
+2026-07-06 23:57:01.747 30046-30285 unknown:Vi...rtyUpdater com.anonymous.o2o                    W  Could not find generated setter for class com.horcrux.svg.RenderableViewManager$UseViewManager
+2026-07-06 23:57:01.747 30046-30285 unknown:Vi...rtyUpdater com.anonymous.o2o                    W  Could not find generated setter for class com.horcrux.svg.RenderableViewManager$SymbolManager
+2026-07-06 23:57:01.748 30046-30285 unknown:Vi...rtyUpdater com.anonymous.o2o                    W  Could not find generated setter for class com.horcrux.svg.RenderableViewManager$LinearGradientManager
+2026-07-06 23:57:01.749 30046-30285 unknown:Vi...rtyUpdater com.anonymous.o2o                    W  Could not find generated setter for class com.horcrux.svg.RenderableViewManager$RadialGradientManager
+2026-07-06 23:57:01.749 30046-30285 unknown:Vi...rtyUpdater com.anonymous.o2o                    W  Could not find generated setter for class com.horcrux.svg.RenderableViewManager$PatternManager
+2026-07-06 23:57:01.750 30046-30285 unknown:Vi...rtyUpdater com.anonymous.o2o                    W  Could not find generated setter for class com.horcrux.svg.RenderableViewManager$MaskManager
+2026-07-06 23:57:01.751 30046-30285 unknown:Vi...rtyUpdater com.anonymous.o2o                    W  Could not find generated setter for class com.horcrux.svg.RenderableViewManager$ForeignObjectManager
+2026-07-06 23:57:01.752 30046-30285 unknown:Vi...rtyUpdater com.anonymous.o2o                    W  Could not find generated setter for class com.horcrux.svg.RenderableViewManager$MarkerManager
+2026-07-06 23:57:01.752 30046-30285 unknown:Vi...rtyUpdater com.anonymous.o2o                    W  Could not find generated setter for class com.horcrux.svg.SvgViewManager
+2026-07-06 23:57:01.753 30046-30285 unknown:Vi...rtyUpdater com.anonymous.o2o                    W  Could not find generated setter for class com.reactnativecommunity.blurview.BlurViewManager
+2026-07-06 23:57:01.754 30046-30285 unknown:Vi...rtyUpdater com.anonymous.o2o                    W  Could not find generated setter for class com.swmansion.gesturehandler.react.RNGestureHandlerRootViewManager
+2026-07-06 23:57:01.754 30046-30285 unknown:Vi...rtyUpdater com.anonymous.o2o                    W  Could not find generated setter for class com.swmansion.gesturehandler.react.RNGestureHandlerButtonViewManager
+2026-07-06 23:57:01.755 30046-30285 unknown:Vi...rtyUpdater com.anonymous.o2o                    W  Could not find generated setter for class com.BV.LinearGradient.LinearGradientManager
+2026-07-06 23:57:01.760 30046-30285 m.anonymous.o2o         com.anonymous.o2o                    I  hiddenapi: Accessing hidden field Ljava/lang/reflect/Field;->accessFlags:I (runtime_flags=0, domain=core-platform, api=unsupported) from Lcom/swmansion/reanimated/layoutReanimation/ReanimatedNativeHierarchyManager; (domain=app, TargetSdkVersion=35) using reflection: allowed
+2026-07-06 23:57:01.762 30046-30285 unknown:ReactContext    com.anonymous.o2o                    W  initializeMessageQueueThreads() is called.
+2026-07-06 23:57:01.763 30046-30285 SoLoader                com.anonymous.o2o                    D  libyoga.so not found on /data/data/com.anonymous.o2o/lib-main
+2026-07-06 23:57:01.764 30046-30285 SoLoader                com.anonymous.o2o                    D  libyoga.so found on /data/app/~~u8yREG8Uvnlpb0ftXQTvyA==/com.anonymous.o2o-rmyH-TlAAsRBrHhLOcyK1A==/lib/arm64
+2026-07-06 23:57:01.764 30046-30285 SoLoader                com.anonymous.o2o                    D  Not resolving dependencies for libyoga.so
+2026-07-06 23:57:01.764 30046-30285 nativeloader            com.anonymous.o2o                    D  Load /data/app/~~u8yREG8Uvnlpb0ftXQTvyA==/com.anonymous.o2o-rmyH-TlAAsRBrHhLOcyK1A==/lib/arm64/libyoga.so using class loader ns clns-4 (caller=/data/app/~~u8yREG8Uvnlpb0ftXQTvyA==/com.anonymous.o2o-rmyH-TlAAsRBrHhLOcyK1A==/base.apk): ok
+2026-07-06 23:57:02.093 30046-30284 SoLoader                com.anonymous.o2o                    D  libreactnativeblob.so not found on /data/data/com.anonymous.o2o/lib-main
+2026-07-06 23:57:02.094 30046-30284 SoLoader                com.anonymous.o2o                    D  libreactnativeblob.so found on /data/app/~~u8yREG8Uvnlpb0ftXQTvyA==/com.anonymous.o2o-rmyH-TlAAsRBrHhLOcyK1A==/lib/arm64
+2026-07-06 23:57:02.094 30046-30284 SoLoader                com.anonymous.o2o                    D  Not resolving dependencies for libreactnativeblob.so
+2026-07-06 23:57:02.096 30046-30284 nativeloader            com.anonymous.o2o                    D  Load /data/app/~~u8yREG8Uvnlpb0ftXQTvyA==/com.anonymous.o2o-rmyH-TlAAsRBrHhLOcyK1A==/lib/arm64/libreactnativeblob.so using class loader ns clns-4 (caller=/data/app/~~u8yREG8Uvnlpb0ftXQTvyA==/com.anonymous.o2o-rmyH-TlAAsRBrHhLOcyK1A==/base.apk): ok
+2026-07-06 23:57:02.143 30046-30285 WebViewFactory          com.anonymous.o2o                    I  Loading com.google.android.webview version 149.0.7827.163 (code 782716303)
+2026-07-06 23:57:02.150 30046-30285 ApplicationLoaders      com.anonymous.o2o                    D  Returning zygote-cached class loader: /system/framework/android.test.base.jar
+2026-07-06 23:57:02.157 30046-30285 nativeloader            com.anonymous.o2o                    D  Configuring clns-5 for other apk /data/app/~~GBfPuZi4anb1fBUodLD6sQ==/com.google.android.webview-aoPy1mhAWI1-X12GGD3k8w==/base.apk. target_sdk_version=36, uses_libraries=, library_path=/data/app/~~GBfPuZi4anb1fBUodLD6sQ==/com.google.android.webview-aoPy1mhAWI1-X12GGD3k8w==/lib/arm64:/data/app/~~GBfPuZi4anb1fBUodLD6sQ==/com.google.android.webview-aoPy1mhAWI1-X12GGD3k8w==/base.apk!/lib/arm64-v8a, permitted_path=/data:/mnt/expand
+2026-07-06 23:57:02.204 30046-30284 nativeloader            com.anonymous.o2o                    D  Load /data/app/~~u8yREG8Uvnlpb0ftXQTvyA==/com.anonymous.o2o-rmyH-TlAAsRBrHhLOcyK1A==/lib/arm64/libreanimated.so using class loader ns clns-4 (caller=/data/app/~~u8yREG8Uvnlpb0ftXQTvyA==/com.anonymous.o2o-rmyH-TlAAsRBrHhLOcyK1A==/base.apk!classes2.dex): ok
+2026-07-06 23:57:02.205 30046-30284 SoLoader                com.anonymous.o2o                    D  libturbomodulejsijni.so not found on /data/data/com.anonymous.o2o/lib-main
+2026-07-06 23:57:02.205 30046-30284 SoLoader                com.anonymous.o2o                    D  libturbomodulejsijni.so found on /data/app/~~u8yREG8Uvnlpb0ftXQTvyA==/com.anonymous.o2o-rmyH-TlAAsRBrHhLOcyK1A==/lib/arm64
+2026-07-06 23:57:02.205 30046-30284 SoLoader                com.anonymous.o2o                    D  Not resolving dependencies for libturbomodulejsijni.so
+2026-07-06 23:57:02.206 30046-30284 nativeloader            com.anonymous.o2o                    D  Load /data/app/~~u8yREG8Uvnlpb0ftXQTvyA==/com.anonymous.o2o-rmyH-TlAAsRBrHhLOcyK1A==/lib/arm64/libturbomodulejsijni.so using class loader ns clns-4 (caller=/data/app/~~u8yREG8Uvnlpb0ftXQTvyA==/com.anonymous.o2o-rmyH-TlAAsRBrHhLOcyK1A==/base.apk): ok
+2026-07-06 23:57:02.221 30046-30285 cr_WVCFactoryProvider   com.anonymous.o2o                    I  version=149.0.7827.163 (782716303) minSdkVersion=29 multiprocess=true packageId=127 splits=<none>
+2026-07-06 23:57:02.234 30046-30285 nativeloader            com.anonymous.o2o                    D  Load /data/app/~~GBfPuZi4anb1fBUodLD6sQ==/com.google.android.webview-aoPy1mhAWI1-X12GGD3k8w==/base.apk!/lib/arm64-v8a/libwebviewchromium.so using class loader ns clns-5 (caller=/data/app/~~GBfPuZi4anb1fBUodLD6sQ==/com.google.android.webview-aoPy1mhAWI1-X12GGD3k8w==/base.apk): ok
+2026-07-06 23:57:02.240 30046-30285 nativeloader            com.anonymous.o2o                    D  Load /system/lib64/libwebviewchromium_plat_support.so using class loader ns clns-5 (caller=/data/app/~~GBfPuZi4anb1fBUodLD6sQ==/com.google.android.webview-aoPy1mhAWI1-X12GGD3k8w==/base.apk): ok
+2026-07-06 23:57:02.244 30046-30304 chromium                com.anonymous.o2o                    I  [0706/235702.244104:INFO:android_webview/browser/variations/variations_seed_loader.cc:67] Failed to open file for reading.: No such file or directory (2)
+2026-07-06 23:57:02.244 30046-30304 chromium                com.anonymous.o2o                    I  [0706/235702.244803:INFO:android_webview/browser/variations/variations_seed_loader.cc:67] Failed to open file for reading.: No such file or directory (2)
+2026-07-06 23:57:02.269 30046-30285 cr_LibraryLoader        com.anonymous.o2o                    I  Successfully loaded native library
+2026-07-06 23:57:02.274 30046-30285 cr_CachingUmaRecorder   com.anonymous.o2o                    I  Flushed 41 samples from 19 histograms, 0 samples were dropped.
+2026-07-06 23:57:02.721 30046-30284 ReactNativeJS           com.anonymous.o2o                    I  Running "main" with {"rootTag":1}
+2026-07-06 23:57:03.104 30046-30284 ReactNativeJS           com.anonymous.o2o                    E  TypeError: undefined is not a function
+                                                                                                    
+                                                                                                    This error is located at:
+                                                                                                        in DataProvider (at _layout.tsx:143)
+                                                                                                        in SocketProvider (at _layout.tsx:142)
+                                                                                                        in AuthProvider (at _layout.tsx:141)
+                                                                                                        in RNGestureHandlerRootView (at GestureHandlerRootView.android.tsx:23)
+                                                                                                        in GestureHandlerRootView (at _layout.tsx:140)
+                                                                                                        in SafeKeyboardProvider (at _layout.tsx:139)
+                                                                                                        in QueryClientProvider (at _layout.tsx:138)
+                                                                                                        in ErrorBoundary (at _layout.tsx:137)
+                                                                                                        in RNCSafeAreaProvider (at SafeAreaContext.tsx:76)
+                                                                                                        in SafeAreaProvider (at _layout.tsx:136)
+                                                                                                        in RootLayout (at renderApplication.js:50)
+                                                                                                        in RCTView (at View.js:32)
+                                                                                                        in View (at AppContainer.js:92)
+                                                                                                        in RCTView (at View.js:32)
+                                                                                                        in View (at AppContainer.js:119)
+                                                                                                        in AppContainer (at renderApplication.js:43)
+                                                                                                        in main(RootComponent) (at renderApplication.js:60), js engine: hermes
+2026-07-06 23:57:04.492 30046-30316 SoLoader                com.anonymous.o2o                    D  libimagepipeline.so not found on /data/data/com.anonymous.o2o/lib-main
+2026-07-06 23:57:04.492 30046-30316 SoLoader                com.anonymous.o2o                    D  libimagepipeline.so found on /data/app/~~u8yREG8Uvnlpb0ftXQTvyA==/com.anonymous.o2o-rmyH-TlAAsRBrHhLOcyK1A==/lib/arm64
+2026-07-06 23:57:04.493 30046-30316 SoLoader                com.anonymous.o2o                    D  Not resolving dependencies for libimagepipeline.so
+2026-07-06 23:57:04.495 30046-30316 nativeloader            com.anonymous.o2o                    D  Load /data/app/~~u8yREG8Uvnlpb0ftXQTvyA==/com.anonymous.o2o-rmyH-TlAAsRBrHhLOcyK1A==/lib/arm64/libimagepipeline.so using class loader ns clns-4 (caller=/data/app/~~u8yREG8Uvnlpb0ftXQTvyA==/com.anonymous.o2o-rmyH-TlAAsRBrHhLOcyK1A==/base.apk): ok
+2026-07-06 23:57:04.498 30046-30046 unknown:ReactContext    com.anonymous.o2o                    W  initializeMessageQueueThreads() is called.
+2026-07-06 23:57:04.512 30046-30046 BufferQueueConsumer     com.anonymous.o2o                    D  [](id:755e00000002,api:0,p:-1,c:30046) connect: controlledByApp=false
+2026-07-06 23:57:04.518 30046-30093 BLASTBufferQueue        com.anonymous.o2o                    D  [VRI[MainActivity]#2](f:0,a:1) acquireNextBufferLocked size=1080x2400 mFrameNumber=1 applyTransaction=true mTimestamp=10294239584844(auto) mPendingTransactions.size=0 graphicBufferId=129046587375624 transform=0
+2026-07-06 23:57:04.519 30046-30093 Parcel                  com.anonymous.o2o                    W  Expecting binder but got null!
+2026-07-06 23:57:04.587 30046-30046 ImeFocusController      com.anonymous.o2o                    V  onWindowFocus: DecorView@987afc6[MainActivity] softInputMode=STATE_UNSPECIFIED|ADJUST_PAN|IS_FORWARD_NAVIGATION
+2026-07-06 23:57:04.587 30046-30046 ImeFocusController      com.anonymous.o2o                    D  onViewFocusChanged, view=DecorView@987afc6[MainActivity], mServedView=null
+2026-07-06 23:57:04.587 30046-30046 ImeFocusController      com.anonymous.o2o                    V  checkFocus: view=null next=DecorView@987afc6[MainActivity] immDelegate=delegate{6c99bbe displayId=0} force=false package=<none>
+2026-07-06 23:57:04.749 30046-30046 Compatibil...geReporter com.anonymous.o2o                    D  Compat change id reported: 171228096; UID 10891; state: ENABLED
+2026-07-06 23:57:04.754 30046-30046 m.anonymous.o2o         com.anonymous.o2o                    I  hiddenapi: Accessing hidden field Landroid/widget/ScrollView;->mScroller:Landroid/widget/OverScroller; (runtime_flags=0, domain=platform, api=unsupported) from Lcom/facebook/react/views/scroll/ReactScrollView; (domain=app, TargetSdkVersion=35) using reflection: allowed
+2026-07-06 23:57:54.443 30046-30046 SurfaceComposerClient   com.anonymous.o2o                    I  XDR setRegion is not supported 0xb400006e68997bd0, 1, 0
+2026-07-06 23:57:54.464 30046-30057 BLASTBufferQueue        com.anonymous.o2o                    D  [VRI[MainActivity]#2](f:0,a:1) destructor()
+2026-07-06 23:57:54.464 30046-30057 BufferQueueConsumer     com.anonymous.o2o                    D  [VRI[MainActivity]#2(BLAST Consumer)2](id:755e00000002,api:0,p:-1,c:30046) disconnect
+2026-07-06 23:57:54.490 30046-30046 ImeFocusController      com.anonymous.o2o                    V  onWindowFocus: DecorView@c621336[MainActivity] softInputMode=STATE_UNSPECIFIED|ADJUST_RESIZE
+2026-07-06 23:57:54.490 30046-30046 ImeFocusController      com.anonymous.o2o                    D  onViewFocusChanged, view=DecorView@c621336[MainActivity], mServedView=DecorView@c621336[MainActivity]
+2026-07-06 23:57:54.491 30046-30046 ImeFocusController      com.anonymous.o2o                    V  checkFocus: view=DecorView@c621336[MainActivity] next=DecorView@c621336[MainActivity] immDelegate=delegate{6c99bbe displayId=0} force=true package=com.anonymous.o2o
+2026-07-06 23:57:55.440 30046-30058 ActivityThread          com.anonymous.o2o                    V  updateVmProcessStateForGc sceneId =0 state=196864
+2026-07-06 23:57:56.998 30046-30058 ActivityThread          com.anonymous.o2o                    V  updateVmProcessStateForGc sceneId =0 state=196608
+2026-07-06 23:57:57.114 30046-30058 ActivityThread          com.anonymous.o2o                    V  updateVmProcessStateForGc sceneId =0 state=196864
+2026-07-06 23:57:57.480 30046-30058 ActivityThread          com.anonymous.o2o                    V  updateVmProcessStateForGc sceneId =0 state=196608
+2026-07-06 23:57:58.809 30046-30046 ImeFocusController      com.anonymous.o2o                    V  onWindowFocus: DecorView@c621336[MainActivity] softInputMode=STATE_UNSPECIFIED|ADJUST_RESIZE
+2026-07-06 23:57:58.809 30046-30046 ImeFocusController      com.anonymous.o2o                    D  onViewFocusChanged, view=DecorView@c621336[MainActivity], mServedView=DecorView@c621336[MainActivity]
+2026-07-06 23:57:58.809 30046-30046 ImeFocusController      com.anonymous.o2o                    V  checkFocus: view=DecorView@c621336[MainActivity] next=DecorView@c621336[MainActivity] immDelegate=delegate{6c99bbe displayId=0} force=true package=com.anonymous.o2o

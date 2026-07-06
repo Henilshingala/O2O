@@ -1,0 +1,61 @@
+PS D:\downloads\O2Os\O2O\artifacts\o2o> cd D:\downloads\O2Os\O2O
+PS D:\downloads\O2Os\O2O> pnpm install
+Scope: all 9 workspace projects
+Lockfile is up to date, resolution step is skipped
+Packages: -49
+-------------------------------------------------
+Progress: resolved 0, reused 49, downloaded 0, added 0, done
+artifacts/o2o postinstall$ node scripts/postinstall-patches.mjs
+[1 lines collapsed]                                                                  
+[11 lines collapsed]\downloads\O2Os\O2O\node_modules\@react-native-async-storage\a…
+│   [FOUND] flat: D:\downloads\O2Os\O2O\node_modules\react-native-safe-area-context  
+│   [PATCH] react-native-safe-area-context/react-native.config.js stripped           
+│ === Patching react-native-screens (autolinking compat) ===                         
+│   [FOUND] flat: D:\downloads\O2Os\O2O\node_modules\react-native-screens            
+│   [PATCH] react-native-screens/react-native.config.js stripped                     
+│   [OK]   Already patched                                                           
+│ === Patching react-native-svg (autolinking compat) ===                             
+│   [FOUND] flat: D:\downloads\O2Os\O2O\node_modules\react-native-svg                
+│   [PATCH] react-native-svg/react-native.config.js stripped                         
+└─ Done in 105mss applied: 3 total.                                                  
+Done in 2.1s using pnpm v10.12.4
+PS D:\downloads\O2Os\O2O> cd artifacts\o2o
+PS D:\downloads\O2Os\O2O\artifacts\o2o> npx react-native start
+● Validation Warning:
+
+  Unknown option "watcher" with value {"healthCheck": {}, "watchman": {}} was found. 
+  This is probably a typing mistake. Fixing it will remove this message.
+
+
+                        #######
+                   ################
+                #########     #########
+            #########             ##########
+        #########        ######        #########
+       ##########################################
+      #####      #####################       #####
+      #####          ##############          #####
+      #####    ###       ######       ###    #####
+      #####    #######            #######    #####
+      #####    ###########    ###########    #####
+      #####    ##########################    #####
+      #####    ##########################    #####
+      #####      ######################     ######
+       ######        #############        #######
+         #########        ####       #########
+              #########          #########
+                  ######### #########
+                       #########
+
+
+                    Welcome to Metro!
+              Fast - Scalable - Integrated
+
+
+
+To reload the app press "r"
+To open developer menu press "d"
+
+ BUNDLE  ./index.js
+
+PS D:\downloads\O2Os\O2O\artifacts\o2o> 
