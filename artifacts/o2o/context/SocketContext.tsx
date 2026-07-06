@@ -2,9 +2,8 @@ import React, { createContext, useContext, useEffect } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "@/context/AuthContext";
 import { connectSocket, disconnectSocket } from "@/lib/socket";
+import { getBaseUrl } from "@workspace/api-client-react";
 import type { Bid, BidOffer, Chat, Group, Channel, Message } from "@/types";
-
-const API_BASE_URL = "https://o2o-rphb.onrender.com";
 
 function debounce<T extends (...args: unknown[]) => void>(fn: T, ms = 500) {
   let timeoutId: ReturnType<typeof setTimeout>;
@@ -27,10 +26,13 @@ export function SocketProvider({ children }: { children: React.ReactNode }) {
     }
 
     let mounted = true;
-    connectSocket(API_BASE_URL).then((sock) => {
+    const apiBaseUrl = getBaseUrl();
+    connectSocket(apiBaseUrl).then((sock) => {
       if (!mounted) return;
 
-      const debouncedInvalidateBids = debounce(() => queryClient.invalidateQueries({ queryKey: ["bids"] }));
+      const debouncedInvalidateBids = debounce(() =>
+        queryClient.invalidateQueries({ queryKey: ["bids"] })
+      );
       const debouncedInvalidateNotifications = debounce(() =>
         queryClient.invalidateQueries({ queryKey: ["notifications"] })
       );
@@ -80,12 +82,16 @@ export function SocketProvider({ children }: { children: React.ReactNode }) {
             );
             const offers = exists
               ? b.offers.map((o) =>
-                  o.sellerId === offer.sellerId && o.channelId === offer.channelId ? { ...o, ...offer } : o
+                  o.sellerId === offer.sellerId && o.channelId === offer.channelId
+                    ? { ...o, ...offer }
+                    : o
                 )
               : [...b.offers, offer];
             return { ...b, offers };
           }) ?? old
         );
+        debouncedInvalidateBids();
+        debouncedInvalidateCounts();
       });
 
       sock.on("bid:ended", () => {
@@ -98,10 +104,6 @@ export function SocketProvider({ children }: { children: React.ReactNode }) {
       });
       sock.on("bid:accepted", () => {
         debouncedInvalidateOrders();
-        debouncedInvalidateCounts();
-      });
-      sock.on("bid:offer", () => {
-        debouncedInvalidateBids();
         debouncedInvalidateCounts();
       });
       sock.on("notification:new", () => {

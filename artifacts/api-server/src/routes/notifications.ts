@@ -1,14 +1,16 @@
 import { Router } from "express";
 import { db } from "@workspace/db";
 import { notifications } from "@workspace/db/schema";
-import { eq, desc, and, count } from "drizzle-orm";
+import { eq, desc, and, lt, count } from "drizzle-orm";
+import { randomUUID } from "crypto";
 import { requireAuth, type AuthRequest } from "../middlewares/auth";
 import { parseCursorPagination, sendListResponse, buildOffsetMeta, parseOffsetPagination } from "../lib/pagination";
 
 const router = Router();
 router.use(requireAuth);
 
-const genId = (prefix: string) => `${prefix}_${Date.now()}`;
+// Use UUID to eliminate timestamp-collision risk for concurrent inserts
+const genId = (prefix: string) => `${prefix}_${randomUUID()}`;
 
 export async function createNotification(
   userId: string,
@@ -29,25 +31,25 @@ export async function createNotification(
 router.get("/", async (req: AuthRequest, res) => {
   try {
     const userId = req.user!.userId;
-    const cursorMode = typeof req.query.cursor === "string" && req.query.cursor.length > 0;
+    const cursorMode = typeof req.query.cursor === "string";
 
-    if (cursorMode || req.query.cursor === "") {
+    if (cursorMode) {
       const { limit, cursor } = parseCursorPagination(req.query as Record<string, unknown>, { limit: 50, maxLimit: 100 });
-      let query = db
+
+      // Proper cursor pagination: use WHERE clause instead of in-memory filtering
+      const whereClause = cursor
+        ? and(eq(notifications.userId, userId), lt(notifications.id, cursor))
+        : eq(notifications.userId, userId);
+
+      const rows = await db
         .select()
         .from(notifications)
-        .where(eq(notifications.userId, userId))
+        .where(whereClause)
         .orderBy(desc(notifications.createdAt))
         .limit(limit + 1);
 
-      const rows = await query;
-      let filtered = rows;
-      if (cursor) {
-        const cursorIdx = rows.findIndex((r) => r.id === cursor);
-        filtered = cursorIdx >= 0 ? rows.slice(cursorIdx + 1) : rows;
-      }
-      const hasMore = filtered.length > limit;
-      const page = hasMore ? filtered.slice(0, limit) : filtered;
+      const hasMore = rows.length > limit;
+      const page = hasMore ? rows.slice(0, limit) : rows;
       const nextCursor = hasMore ? page[page.length - 1]?.id ?? null : null;
       return res.json({ data: page, pagination: { limit, nextCursor, hasMore } });
     }
@@ -77,7 +79,7 @@ router.post("/:id/read", async (req: AuthRequest, res) => {
       .set({ isRead: true })
       .where(and(eq(notifications.id, req.params.id as string), eq(notifications.userId, req.user!.userId)));
     return res.json({ success: true });
-  } catch (error) {
+  } catch {
     return res.status(500).json({ error: "Server error" });
   }
 });
@@ -89,7 +91,7 @@ router.post("/read-all", async (req: AuthRequest, res) => {
       .set({ isRead: true })
       .where(eq(notifications.userId, req.user!.userId));
     return res.json({ success: true });
-  } catch (error) {
+  } catch {
     return res.status(500).json({ error: "Server error" });
   }
 });

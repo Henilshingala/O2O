@@ -18,7 +18,7 @@ export async function apiClient<T = any>(endpoint: string, options: FetchOptions
   if (res.status === 401) {
     localStorage.removeItem("admin_token");
     localStorage.removeItem("admin_user");
-    window.location.href = "/";
+    window.location.href = "/admin/";
     throw new Error("Unauthorized");
   }
 

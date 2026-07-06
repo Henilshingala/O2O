@@ -50,10 +50,11 @@ seedSuperAdmin().then(() => {
       process.exit(1);
     }
 
+    const host = process.env.HOST || `http://localhost:${port}`;
     logger.info({ port }, "Server listening");
-    logger.info(`Admin Panel: https://o2o-rphb.onrender.com/`);
-    logger.info(`API: https://o2o-rphb.onrender.com/api/`);
-    logger.info(`Socket.IO: wss://o2o-rphb.onrender.com`);
+    logger.info(`Admin Panel: ${host}/admin/`);
+    logger.info(`API: ${host}/api/`);
+    logger.info(`Socket.IO: ${host}`);
   });
 }).catch((err) => {
   logger.error({ err }, "Failed during startup");

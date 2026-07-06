@@ -1,6 +1,6 @@
 import { Router } from "express";
 import { db } from "@workspace/db";
-import { eq, inArray, and } from "drizzle-orm";
+import { eq, inArray, and, or, sql } from "drizzle-orm";
 import * as schema from "@workspace/db";
 import { requireAuth, type AuthRequest } from "../middlewares/auth";
 
@@ -17,11 +17,14 @@ router.post("/", async (req: AuthRequest, res) => {
       });
     }
     const userId = req.user!.userId;
-    
+
     // Security: Only allow querying channels the user actually owns
-    const ownedChannelsResult = await db.select({ id: schema.channels.id }).from(schema.channels).where(eq(schema.channels.ownerId, userId));
+    const ownedChannelsResult = await db
+      .select({ id: schema.channels.id })
+      .from(schema.channels)
+      .where(eq(schema.channels.ownerId, userId));
     const ownedChannelIds = ownedChannelsResult.map(c => c.id);
-    const validChannelIds = channelIds.filter(id => ownedChannelIds.includes(id));
+    const validChannelIds = (channelIds as string[]).filter(id => ownedChannelIds.includes(id));
 
     if (validChannelIds.length === 0) {
       return res.json({
@@ -30,37 +33,58 @@ router.post("/", async (req: AuthRequest, res) => {
       });
     }
 
-    // active bids for these channels
-    const activeBids = await db.select().from(schema.bids).where(
-      and(
-        eq(schema.bids.status, "active"),
-      )
+    // active bids for these channels — filter in DB using parameterized SQL
+    // Uses EXISTS + jsonb_array_elements_text to avoid loading the full bids table into memory
+    const channelIdsSql = sql.join(
+      validChannelIds.map(id => sql`${id}`),
+      sql`, `
     );
-    // Since selectedSellers is jsonb, filtering exactly in PG requires raw SQL or we filter in memory for simplicity in this migration
-    const relevantActiveBids = activeBids.filter(b => b.allSellers || validChannelIds.some(cid => (b.selectedSellers as string[]).includes(cid)));
+
+    const activeBidsResult = await db
+      .select({ id: schema.bids.id })
+      .from(schema.bids)
+      .where(
+        and(
+          eq(schema.bids.status, "active"),
+          or(
+            eq(schema.bids.allSellers, true),
+            sql`EXISTS (
+              SELECT 1 FROM jsonb_array_elements_text(${schema.bids.selectedSellers}) AS elem
+              WHERE elem IN (${channelIdsSql})
+            )`
+          )
+        )
+      );
 
     // total offers made by this seller across these channels
-    const totalOffers = await db.select().from(schema.bidOffers).where(
-      inArray(schema.bidOffers.channelId, validChannelIds)
-    );
+    const totalOffers = await db
+      .select()
+      .from(schema.bidOffers)
+      .where(inArray(schema.bidOffers.channelId, validChannelIds));
 
     const prices = totalOffers.map(o => o.price);
     const avgPrice = prices.length > 0 ? prices.reduce((a, b) => a + b, 0) / prices.length : 0;
     const lowestOffer = prices.length > 0 ? Math.min(...prices) : 0;
     const highestOffer = prices.length > 0 ? Math.max(...prices) : 0;
 
-    // winning rate
-    const wonBids = await db.select().from(schema.bids).where(
-      inArray(schema.bids.winnerChannelId, validChannelIds)
-    );
+    // winning rate: bids where this seller's channel was picked as winner
+    const wonBids = await db
+      .select({ id: schema.bids.id })
+      .from(schema.bids)
+      .where(inArray(schema.bids.winnerChannelId, validChannelIds));
     const winningRate = totalOffers.length > 0 ? (wonBids.length / totalOffers.length) * 100 : 0;
 
-    // rating and reviews
-    const reviews = await db.select().from(schema.reviews).where(eq(schema.reviews.sellerId, userId));
-    const rating = reviews.length > 0 ? reviews.reduce((a, r) => a + r.rating, 0) / reviews.length : 5.0;
+    // rating and reviews for this seller
+    const reviews = await db
+      .select()
+      .from(schema.reviews)
+      .where(eq(schema.reviews.sellerId, userId));
+    const rating = reviews.length > 0
+      ? reviews.reduce((a, r) => a + r.rating, 0) / reviews.length
+      : 5.0;
 
     return res.json({
-      activeBids: relevantActiveBids.length,
+      activeBids: activeBidsResult.length,
       totalOffers: totalOffers.length,
       winningRate: Math.round(winningRate),
       avgPrice: Math.round(avgPrice),

@@ -1,0 +1,212 @@
+# GOD MODE: COMPLETE O2O PRODUCTION IMPLEMENTATION
+
+You are a Principal Software Engineer, React Native Engineer, Android Engineer, Backend Engineer, Security Engineer, DevOps Engineer, QA Engineer, Database Engineer, and Code Reviewer.
+
+Your objective is to transform this entire project into a production-quality application.
+
+IMPORTANT RULES
+
+- Read the ENTIRE repository before modifying any file.
+- Do NOT skip any folder or file.
+- Do NOT make assumptions.
+- Find the root cause of every issue before fixing it.
+- Never apply temporary workarounds or hacks.
+- Do not suppress errors just to make the build pass.
+- Preserve existing functionality unless it is objectively broken.
+- Do not remove features simply to eliminate errors.
+- Continue fixing automatically if one fix reveals another issue.
+- Do not stop until all Critical and High severity issues are resolved.
+- At the end, provide a complete implementation report.
+
+----------------------------------------------------------
+
+PROJECT INPUT
+
+I am providing the latest version of my React Native project.
+
+Extract and inspect the entire project.
+
+Read every file including:
+
+- React Native Android application
+- Android native code
+- Node.js backend
+- Express server
+- PostgreSQL (Drizzle ORM)
+- Socket.IO
+- Cloudinary
+- Authentication
+- Admin Panel
+- Shared packages
+- Metro
+- Babel
+- Gradle
+- pnpm workspace
+- TypeScript
+- ESLint
+- React Query
+- Navigation
+- Environment configuration
+- Build configuration
+
+Do not skip any file.
+
+----------------------------------------------------------
+
+STEP 1 — COMPLETE PRODUCTION AUDIT
+
+Before making changes:
+
+Inspect every file.
+
+Identify every:
+
+- Build error
+- Runtime error
+- Android error
+- Metro error
+- Babel error
+- Gradle error
+- Native module issue
+- Dependency conflict
+- Version mismatch
+- Navigation issue
+- UI issue
+- UX issue
+- Layout issue
+- API issue
+- Backend issue
+- Database issue
+- Socket.IO issue
+- Authentication issue
+- Cloudinary issue
+- Security vulnerability
+- SQL Injection risk
+- XSS risk
+- Missing validation
+- Authorization issue
+- Memory leak
+- Race condition
+- Event loop blocking
+- N+1 query
+- Performance bottleneck
+- Dead code
+- Duplicate code
+- Unused imports
+- Unused files
+- Broken feature
+- Missing implementation
+- TODO
+- FIXME
+- Placeholder implementation
+- Mock data
+- Incorrect configuration
+
+----------------------------------------------------------
+
+STEP 2 — FIX EVERYTHING
+
+Fix every issue found during the audit.
+
+If fixing one issue exposes another, continue automatically.
+
+Do not stop after the first successful build.
+
+Fix all Critical, High, and Medium issues.
+
+----------------------------------------------------------
+
+VERIFY EVERY SCREEN
+
+Verify every page and every feature including:
+
+- Splash Screen
+- Login
+- Signup
+- Forgot Password
+- OTP Verification
+- Authentication
+- Session Management
+- Persistent Login
+- Logout
+- Home
+- Chat
+- Friend Requests
+- Friends
+- Groups
+- Group Chat
+- Group Admin
+- Channels
+- Channel Admin
+- Products
+- Wishlist
+- Buyer
+- Seller
+- Bid System
+- Orders
+- Notifications
+- Profile
+- Settings
+- Analytics
+- Admin Panel
+- Search
+- Forms
+- Validation
+
+Every screen must load correctly.
+
+----------------------------------------------------------
+
+VERIFY EVERY FEATURE
+
+Ensure the following work correctly:
+
+- JWT Authentication
+- Refresh Tokens
+- Socket.IO
+- Realtime Chat
+- Realtime Groups
+- Realtime Channels
+- Realtime Bids
+- Image Upload
+- Video Upload
+- Camera
+- Gallery
+- Documents
+- Live Location
+- Current Location
+- Cloudinary Upload
+- PostgreSQL Persistence
+- React Query
+- Offline handling
+- Error handling
+- Loading states
+- Navigation
+- Deep Linking
+- Permissions
+
+----------------------------------------------------------
+
+ANDROID REQUIREMENTS
+
+Fix every Android issue including:
+
+- Startup crashes
+- Red Screen
+- White Screen
+- Blank Screen
+- Metro issues
+- Babel issues
+- Hermes issues
+- Reanimated issues
+- Gesture Handler issues
+- KeyboardProvider issues
+- Native module issues
+- Runtime crashes
+- Logcat fatal exceptions
+- Permission issues
+- Memory leaks
+
+Run the application on the connected Android device using React Native CLI.
+
+Do NOT generate APK or AAB files unless absolutely required

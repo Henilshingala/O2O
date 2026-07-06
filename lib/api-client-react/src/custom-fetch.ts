@@ -32,6 +32,14 @@ export function setBaseUrl(url: string | null): void {
 }
 
 /**
+ * Get the currently configured base URL, or empty string if none is set.
+ * Useful for modules that need the API URL (e.g. Socket.IO, media resolvers).
+ */
+export function getBaseUrl(): string {
+  return _baseUrl ?? "";
+}
+
+/**
  * Register a getter that supplies a bearer auth token.  Before every fetch
  * the getter is invoked; when it returns a non-null string, an
  * `Authorization: Bearer <token>` header is attached to the request.

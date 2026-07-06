@@ -450,15 +450,12 @@ router.get("/chats", async (req: AuthRequest, res) => {
     const myChats = await db.select().from(schema.chats).where(inArray(schema.chats.id, paginatedChatIds));
     const allParts = await db.select().from(schema.chatParticipants).where(inArray(schema.chatParticipants.chatId, paginatedChatIds));
 
-    const msgResults = await Promise.all(
-      paginatedChatIds.map(id =>
-        db.select().from(schema.messages)
-          .where(and(eq(schema.messages.chatId, id), isNull(schema.messages.deletedAt)))
-          .orderBy(desc(schema.messages.timestamp))
-          .limit(50)
-      )
-    );
-    const allMsgs = msgResults.flat();
+    // Single batched query instead of N+1 per-chat queries
+    const allMsgs = paginatedChatIds.length > 0
+      ? await db.select().from(schema.messages)
+          .where(and(inArray(schema.messages.chatId, paginatedChatIds), isNull(schema.messages.deletedAt)))
+          .orderBy(asc(schema.messages.timestamp))
+      : [];
 
     const enriched = myChats.map(c => ({
       ...c,
