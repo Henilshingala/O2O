@@ -1,0 +1,435 @@
+You MUST start from the latest code before making ANY changes.
+
+FIRST (MANDATORY)
+
+1. Pull the latest code from GitHub.
+2. Fetch all remote branches.
+3. Merge the latest changes.
+4. Make sure your workspace exactly matches the newest repository.
+5. Do NOT overwrite my local work.
+6. Resolve every merge conflict correctly.
+
+Repository:
+
+https://github.com/Henilshingala/O2O
+
+====================================================
+CURRENT STATUS
+====================================================
+
+The app now launches successfully.
+
+Metro is working.
+
+Gradle builds successfully.
+
+The splash screen appears.
+
+The UI loads.
+
+The remaining problems are APPLICATION LOGIC bugs.
+
+DO NOT modify random files.
+
+Find the REAL root causes.
+
+====================================================
+ISSUE 1 (CRITICAL)
+====================================================
+
+Current runtime error:
+
+Text strings must be rendered within a <Text> component.
+
+You MUST locate the EXACT component causing this.
+
+Do NOT suppress the error.
+
+Do NOT wrap random components.
+
+Find the real source.
+
+Search the ENTIRE project for:
+
+&& "text"
+
+? "text"
+
+:"text"
+
+Raw strings inside:
+
+<View>
+
+<Pressable>
+
+<TouchableOpacity>
+
+<TouchableWithoutFeedback>
+
+<SafeAreaView>
+
+<Animated.View>
+
+<Fragment>
+
+React.Fragment
+
+Search every screen.
+
+Search every component.
+
+Search every custom UI component.
+
+Search every layout.
+
+Search every navigation wrapper.
+
+Search every modal.
+
+Search every toast.
+
+Search every loading component.
+
+Search every error component.
+
+Search every auth screen.
+
+Search every reusable component.
+
+Search every workspace package.
+
+Find every raw string rendered outside a <Text> component.
+
+Fix ALL of them.
+
+====================================================
+ISSUE 2 (CRITICAL)
+====================================================
+
+The Login button still does NOT log in.
+
+DO NOT assume networking.
+
+Trace the COMPLETE login flow.
+
+Start from:
+
+Button press
+
+↓
+
+onPress
+
+↓
+
+validation
+
+↓
+
+form state
+
+↓
+
+React Hook Form
+
+↓
+
+Zod/Yup validation
+
+↓
+
+AuthContext
+
+↓
+
+login()
+
+↓
+
+API client
+
+↓
+
+fetch/axios
+
+↓
+
+backend request
+
+↓
+
+backend response
+
+↓
+
+JWT parsing
+
+↓
+
+secure storage
+
+↓
+
+session restore
+
+↓
+
+navigation
+
+↓
+
+Home screen
+
+Verify EVERY step.
+
+====================================================
+DO NOT GUESS
+
+Instrument the login flow with temporary logs.
+
+Verify:
+
+Button pressed
+
+Validation executed
+
+Request created
+
+Headers
+
+Authorization
+
+Request body
+
+API URL
+
+Response status
+
+Response body
+
+JWT received
+
+Storage success
+
+Navigation success
+
+Remove every debug log afterwards.
+
+====================================================
+BACKEND
+
+Use ONLY:
+
+https://o2o-rphb.onrender.com/
+
+Search the ENTIRE repository.
+
+Replace EVERY occurrence of:
+
+localhost
+
+127.0.0.1
+
+10.0.2.2
+
+192.168.*
+
+172.*
+
+emulator URLs
+
+development URLs
+
+old APIs
+
+mock APIs
+
+staging APIs
+
+There must be ONLY ONE backend URL:
+
+https://o2o-rphb.onrender.com/
+
+====================================================
+VERIFY API
+
+Verify:
+
+POST /login
+
+POST /signup
+
+refresh token
+
+logout
+
+profile
+
+session restore
+
+authenticated requests
+
+token refresh
+
+error handling
+
+422 validation
+
+401 unauthorized
+
+500 server error
+
+offline handling
+
+timeouts
+
+====================================================
+CHECK EVERYTHING
+
+Inspect:
+
+React Query
+
+Axios
+
+fetch
+
+custom fetch
+
+NativeModules
+
+SimpleFetchModule
+
+AuthContext
+
+Secure Storage
+
+AsyncStorage
+
+MMKV
+
+Navigation
+
+Expo Router (if present)
+
+React Navigation
+
+middleware
+
+interceptors
+
+API client
+
+workspace packages
+
+====================================================
+QUALITY CHECK
+
+Remove:
+
+dead code
+
+unused imports
+
+duplicate code
+
+temporary patches
+
+fake fixes
+
+hardcoded credentials
+
+test code
+
+console.log
+
+TODO
+
+FIXME
+
+====================================================
+FINAL VALIDATION
+
+Verify on a REAL Android device.
+
+The following MUST work:
+
+✓ Splash Screen
+
+✓ Login
+
+✓ Signup
+
+✓ Session restore
+
+✓ Logout
+
+✓ Home
+
+✓ Every screen
+
+✓ Every navigation path
+
+✓ Image loading
+
+✓ Forms
+
+✓ Validation
+
+✓ Network requests
+
+✓ API communication
+
+✓ Socket.IO
+
+✓ Loading states
+
+✓ Error states
+
+✓ Background/foreground lifecycle
+
+✓ No Red Screen
+
+✓ No Blank Screen
+
+✓ No runtime exceptions
+
+✓ No React warnings
+
+✓ No Metro warnings
+
+✓ No crashes
+
+✓ No infinite loading
+
+====================================================
+DELIVERABLE
+
+Do NOT stop after fixing one issue.
+
+Continue fixing until the ENTIRE application works end-to-end on a physical Android device.
+
+Before finishing, perform a complete manual end-to-end test:
+
+Splash → Login → Home → Navigation → Logout → Login again.
+
+Only finish when every feature works.
+
+Finally:
+
+1. Commit every change.
+2. Push all changes to:
+
+https://github.com/Henilshingala/O2O
+
+3. Provide:
+
+- Root cause of every issue
+- Every modified file
+- Complete change summary
+- Build logs
+- Runtime verification
+- Login verification
+- API verification
+- Final production readiness report

@@ -31,25 +31,20 @@ export default function LoginScreen() {
       setError("Please fill in all fields");
       return;
     }
-    console.log("[LOGIN] Starting login flow...");
+    setError("");
+    setLoading(true);
     try {
-      console.log("[LOGIN] Calling AuthContext.login...");
       const result = await login(username.trim(), password);
-      console.log("[LOGIN] AuthContext.login returned:", result);
       if (result.success) {
-        console.log("[LOGIN] Login successful, redirecting...");
         Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
         router.replace("/(tabs)");
       } else {
-        console.log("[LOGIN] Login failed with error:", result.error);
         Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
         setError(result.error ?? "Login failed");
       }
     } catch (e: any) {
-      console.log("[LOGIN] Fatal error in handleLogin:", e);
-      setError("Fatal Error: " + e?.message);
+      setError(e?.message ?? "An unexpected error occurred");
     } finally {
-      console.log("[LOGIN] Setting loading to false");
       setLoading(false);
     }
   };

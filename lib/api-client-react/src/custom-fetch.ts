@@ -388,29 +388,29 @@ export async function customFetch<T = unknown>(
   let response: Response;
   try {
     if (NativeModules.SimpleFetch) {
-      console.log("[CUSTOM_FETCH] Using NativeModules.SimpleFetch for URL:", resolveUrl(input));
-      
-      const method = init.method || 'GET';
-      const headers = init.headers || {};
       let bodyStr = "";
       if (init.body) {
-        if (typeof init.body === 'string') {
-          bodyStr = init.body;
-        } else {
-          bodyStr = JSON.stringify(init.body);
-        }
+        bodyStr = typeof init.body === "string" ? init.body : JSON.stringify(init.body);
       }
-      
-      const resStr = await NativeModules.SimpleFetch.fetch(resolveUrl(input), method, headers, bodyStr);
-      console.log("[CUSTOM_FETCH] SimpleFetch response:", resStr);
-      
+      // Convert the merged Headers instance to a plain object for the native bridge.
+      // The bridge serialises plain JS objects as ReadableMap; a Headers instance is
+      // opaque to it, so Content-Type / Authorization set above would be silently lost.
+      const headersObj: Record<string, string> = {};
+      headers.forEach((value: string, key: string) => {
+        headersObj[key] = value;
+      });
+      const resStr = await NativeModules.SimpleFetch.fetch(
+        resolveUrl(input),
+        method,
+        headersObj,
+        bodyStr,
+      );
       const resObj = JSON.parse(resStr);
       response = new Response(resObj.data, {
         status: resObj.status,
-        headers: new Headers({ 'content-type': 'application/json' }),
+        headers: new Headers({ "content-type": "application/json" }),
       });
     } else {
-      console.log("[CUSTOM_FETCH] Falling back to standard fetch");
       response = await fetch(input, { ...init, method, headers });
     }
   } catch (err: any) {
