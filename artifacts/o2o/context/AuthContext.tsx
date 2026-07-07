@@ -39,8 +39,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [userCache, setUserCache] = useState<Record<string, User>>({});
   const pendingFetches = useRef(new Set<string>());
   const refreshPromise = useRef<Promise<string | null> | null>(null);
+  // Track mount state so async callbacks never call setState after unmount
+  const isMounted = useRef(true);
+  useEffect(() => {
+    isMounted.current = true;
+    return () => { isMounted.current = false; };
+  }, []);
 
   const cacheUser = useCallback((u: User) => {
+    if (!isMounted.current) return;
     setUserCache((prev: Record<string, User>) => ({ ...prev, [u.id]: u }));
   }, []);
 

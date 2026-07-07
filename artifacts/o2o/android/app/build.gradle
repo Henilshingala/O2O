@@ -119,7 +119,36 @@ dependencies {
         implementation jscFlavor
     }
 }
-apply from: new File(["node", "--print", "require.resolve('react-native-vector-icons/fonts.gradle')"].execute(null, rootDir).text.trim())
+// Copy vector icon fonts into assets.
+// Uses a direct Gradle copy task instead of fonts.gradle because fonts.gradle
+// relies on `node` being in PATH during the Gradle build, which is unreliable
+// on Windows and in pnpm monorepos. The copy task below finds fonts from either
+// the project node_modules or the workspace-root node_modules (pnpm hoists there).
+android.applicationVariants.all { variant ->
+    def mergeAssets = variant.mergeAssetsProvider.get()
+    mergeAssets.doFirst {
+        def fontsDir = new File(mergeAssets.outputDir.get().asFile, "fonts")
+        fontsDir.mkdirs()
+        // projectRoot = artifacts/o2o  (set at top of this file)
+        // workspace root is two levels up: artifacts/o2o -> artifacts -> repo root
+        def candidates = [
+            new File("${projectRoot}/node_modules/react-native-vector-icons/Fonts"),
+            new File("${projectRoot}/../../node_modules/react-native-vector-icons/Fonts"),
+        ]
+        def fontsSource = candidates.find { it.exists() }
+        if (fontsSource) {
+            copy {
+                from fontsSource
+                into fontsDir
+                include "*.ttf"
+            }
+            println "react-native-vector-icons: copied fonts from ${fontsSource}"
+        } else {
+            // Fonts already committed to assets/fonts — no copy needed
+            println "react-native-vector-icons: fonts.gradle source not found; using committed fonts in assets/fonts/"
+        }
+    }
+}
 
 apply from: new File(["node", "--print", "require('path').dirname(require.resolve('@react-native-community/cli-platform-android/package.json', { paths: [require.resolve('react-native/package.json')] })) + '/native_modules.gradle'"].execute(null, rootDir).text.trim()); applyNativeModulesAppBuildGradle(project)
 

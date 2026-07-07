@@ -15,6 +15,9 @@ LogBox.ignoreLogs([
   "socket.io-client",
   // VirtualizedLists inside ScrollViews — acceptable in our layout
   'VirtualizedLists should never be nested',
+  // Known RN 0.68 circular dependency between whatwg-fetch polyfill and RN fetch — harmless
+  'Require cycle: ../..\\node_modules\\react-native',
+  'Require cycle: ../../node_modules/react-native',
 ]);
 
 AppRegistry.registerComponent("main", () => RootLayout);
