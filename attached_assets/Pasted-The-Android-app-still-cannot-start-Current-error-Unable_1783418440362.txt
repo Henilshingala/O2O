@@ -1,0 +1,150 @@
+The Android app still cannot start.
+
+Current error:
+
+Unable to resolve module ./index
+
+Metro is trying to load:
+
+D:\downloads\O2Os\O2O\index
+
+and cannot find the entry file.
+
+DO NOT patch around this.
+
+Find the actual root cause.
+
+Check ALL of the following:
+
+1. Verify the React Native entry file exists.
+
+Exactly one of these must exist:
+
+index.js
+index.ts
+index.android.js
+index.android.ts
+
+If none exist, restore the correct entry file.
+
+------------------------------------------------
+
+2. Verify package.json
+
+Check:
+
+main
+
+It must point to the correct React Native entry.
+
+Do not point to a missing file.
+
+------------------------------------------------
+
+3. Verify app.json
+
+Check:
+
+name
+
+displayName
+
+entryFile
+
+Make sure they match the actual project.
+
+------------------------------------------------
+
+4. Verify metro.config.js
+
+Ensure Metro projectRoot is correct.
+
+Ensure watchFolders are correct.
+
+Ensure resolver.extraNodeModules does not redirect the entry file.
+
+Ensure no custom resolver breaks module resolution.
+
+------------------------------------------------
+
+5. Verify babel.config.js
+
+Ensure Babel does not rewrite the entry file.
+
+------------------------------------------------
+
+6. Verify react-native.config.js
+
+Ensure no incorrect sourceDir or projectRoot.
+
+------------------------------------------------
+
+7. Verify where React Native is launched.
+
+If this is a monorepo, make sure:
+
+npx react-native run-android
+
+is executed from the React Native app directory
+
+NOT the repository root.
+
+------------------------------------------------
+
+8. Verify index.js contains
+
+import 'react-native-gesture-handler';
+
+import {AppRegistry} from 'react-native';
+
+import App from './App';
+
+or the Expo Router registration if this project uses Expo Router.
+
+Do not leave the entry file empty.
+
+------------------------------------------------
+
+9. Verify App.tsx or Expo Router entry actually exists.
+
+------------------------------------------------
+
+10. Delete ALL caches.
+
+Remove:
+
+node_modules
+
+android/.gradle
+
+android/app/build
+
+android/build
+
+.gradle
+
+metro cache
+
+watchman cache
+
+Then reinstall everything.
+
+------------------------------------------------
+
+11. Rebuild the project completely.
+
+------------------------------------------------
+
+12. Do NOT stop until:
+
+- Metro starts successfully
+- No "Unable to resolve module ./index"
+- No HTTP 500
+- No Red Screen
+- App launches
+- Splash screen appears
+- Login works
+- Signup works
+- Home screen opens
+
+Finally commit every fix and push everything to GitHub.
