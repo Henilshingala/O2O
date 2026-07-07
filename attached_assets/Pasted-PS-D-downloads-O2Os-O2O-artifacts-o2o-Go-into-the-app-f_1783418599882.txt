@@ -1,0 +1,135 @@
+PS D:\downloads\O2Os\O2O\artifacts\o2o> # Go into the app folder first
+PS D:\downloads\O2Os\O2O\artifacts\o2o> cd D:\downloads\O2Os\O2O\artifacts\o2o
+PS D:\downloads\O2Os\O2O\artifacts\o2o> 
+PS D:\downloads\O2Os\O2O\artifacts\o2o> # Then run
+PS D:\downloads\O2Os\O2O\artifacts\o2o> pnpm install
+Scope: all 9 workspace projects
+../..                                    |  -49 -----
+../..                                    | Progress: resolved 0, reused 49, downloaded 0, added 0, done
+. postinstall$ node scripts/postinstall-patches.mjs
+│ === Patching @react-native-async-storage/async-storage@1.18.2 ===
+│   [FOUND] flat: D:\downloads\O2Os\O2O\node_modules\@react-native-async-storage\async-storage
+│   [OK]   Already patched
+│   [OK]   Already patched
+[1 lines collapsed]                                                                                              
+│ === Patching react-native-gesture-handler@2.4.2 ===
+│2  [FOUND] flat: D:\downloads\O2Os\O2O\node_modules\react-native-gesture-handler
+│   [OK]   Already patched                                                                                       
+│   [OK]   Already patched
+│3✅  Postinstall patches done: 0 file(s) patched, 5 skipped.
+│ === Patching react-native-gesture-handler@2.4.2 ===
+│   [FOUND] flat: D:\downloads\O2Os\O2O\node_modules\react-native-gesture-handler
+│ === Patching react-native-gesture-handler@2.4.2 ===                                                            
+│4  [FOUND] flat: D:\downloads\O2Os\O2O\node_modules\react-native-gesture-handler
+│   [OK]   Already patched                                                                                       
+│ === Patching react-native-gesture-handler@2.4.2 ===react-native-safe-area-context
+│   [FOUND] flat: D:\downloads\O2Os\O2O\node_modules\react-native-gesture-handler
+│5  [OK]   Already patched                                                                                       
+│ === Patching react-native-gesture-handler@2.4.2 ===react-native-safe-area-context
+│   [FOUND] flat: D:\downloads\O2Os\O2O\node_modules\react-native-gesture-handler
+│   [OK]   Already patched                                                                                       
+│6  [FOUND] flat: D:\downloads\O2Os\O2O\node_modules\react-native-safe-area-context
+│   [FOUND] flat: D:\downloads\O2Os\O2O\node_modules\react-native-gesture-handler
+│   [OK]   Already patched                                                                                       
+│   [FOUND] flat: D:\downloads\O2Os\O2O\node_modules\react-native-safe-area-context
+│7✅  Postinstall patches done: 0 file(s) patched, 5 skipped.g.js stripped
+│   [OK]   Already patched                                                                                       
+│   [FOUND] flat: D:\downloads\O2Os\O2O\node_modules\react-native-safe-area-context
+│ ✅  Postinstall patches done: 0 file(s) patched, 5 skipped.g.js stripped
+│8=== Patching react-native-safe-area-context (autolinking compat) ===
+│   [FOUND] flat: D:\downloads\O2Os\O2O\node_modules\react-native-safe-area-context
+│ ✅  Postinstall patches done: 0 file(s) patched, 5 skipped.g.js stripped                                       
+│ === Patching react-native-safe-area-context (autolinking compat) ===
+│9  [FOUND] flat: D:\downloads\O2Os\O2O\node_modules\react-native-safe-area-context
+│ ✅  Postinstall patches done: 0 file(s) patched, 5 skipped.g.js stripped                                       
+│ === Patching react-native-safe-area-context (autolinking compat) ===                                           
+│   [FOUND] flat: D:\downloads\O2Os\O2O\node_modules\react-native-safe-area-context
+[10 lines collapsed]tive-safe-area-context/react-native.config.js stripped                                       
+│ === Patching react-native-safe-area-context (autolinking compat) ===                                           
+│   [FOUND] flat: D:\downloads\O2Os\O2O\node_modules\react-native-safe-area-context
+│   [PATCH] react-native-safe-area-context/react-native.config.js stripped                                       
+│ 1== Patching react-native-screens (autolinking compat) ===                                                     
+│   [FOUND] flat: D:\downloads\O2Os\O2O\node_modules\react-native-safe-area-context
+│   [PATCH] react-native-safe-area-context/react-native.config.js stripped                                       
+│ === Patching react-native-screens (autolinking compat) ===                                                     
+│ 2 [FOUND] flat: D:\downloads\O2Os\O2O\node_modules\react-native-screens
+│   [PATCH] react-native-safe-area-context/react-native.config.js stripped                                       
+│ === Patching react-native-screens (autolinking compat) ===                                                     
+│   [FOUND] flat: D:\downloads\O2Os\O2O\node_modules\react-native-screens
+│ 3 [PATCH] react-native-screens/react-native.config.js stripped                                                 
+│ === Patching react-native-screens (autolinking compat) ===                                                     
+│   [FOUND] flat: D:\downloads\O2Os\O2O\node_modules\react-native-screens
+│   [PATCH] react-native-screens/react-native.config.js stripped                                                 
+│ 4 [OK]   Already patched                                                                                       
+│   [FOUND] flat: D:\downloads\O2Os\O2O\node_modules\react-native-screens
+│   [PATCH] react-native-screens/react-native.config.js stripped                                                 
+│ 5 [OK]   Already patched                                                                                       
+│   [PATCH] react-native-screens/react-native.config.js stripped                                                 
+│   [OK]   Already patched                                                                                       
+│ 6== Patching react-native-svg (autolinking compat) ===pped                                                     
+│   [OK]   Already patched                                                                                       
+│ === Patching react-native-svg (autolinking compat) ===pped                                                     
+│ 7 [FOUND] flat: D:\downloads\O2Os\O2O\node_modules\react-native-svg=
+│ === Patching react-native-svg (autolinking compat) ===pped                                                     
+│   [FOUND] flat: D:\downloads\O2Os\O2O\node_modules\react-native-svg=
+│ 8 [PATCH] react-native-svg/react-native.config.js stripped                                                     
+│   [FOUND] flat: D:\downloads\O2Os\O2O\node_modules\react-native-svg=
+│   [PATCH] react-native-svg/react-native.config.js stripped                                                     
+│ 9== Patching react (useSyncExternalStore compatibility polyfill) ===                                           
+│   [PATCH] react-native-svg/react-native.config.js stripped                                                     
+│ === Patching react (useSyncExternalStore compatibility polyfill) ===                                           
+│20 [FOUND] flat: D:\downloads\O2Os\O2O\node_modules\react                                                       
+│ === Patching react (useSyncExternalStore compatibility polyfill) ===                                           
+│   [FOUND] flat: D:\downloads\O2Os\O2O\node_modules\react                                                       
+│ 1 [OK]   Already patched                                                                                       
+│   [FOUND] flat: D:\downloads\O2Os\O2O\node_modules\react                                                       
+│   [OK]   Already patched                                                                                       
+│ 2 [FOUND] flat: D:\downloads\O2Os\O2O\node_modules\@react-navigation\native-stack                              
+│   [OK]   Already patched                                                                                       
+│   [FOUND] flat: D:\downloads\O2Os\O2O\node_modules\@react-navigation\native-stack                              
+│ 3== Patching @react-navigation/native-stack (compatibilityFlags, useAnimatedValue, ScreenStackItem) ===        
+│   [FOUND] flat: D:\downloads\O2Os\O2O\node_modules\@react-navigation\native-stack                              
+│ === Patching @react-navigation/native-stack (compatibilityFlags, useAnimatedValue, ScreenStackItem) ===        
+│   [FOUND] flat: D:\downloads\O2Os\O2O\node_modules\@react-navigation\native-stack                              
+│   [OK]   Already patched                                                                                       
+│   [FOUND] flat: D:\downloads\O2Os\O2O\node_modules\@react-navigation\bottom-tabs
+│ === Patching @react-navigation/bottom-tabs (useAnimatedValue & ScreenStackItem fallbacks) ===
+│   [FOUND] flat: D:\downloads\O2Os\O2O\node_modules\@react-navigation\bottom-tabs
+│   [OK]   Already patched
+└─ Done in 148mss applied: 3 total.
+Done in 2.1s using pnpm v10.12.4
+PS D:\downloads\O2Os\O2O\artifacts\o2o> pnpm run android
+
+> @workspace/o2o@0.0.0 android D:\downloads\O2Os\O2O\artifacts\o2o
+> react-native run-android
+
+info Running jetifier to migrate libraries to AndroidX. You can disable it using "--no-jetifier" flag.
+Jetifier found 0 file(s) to forward-jetify. Using 16 workers...
+info Starting JS server...
+info Launching emulator...
+error Failed to launch emulator. Reason: No emulators found as an output of `emulator -list-avds`.
+warn Please launch an emulator manually or connect a device. Otherwise app may fail to launch.
+info Installing the app...
+
+> Configure project :react-native-reanimated
+AAR for react-native-reanimated has been found
+D:\downloads\O2Os\O2O\node_modules\react-native-reanimated\android\react-native-reanimated-68-hermes.aar
+
+> Task :app:installDebug
+Installing APK 'app-debug.apk' on 'V2055 - 13' for :app:debug
+Installed on 1 device.
+
+[Incubating] Problems report is available at: file:///D:/downloads/O2Os/O2O/artifacts/o2o/android/build/reports/problems/problems-report.html
+
+Deprecated Gradle features were used in this build, making it incompatible with Gradle 9.0.
+
+You can use '--warning-mode all' to show the individual deprecation warnings and determine if they come from your own scripts or plugins.
+
+For more on this, please refer to https://docs.gradle.org/8.14.3/userguide/command_line_interface.html#sec:command_line_warnings in the Gradle documentation.
+
+BUILD SUCCESSFUL in 39s
+236 actionable tasks: 2 executed, 234 up-to-date
+info Connecting to the development server...
+info Starting the app...
+Starting: Intent { cmp=com.anonymous.o2o/.MainActivity }
+PS D:\downloads\O2Os\O2O\artifacts\o2o> 

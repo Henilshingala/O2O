@@ -1,0 +1,41 @@
+
+                        #######
+                   ################
+                #########     #########
+            #########             ##########
+        #########        ######        #########
+       ##########################################
+      #####      #####################       #####
+      #####          ##############          #####
+      #####    ###       ######       ###    #####
+      #####    #######            #######    #####
+      #####    ###########    ###########    #####
+      #####    ##########################    #####
+      #####    ##########################    #####
+      #####      ######################     ######
+       ######        #############        #######
+         #########        ####       #########
+              #########          #########
+                  ######### #########
+                       #########
+
+
+                    Welcome to Metro!
+              Fast - Scalable - Integrated
+
+
+
+To reload the app press "r"
+To open developer menu press "d"
+
+Error: Unable to resolve module ./index from D:\downloads\O2Os\O2O/.:
+
+None of these files exist:
+  * index(.native|.android.js|.native.js|.js|.android.json|.native.json|.json|.android.ts|.native.ts|.ts|.android.tsx|.native.tsx|.tsx)
+  * index\index(.native|.android.js|.native.js|.js|.android.json|.native.json|.json|.android.ts|.native.ts|.ts|.android.tsx|.native.tsx|.tsx)
+    at ModuleResolver.resolveDependency (D:\downloads\O2Os\O2O\node_modules\metro\src\node-haste\DependencyGraph\ModuleResolution.js:136:15)
+    at DependencyGraph.resolveDependency (D:\downloads\O2Os\O2O\node_modules\metro\src\node-haste\DependencyGraph.js:231:43)
+    at D:\downloads\O2Os\O2O\node_modules\metro\src\lib\transformHelpers.js:129:24
+    at Server._resolveRelativePath (D:\downloads\O2Os\O2O\node_modules\metro\src\Server.js:1107:12)
+    at async Server.requestProcessor [as _processBundleRequest] (D:\downloads\O2Os\O2O\node_modules\metro\src\Server.js:450:37)
+    at async Server._processRequest (D:\downloads\O2Os\O2O\node_modules\metro\src\Server.js:406:9)
