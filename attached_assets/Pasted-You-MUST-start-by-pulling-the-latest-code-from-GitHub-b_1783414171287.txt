@@ -1,0 +1,422 @@
+You MUST start by pulling the latest code from GitHub before making ANY changes.
+
+Repository:
+https://github.com/Henilshingala/O2O
+
+FIRST:
+
+1. git fetch --all
+2. git checkout main
+3. git pull origin main
+4. Install dependencies again.
+5. Build the Android app.
+6. Run on a REAL Android device.
+7. Reproduce ALL runtime errors before modifying code.
+
+===========================================================
+CURRENT STATUS
+===========================================================
+
+The app now:
+
+✅ Builds successfully
+✅ Metro starts
+✅ Gradle builds
+✅ Splash screen works
+✅ Login works
+✅ Backend connection works
+
+BUT AFTER LOGIN THE APP IS NOT USABLE.
+
+These runtime errors still exist.
+
+===========================================================
+ERROR #1
+===========================================================
+
+Console Warning
+
+Require cycle:
+
+react-native/Libraries/Network/fetch.js
+
+↓
+
+whatwg-fetch
+
+↓
+
+react-native/Libraries/Network/fetch.js
+
+Find the REAL reason this polyfill exists.
+
+Do NOT ignore the warning.
+
+Do NOT suppress it.
+
+Find which package or custom fetch implementation imports both React Native fetch and whatwg-fetch.
+
+Remove the circular dependency completely.
+
+Use only ONE fetch implementation.
+
+===========================================================
+ERROR #2
+===========================================================
+
+Runtime Error
+
+Cannot read property 'getItem' of undefined
+
+This is a CRITICAL runtime crash.
+
+Find EVERY place where:
+
+AsyncStorage
+
+MMKV
+
+SecureStore
+
+EncryptedStorage
+
+NativeModules
+
+Storage
+
+is imported.
+
+Verify every import.
+
+Verify every initialization.
+
+Verify every provider.
+
+Verify every platform-specific implementation.
+
+Find exactly WHY getItem is undefined.
+
+Do NOT replace it with optional chaining.
+
+Do NOT hide the crash.
+
+Fix the root cause.
+
+===========================================================
+ERROR #3
+===========================================================
+
+Application immediately shows
+
+"Something went wrong"
+
+with
+
+"Try Again"
+
+instead of loading the application.
+
+This means an Error Boundary is catching an exception.
+
+Find the ORIGINAL exception.
+
+Do NOT debug the Error Boundary.
+
+Debug the code that throws the exception.
+
+Temporarily disable the Error Boundary if necessary to expose the original stack trace.
+
+Identify the exact file, component and line number causing the crash.
+
+Fix the original issue.
+
+===========================================================
+FULL APPLICATION AUDIT
+===========================================================
+
+Inspect the ENTIRE application after login.
+
+Check every screen:
+
+Home
+
+Profile
+
+Marketplace
+
+Orders
+
+Chats
+
+Notifications
+
+Wishlist
+
+Settings
+
+Search
+
+Product Details
+
+Seller Pages
+
+Group Chat
+
+Bidding
+
+Payment
+
+Image Upload
+
+Every modal
+
+Every drawer
+
+Every tab
+
+Every FlatList
+
+Every ScrollView
+
+Every Context Provider
+
+Every React Query hook
+
+Every Socket.IO listener
+
+Every API request
+
+===========================================================
+FLATLIST AUDIT
+===========================================================
+
+Search the project for every FlatList.
+
+Verify:
+
+data
+
+keyExtractor
+
+renderItem
+
+extraData
+
+ListHeaderComponent
+
+ListFooterComponent
+
+refreshControl
+
+empty state
+
+null values
+
+undefined values
+
+Array.isArray(data)
+
+No undefined props
+
+No invalid children
+
+===========================================================
+STORAGE AUDIT
+===========================================================
+
+Search every file for:
+
+getItem
+
+setItem
+
+removeItem
+
+multiGet
+
+multiSet
+
+AsyncStorage
+
+MMKV
+
+SecureStore
+
+NativeModules
+
+Verify every import.
+
+Verify package installation.
+
+Verify autolinking.
+
+Verify Android native linking.
+
+Verify initialization before use.
+
+===========================================================
+NETWORK AUDIT
+===========================================================
+
+Verify every request uses ONLY:
+
+https://o2o-rphb.onrender.com/
+
+Search entire repository.
+
+Remove:
+
+localhost
+
+127.0.0.1
+
+10.0.2.2
+
+192.168.*
+
+172.*
+
+mock APIs
+
+staging APIs
+
+development URLs
+
+There must be exactly ONE backend.
+
+===========================================================
+POST LOGIN VERIFICATION
+===========================================================
+
+Test:
+
+Login
+
+Session restore
+
+Refresh token
+
+Home
+
+Logout
+
+Navigation
+
+Tabs
+
+Drawer
+
+Profile
+
+Chats
+
+Marketplace
+
+Products
+
+Wishlist
+
+Notifications
+
+Settings
+
+Realtime updates
+
+Image upload
+
+Everything must work.
+
+===========================================================
+DO NOT STOP
+===========================================================
+
+If fixing one issue reveals another...
+
+Continue fixing.
+
+Repeat until:
+
+No Red Screens
+
+No Error Boundary
+
+No Blank Screen
+
+No Runtime Exception
+
+No React Warnings
+
+No Storage Errors
+
+No FlatList Errors
+
+No Navigation Errors
+
+No Hook Errors
+
+No Context Errors
+
+No API Errors
+
+===========================================================
+FINAL VALIDATION
+===========================================================
+
+Run on a REAL Android device.
+
+Use the app exactly like a user.
+
+Login.
+
+Navigate every screen.
+
+Open every tab.
+
+Create listings.
+
+Open chats.
+
+Receive socket events.
+
+Upload images.
+
+Logout.
+
+Login again.
+
+Background app.
+
+Resume app.
+
+Kill app.
+
+Reopen app.
+
+Everything must continue working.
+
+===========================================================
+DELIVERABLE
+===========================================================
+
+Do NOT stop after one fix.
+
+Return ONLY when:
+
+1. The application is fully functional.
+2. Every runtime error is fixed.
+3. Every warning is investigated.
+4. Every screen works.
+5. Login and post-login flows work.
+6. Push every change to:
+
+https://github.com/Henilshingala/O2O
+
+Include:
+
+• Root cause of each bug
+• Every modified file
+• Why each fix was necessary
+• Screens tested
+• Runtime verification
+• Android verification
+• Final production readiness report
