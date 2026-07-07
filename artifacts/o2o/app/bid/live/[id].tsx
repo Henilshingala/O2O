@@ -61,22 +61,23 @@ export default function LiveBidScreen() {
   const bid = getBid(params.id);
   if (!bid) return null;
 
-  const msLeft = new Date(bid.endTime).getTime() - Date.now();
+  const msLeft = bid.endTime ? new Date(bid.endTime).getTime() - Date.now() : 0;
   const isExpired = msLeft <= 0;
-  const sortedOffers = [...bid.offers].sort((a, b) => a.price - b.price);
+  const safeOffers = Array.isArray(bid.offers) ? bid.offers : [];
+  const sortedOffers = [...safeOffers].sort((a, b) => a.price - b.price);
   const bestOffer = sortedOffers[0];
-  const prices = bid.offers.map((o) => o.price);
+  const prices = safeOffers.map((o) => o.price);
   const avgPrice = prices.length > 0 ? Math.round(prices.reduce((a, b) => a + b, 0) / prices.length) : 0;
 
   const handleEndEarly = () => {
-    if (bid.offers.length === 0) return;
+    if (safeOffers.length === 0) return;
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
     endBid(bid.id);
     router.push({ pathname: "/bid/winner/[id]", params: { id: bid.id } });
   };
 
   const handleTimerEnd = useCallback(() => {
-    if (bid.status === "active" && bid.offers.length > 0) {
+    if (bid.status === "active" && safeOffers.length > 0) {
       router.push({ pathname: "/bid/winner/[id]", params: { id: bid.id } });
     }
   }, [bid]);
@@ -133,7 +134,7 @@ export default function LiveBidScreen() {
         <View style={[styles.analyticsCard, { backgroundColor: colors.card, borderColor: colors.border }]}>
           <Text style={[styles.analyticsTitle, { color: colors.foreground }]}>Bid Analytics</Text>
           <View style={styles.analyticsGrid}>
-            <AnalyticItem label="Offers" value={bid.offers.length} colors={colors} />
+            <AnalyticItem label="Offers" value={safeOffers.length} colors={colors} />
             {prices.length > 0 && <>
               <AnalyticItem label="Lowest" value={`₹${Math.min(...prices)}`} colors={colors} positive />
               <AnalyticItem label="Highest" value={`₹${Math.max(...prices)}`} colors={colors} />
@@ -169,7 +170,7 @@ export default function LiveBidScreen() {
         )}
       </ScrollView>
 
-      {bid.status === "active" && bid.offers.length > 0 && (
+      {bid.status === "active" && safeOffers.length > 0 && (
         <View style={[styles.footer, { backgroundColor: colors.card, borderTopColor: colors.border, paddingBottom: insets.bottom + 12 }]}>
           <AppButton title="View & Select Offers" onPress={handleEndEarly} />
         </View>

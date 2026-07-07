@@ -7,7 +7,16 @@ let socket: Socket | null = null;
 
 export async function connectSocket(baseUrl: string): Promise<Socket> {
   if (socket?.connected) return socket;
-  const token = await AsyncStorage.getItem(TOKEN_KEY);
+
+  // Safely read the auth token — if AsyncStorage isn't ready or fails,
+  // continue without a token rather than crashing the socket connection.
+  let token: string | null = null;
+  try {
+    token = await AsyncStorage.getItem(TOKEN_KEY);
+  } catch (err) {
+    console.warn("[socket] AsyncStorage.getItem failed, connecting without token:", err);
+  }
+
   socket = io(baseUrl, {
     auth: { token },
     transports: ["websocket", "polling"],

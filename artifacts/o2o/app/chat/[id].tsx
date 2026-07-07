@@ -64,7 +64,7 @@ export default function ChatScreen() {
     roomId: chat?.id,
     initialMessages: chat?.messages ?? [],
     queryKey: ["chats"],
-    onSend: (msg) => sendChatMessage(chat!.id, { ...msg, chatId: chat!.id }),
+    onSend: (msg) => { if (chat) sendChatMessage(chat.id, { ...msg, chatId: chat.id }); },
   });
 
   if (!user) return null;
@@ -76,8 +76,8 @@ export default function ChatScreen() {
     );
   }
 
-  const otherId = chat.participants.find((p) => p !== user.id)!;
-  const other = getUserById(otherId);
+  const otherId = chat.participants.find((p) => p !== user.id) ?? "";
+  const other = otherId ? getUserById(otherId) : undefined;
 
   const send = () => {
     if (!text.trim()) return;

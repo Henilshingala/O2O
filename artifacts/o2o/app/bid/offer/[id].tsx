@@ -32,7 +32,7 @@ export default function SellerOfferScreen() {
   }, []);
 
   const bid = getBid(params.id);
-  const myOffer = bid?.offers.find((o) => o.sellerId === user?.id && o.channelId === params.channelId);
+  const myOffer = bid?.offers?.find((o) => o.sellerId === user?.id && o.channelId === params.channelId);
 
   useEffect(() => {
     if (myOffer) {

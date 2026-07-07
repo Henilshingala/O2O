@@ -7,6 +7,8 @@ import com.facebook.react.bridge.ReactMethod;
 import com.facebook.react.bridge.ReadableMap;
 import com.facebook.react.bridge.ReadableMapKeySetIterator;
 
+import org.json.JSONObject;
+
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
 import java.io.OutputStream;
@@ -50,24 +52,39 @@ public class SimpleFetchModule extends ReactContextBaseJavaModule {
                 }
 
                 int statusCode = conn.getResponseCode();
-                
+
                 BufferedReader br;
                 if (200 <= statusCode && statusCode <= 299) {
                     br = new BufferedReader(new InputStreamReader(conn.getInputStream(), "utf-8"));
                 } else {
-                    br = new BufferedReader(new InputStreamReader(conn.getErrorStream(), "utf-8"));
+                    java.io.InputStream errStream = conn.getErrorStream();
+                    if (errStream == null) {
+                        // No error body — return empty data with status code
+                        JSONObject emptyResp = new JSONObject();
+                        emptyResp.put("status", statusCode);
+                        emptyResp.put("data", "");
+                        promise.resolve(emptyResp.toString());
+                        return;
+                    }
+                    br = new BufferedReader(new InputStreamReader(errStream, "utf-8"));
                 }
-                
+
                 StringBuilder response = new StringBuilder();
                 String responseLine;
                 while ((responseLine = br.readLine()) != null) {
-                    response.append(responseLine.trim());
+                    response.append(responseLine);
                 }
-                
-                promise.resolve("{\"status\":" + statusCode + ", \"data\":\"" + response.toString().replace("\"", "\\\"") + "\"}");
+
+                // Use JSONObject to correctly encode the response string —
+                // avoids manual escaping bugs (unescaped newlines, tabs, backslashes, etc.)
+                // that would produce invalid JSON and crash JSON.parse() on the JS side.
+                JSONObject responseObj = new JSONObject();
+                responseObj.put("status", statusCode);
+                responseObj.put("data", response.toString());
+                promise.resolve(responseObj.toString());
 
             } catch (Exception e) {
-                promise.reject("FETCH_ERROR", e.getMessage());
+                promise.reject("FETCH_ERROR", e.getMessage() != null ? e.getMessage() : "Unknown network error");
             }
         }).start();
     }

@@ -150,9 +150,10 @@ export default function HomeScreen() {
           <EmptyRow label="No recent chats" colors={colors} />
         ) : (
           myChats.map((chat) => {
-            const otherId = chat.participants.find((p) => p !== user.id)!;
-            const other = getUserById(otherId);
-            const last = chat.messages[chat.messages.length - 1];
+            const otherId = chat.participants.find((p) => p !== user.id) ?? "";
+            const other = otherId ? getUserById(otherId) : undefined;
+            const chatMsgs = Array.isArray(chat.messages) ? chat.messages : [];
+            const last = chatMsgs[chatMsgs.length - 1];
             return (
               <TouchableOpacity
                 key={chat.id}
@@ -184,7 +185,8 @@ export default function HomeScreen() {
           <EmptyRow label="No groups yet" colors={colors} />
         ) : (
           myGroups.map((grp) => {
-            const last = grp.messages[grp.messages.length - 1];
+            const grpMessages = Array.isArray(grp.messages) ? grp.messages : [];
+            const last = grpMessages[grpMessages.length - 1];
             return (
               <TouchableOpacity
                 key={grp.id}
@@ -198,7 +200,7 @@ export default function HomeScreen() {
                   <Text style={[styles.cardTitle, { color: colors.foreground }]}>{grp.name}</Text>
                   <Text style={[styles.cardSub, { color: colors.mutedForeground }]}>
                     {grp.members.length} members
-                    {last ? ` • ${last.text.slice(0, 30)}` : ""}
+                    {last ? ` • ${(last.text ?? "").slice(0, 30)}` : ""}
                   </Text>
                 </View>
               </TouchableOpacity>

@@ -39,6 +39,14 @@ export default function NewChatScreen() {
       <FlatList
         data={friends}
         keyExtractor={(item) => item.id}
+        ListEmptyComponent={
+          <View style={styles.empty}>
+            <Feather name="users" size={40} color={colors.mutedForeground} />
+            <Text style={[styles.emptyText, { color: colors.mutedForeground }]}>
+              {search ? "No users match your search" : "No friends yet. Add people to start chatting!"}
+            </Text>
+          </View>
+        }
         renderItem={({ item }) => (
           <TouchableOpacity
             style={[styles.row, { borderBottomColor: colors.border }]}
@@ -70,4 +78,6 @@ const styles = StyleSheet.create({
   info: { flex: 1 },
   name: { fontSize: 15, fontWeight: "700" },
   username: { fontSize: 12, marginTop: 2 },
+  empty: { alignItems: "center", marginTop: 60, gap: 12, paddingHorizontal: 32 },
+  emptyText: { fontSize: 14, textAlign: "center" },
 });

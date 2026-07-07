@@ -153,7 +153,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
     setUser(null);
     setUserCache({});
-    await clearStoredTokens();
+    try {
+      await clearStoredTokens();
+    } catch (e) {
+      console.warn("[auth] Failed to clear stored tokens during logout:", e);
+    }
   }, []);
 
   const sendOtp = useCallback(async (email: string) => {

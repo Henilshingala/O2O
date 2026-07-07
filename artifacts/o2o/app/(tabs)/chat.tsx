@@ -74,9 +74,10 @@ export default function ChatTab() {
           </View>
         }
         renderItem={({ item }) => {
-          const otherId = item.participants.find((p) => p !== user.id)!;
-          const other = friends.find((f) => f.id === otherId) || getUserById(otherId);
-          const last = item.messages[item.messages.length - 1];
+          const otherId = item.participants.find((p) => p !== user.id) ?? "";
+          const other = otherId ? (friends.find((f) => f.id === otherId) || getUserById(otherId)) : undefined;
+          const messages = Array.isArray(item.messages) ? item.messages : [];
+          const last = messages[messages.length - 1];
           return (
             <TouchableOpacity
               style={[styles.chatRow, { backgroundColor: colors.card, borderBottomColor: colors.border }]}

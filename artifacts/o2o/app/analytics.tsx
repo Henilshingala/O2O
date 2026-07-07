@@ -50,6 +50,18 @@ export default function AnalyticsScreen() {
 
   if (isLoading || !stats) return <View style={[styles.root, { backgroundColor: colors.background }]}><Text>Loading...</Text></View>;
 
+  // Guard against missing fields in the API response
+  const safeStats = {
+    activeBids: stats.activeBids ?? 0,
+    totalOffers: stats.totalOffers ?? 0,
+    winningRate: stats.winningRate ?? 0,
+    rating: stats.rating ?? 0,
+    avgPrice: stats.avgPrice ?? 0,
+    lowestOffer: stats.lowestOffer ?? 0,
+    highestOffer: stats.highestOffer ?? 0,
+    reviews: Array.isArray(stats.reviews) ? stats.reviews : [],
+  };
+
   return (
     <View style={[styles.root, { backgroundColor: colors.background }]}>
       <View style={[styles.header, { backgroundColor: colors.card, borderBottomColor: colors.border, paddingTop: insets.top + 8 }]}>
@@ -62,42 +74,42 @@ export default function AnalyticsScreen() {
 
       <ScrollView contentContainerStyle={{ padding: 16, paddingBottom: 40, gap: 16 }} showsVerticalScrollIndicator={false}>
         <View style={styles.statsGrid}>
-          <StatCard label="Active Bids" value={stats.activeBids} icon="trending-up" color={colors.primary} colors={colors} />
-          <StatCard label="Total Offers" value={stats.totalOffers} icon="send" colors={colors} />
-          <StatCard label="Winning Rate" value={`${stats.winningRate}%`} icon="award" color={colors.success} colors={colors} />
-          <StatCard label="Channel Rating" value={stats.rating > 0 ? `${stats.rating}/5` : "N/A"} icon="star" color="#F59E0B" colors={colors} />
+          <StatCard label="Active Bids" value={safeStats.activeBids} icon="trending-up" color={colors.primary} colors={colors} />
+          <StatCard label="Total Offers" value={safeStats.totalOffers} icon="send" colors={colors} />
+          <StatCard label="Winning Rate" value={`${safeStats.winningRate}%`} icon="award" color={colors.success} colors={colors} />
+          <StatCard label="Channel Rating" value={safeStats.rating > 0 ? `${safeStats.rating}/5` : "N/A"} icon="star" color="#F59E0B" colors={colors} />
         </View>
 
-        {stats.totalOffers > 0 && (
+        {safeStats.totalOffers > 0 && (
           <View style={[styles.priceCard, { backgroundColor: colors.card, borderColor: colors.border }]}>
             <Text style={[styles.cardTitle, { color: colors.foreground }]}>Offer Pricing</Text>
             <View style={styles.priceRow}>
               <View style={styles.priceItem}>
                 <Text style={[styles.priceLabel, { color: colors.mutedForeground }]}>Average Price</Text>
-                <Text style={[styles.priceValue, { color: colors.foreground }]}>₹{stats.avgPrice}</Text>
+                <Text style={[styles.priceValue, { color: colors.foreground }]}>₹{safeStats.avgPrice}</Text>
               </View>
               <View style={styles.priceDivider} />
               <View style={styles.priceItem}>
                 <Text style={[styles.priceLabel, { color: colors.mutedForeground }]}>Lowest Offer</Text>
-                <Text style={[styles.priceValue, { color: colors.success }]}>₹{stats.lowestOffer}</Text>
+                <Text style={[styles.priceValue, { color: colors.success }]}>₹{safeStats.lowestOffer}</Text>
               </View>
               <View style={styles.priceDivider} />
               <View style={styles.priceItem}>
                 <Text style={[styles.priceLabel, { color: colors.mutedForeground }]}>Highest Offer</Text>
-                <Text style={[styles.priceValue, { color: colors.destructive }]}>₹{stats.highestOffer}</Text>
+                <Text style={[styles.priceValue, { color: colors.destructive }]}>₹{safeStats.highestOffer}</Text>
               </View>
             </View>
           </View>
         )}
 
         <Text style={[styles.reviewsTitle, { color: colors.foreground }]}>Recent Reviews</Text>
-        {stats.reviews.length === 0 ? (
+        {safeStats.reviews.length === 0 ? (
           <View style={[styles.emptyReviews, { backgroundColor: colors.muted }]}>
             <Feather name="star" size={32} color={colors.border} />
             <Text style={[styles.emptyReviewsText, { color: colors.mutedForeground }]}>No reviews yet</Text>
           </View>
         ) : (
-          stats.reviews.map((r: any) => (
+          safeStats.reviews.map((r: any) => (
             <View key={r.id} style={[styles.reviewCard, { backgroundColor: colors.card, borderColor: colors.border }]}>
               <View style={styles.reviewHeader}>
                 <Text style={[styles.reviewBuyer, { color: colors.foreground }]}>{r.buyerName}</Text>

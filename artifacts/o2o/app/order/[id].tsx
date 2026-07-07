@@ -21,7 +21,7 @@ export default function OrderChatScreen() {
   const order = getOrder(params.id);
 
   if (!user || !order) return null;
-  const messages = [...order.messages].reverse();
+  const messages = [...(Array.isArray(order.messages) ? order.messages : [])].reverse();
   const isBuyer = order.buyerId === user.id;
   const statusBadge = { pending: "warning", confirmed: "primary", delivered: "success" }[order.status] as any;
 
@@ -81,7 +81,7 @@ export default function OrderChatScreen() {
           </View>
         }
         renderItem={({ item }) => (
-          <ChatBubble text={item.text} timestamp={item.timestamp} isMine={item.senderId === user.id} />
+          <ChatBubble text={item.text ?? ""} timestamp={item.timestamp} isMine={item.senderId === user.id} />
         )}
       />
 

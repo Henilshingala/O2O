@@ -73,7 +73,8 @@ export default function GroupsTab() {
           </View>
         }
         renderItem={({ item }) => {
-          const last = item.messages[item.messages.length - 1];
+          const messages = Array.isArray(item.messages) ? item.messages : [];
+          const last = messages[messages.length - 1];
           return (
             <TouchableOpacity
               style={[styles.row, { backgroundColor: colors.card, borderBottomColor: colors.border }]}
@@ -93,7 +94,7 @@ export default function GroupsTab() {
                 </View>
                 <Text style={[styles.sub, { color: colors.mutedForeground }]}>
                   {item.members.length} members
-                  {last ? ` • ${last.text.slice(0, 35)}` : ""}
+                  {last ? ` • ${(last.text ?? "").slice(0, 35)}` : ""}
                 </Text>
               </View>
             </TouchableOpacity>
