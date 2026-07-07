@@ -111,15 +111,20 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const login = useCallback(async (username: string, password: string) => {
     try {
+      console.log("[AUTH_CONTEXT] Calling customFetch...");
       const data = await customFetch<any>("/api/auth/login", {
         method: "POST",
         body: JSON.stringify({ username, password }),
       });
+      console.log("[AUTH_CONTEXT] customFetch succeeded. Storing tokens...");
       await storeTokens(data.token, data.refreshToken);
+      console.log("[AUTH_CONTEXT] Tokens stored. Setting user state...");
       setUser(data.user);
       cacheUser(data.user);
+      console.log("[AUTH_CONTEXT] User state set. Returning success.");
       return { success: true };
     } catch (err: any) {
+      console.log("[AUTH_CONTEXT] Error in login:", err);
       const msg = err?.data?.error || err?.message || "Network error";
       return { success: false, error: msg };
     }

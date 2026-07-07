@@ -3,6 +3,8 @@ export type CustomFetchOptions = RequestInit & {
   timeoutMs?: number;
 };
 
+import { NativeModules } from "react-native";
+
 export type ErrorType<T = unknown> = ApiError<T>;
 
 export type BodyType<T> = T;
@@ -385,7 +387,32 @@ export async function customFetch<T = unknown>(
 
   let response: Response;
   try {
-    response = await fetch(input, { ...init, method, headers });
+    if (NativeModules.SimpleFetch) {
+      console.log("[CUSTOM_FETCH] Using NativeModules.SimpleFetch for URL:", resolveUrl(input));
+      
+      const method = init.method || 'GET';
+      const headers = init.headers || {};
+      let bodyStr = "";
+      if (init.body) {
+        if (typeof init.body === 'string') {
+          bodyStr = init.body;
+        } else {
+          bodyStr = JSON.stringify(init.body);
+        }
+      }
+      
+      const resStr = await NativeModules.SimpleFetch.fetch(resolveUrl(input), method, headers, bodyStr);
+      console.log("[CUSTOM_FETCH] SimpleFetch response:", resStr);
+      
+      const resObj = JSON.parse(resStr);
+      response = new Response(resObj.data, {
+        status: resObj.status,
+        headers: new Headers({ 'content-type': 'application/json' }),
+      });
+    } else {
+      console.log("[CUSTOM_FETCH] Falling back to standard fetch");
+      response = await fetch(input, { ...init, method, headers });
+    }
   } catch (err: any) {
     if (err.name === 'AbortError' || err.message === 'Aborted') {
       throw new Error(`Network timeout: API request took longer than ${timeoutMs / 1000} seconds. Is your development server reachable?`);
