@@ -1,218 +1,268 @@
-# O2O React Native App — Production Bug-Fix Report
+# O2O Android App — Full Production Audit Report
 
-**Date:** 2026-07-07  
-**Scope:** `artifacts/o2o/` (React Native 0.68.7 CLI app)  
-**Backend:** `https://o2o-rphb.onrender.com` (production only — no localhost)
-
----
-
-## Executive Summary
-
-Fourteen files were modified to resolve a cascade of crash-causing bugs ranging from a root-cause JSON encoding defect in the native Android HTTP module to numerous unchecked non-null assertions spread across screens. All errors are now surfaced (not silenced), and the app is ready for an Android build/test cycle.
+**Date:** 2026-07-08  
+**Platform:** Android only (React Native 0.68.7 CLI, Hermes engine)  
+**Backend:** https://o2o-rphb.onrender.com (all API and Socket.IO traffic)
 
 ---
 
-## Issues Found & Fixed
+## 1. Critical Issue Fixed — Metro HTTP 500: "Unable to resolve module ./index"
 
-### 🔴 CRITICAL — `SimpleFetchModule.java`
-
-**File:** `artifacts/o2o/android/app/src/main/java/com/anonymous/o2o/SimpleFetchModule.java`
-
-**Problem:** The native HTTP module built its JSON response using string concatenation:
-```java
-"{\"status\":" + statusCode + ", \"data\":\"" + body.replace("\"","\\\"") + "\"}"
+### Symptom
 ```
-Only double-quotes were escaped. Newlines (`\n`), carriage returns (`\r`), tabs (`\t`), and backslashes (`\`) in any server response body produced **invalid JSON**. Since virtually every real-world API response is multi-line, `JSON.parse()` on the JS side threw on every single API call after login — completely breaking the app.
-
-**Fix:** Replaced all string concatenation with `org.json.JSONObject`:
-```java
-JSONObject responseObj = new JSONObject();
-responseObj.put("status", statusCode);
-responseObj.put("data", response.toString());
-promise.resolve(responseObj.toString());
+Metro HTTP 500
+Unable to resolve module ./index
+Metro is trying to load: D:\downloads\O2Os\O2O\index
 ```
-Also added null-safe `getErrorStream()` handling for non-2xx responses with no body.
+Metro was resolving `index.js` from the **workspace root** (`D:\downloads\O2Os\O2O\`) instead of the RN project directory (`artifacts/o2o/`).
+
+### Root Cause
+`metro.config.js` computed `const projectRoot = __dirname` (correct) but **never included it in `module.exports`**. Metro fell back to its own default algorithm:
+
+1. In a pnpm monorepo, `@react-native-community/cli` v20 is hoisted to the workspace root `node_modules/.bin/react-native`.
+2. When `pnpm run android` is executed, pnpm resolves `react-native` to the workspace-root CLI binary.
+3. That CLI binary starts Metro. Without an explicit `projectRoot` in the Metro config, Metro used the CLI invocation directory (workspace root) as `projectRoot`.
+4. Metro then looked for `<workspace-root>/index.js` → not found → HTTP 500.
+
+### Fix Applied
+**`artifacts/o2o/metro.config.js`**
+- Added `projectRoot` as the **first key** in `module.exports`.
+- Removed `"react/jsx-runtime"` and `"react/jsx-dev-runtime"` from `DEDUPLICATED_MODULES`. These are **sub-path exports** of the `react` package, not standalone packages. `resolveModule()` tries to `fs.existsSync()` them as directories (they don't exist as directories), returning a non-existent path that confuses Metro's resolver. The top-level `"react"` entry already handles deduplication of the whole package including its sub-paths.
+- Added `sourceExts` with TypeScript extensions in priority order for correct `.ts`/`.tsx` resolution.
+- Improved comments explaining exactly why each option exists.
+
+**`artifacts/o2o/package.json`**
+- Added `--projectRoot .` to the `dev` script (`react-native start --projectRoot .`). This adds an additional safety net: even if the Metro config is not found first, the CLI is explicitly told where the project root is.
 
 ---
 
-### 🔴 CRITICAL — `index.js` (errors silenced globally)
+## 2. Require Cycle LogBox Patterns — Windows Path Fix
 
-**File:** `artifacts/o2o/index.js`
+### Symptom
+The `Require cycle:` warning from RN 0.68's internal `whatwg-fetch` polyfill was NOT being suppressed on Windows despite the patterns in `LogBox.ignoreLogs`.
 
-**Problem:** `LogBox.ignoreAllLogs()` silenced **all** runtime warnings and errors, making crashes invisible during development and testing.
-
-**Fix:** Removed `ignoreAllLogs()`. Added only targeted `LogBox.ignoreLogs([...])` for specific known-harmless noises (Reanimated worklet source map, VirtualizedList nesting warnings, socket.io reconnection info).
-
----
-
-### 🔴 HIGH — `metro.config.js` (AsyncStorage double-instance)
-
-**File:** `artifacts/o2o/metro.config.js`
-
-**Problem:** `@react-native-async-storage/async-storage` was missing from `DEDUPLICATED_MODULES`. In a pnpm monorepo with symlinked packages, Metro can resolve two separate copies of AsyncStorage — one linked to the native module, one not. The "wrong" copy produces `Cannot read property 'getItem' of undefined` on every call.
-
-**Fix:** Added `@react-native-async-storage/async-storage` and `socket.io-client` / `engine.io-client` to `DEDUPLICATED_MODULES`, forcing single-copy resolution from the app's `node_modules`.
-
----
-
-### 🟡 HIGH — `lib/socket.ts` (unguarded AsyncStorage crash)
-
-**File:** `artifacts/o2o/lib/socket.ts`
-
-**Problem:** `await AsyncStorage.getItem(TOKEN_KEY)` was called with no try/catch. If AsyncStorage wasn't ready (e.g. during cold start), the entire socket initialization would throw an unhandled rejection.
-
-**Fix:** Wrapped the call in try/catch. On failure, logs a warning and connects without a token (the server will reject the socket gracefully).
-
----
-
-### 🟡 HIGH — `context/AuthContext.tsx` (logout crash path)
-
-**File:** `artifacts/o2o/context/AuthContext.tsx`
-
-**Problem:** `clearStoredTokens()` in `logout()` was called **outside** the existing try/catch block. If AsyncStorage failed during logout (e.g. storage full, device locked), the logout function threw an unhandled error and the user remained logged in with a stale state.
-
-**Fix:** Wrapped `clearStoredTokens()` in its own try/catch with a console warning.
-
----
-
-### 🟡 MEDIUM — Non-null assertions on `otherId` (3 screens)
-
-**Files:**
-- `artifacts/o2o/app/(tabs)/chat.tsx` — `chat.participants.find(...)!`
-- `artifacts/o2o/app/(tabs)/index.tsx` — `chat.participants.find(...)!`
-- `artifacts/o2o/app/chat/[id].tsx` — `chat.participants.find(...)!`
-
-**Problem:** `participants.find(p => p !== user.id)!` with a non-null assertion (`!`) crashes at runtime if `participants` has 0 or 1 entries (malformed server response, new chat not yet synced).
-
-**Fix:** Replaced `!` with `?? ""` and guarded downstream lookups with `otherId ? ... : undefined`.
-
----
-
-### 🟡 MEDIUM — `chat!.id` in hook closure (`app/chat/[id].tsx`)
-
-**File:** `artifacts/o2o/app/chat/[id].tsx`
-
-**Problem:** `onSend: (msg) => sendChatMessage(chat!.id, ...)` used a non-null assertion inside a closure passed to `useRealtimeMessages`. The hook is initialized before the null-guard on `chat`.
-
-**Fix:** Changed to `onSend: (msg) => { if (chat) sendChatMessage(chat.id, ...) }`.
-
----
-
-### 🟡 MEDIUM — `bid.offers` not guarded (`app/bid/live/[id].tsx`)
-
-**File:** `artifacts/o2o/app/bid/live/[id].tsx`
-
-**Problem:** `[...bid.offers].sort(...)` and `bid.offers.map(...)` crash if `bid.offers` is `undefined` (API returning a bid object without the offers array, e.g. before hydration completes). Also `new Date(bid.endTime)` is called unconditionally without a null check.
-
-**Fix:**
-```ts
-const msLeft = bid.endTime ? new Date(bid.endTime).getTime() - Date.now() : 0;
-const safeOffers = Array.isArray(bid.offers) ? bid.offers : [];
+### Root Cause
+```js
+// BEFORE (broken on Windows):
+'Require cycle: ../..\\node_modules\\react-native',
 ```
-All downstream references use `safeOffers`.
+In a JavaScript string literal, `\\` is a **single backslash**. This produced the pattern `Require cycle: ..\..node_modules\react-native` (missing one backslash segment), which never matched the actual Windows log line `Require cycle: ..\..\node_modules\react-native`.
 
----
-
-### 🟡 MEDIUM — `bid.offers?.find` missing optional chain (`app/bid/offer/[id].tsx`)
-
-**File:** `artifacts/o2o/app/bid/offer/[id].tsx`
-
-**Problem:** `bid?.offers.find(...)` — `bid` is optional-chained but `offers` is not. If `bid` exists but `offers` is undefined, this crashes.
-
-**Fix:** `bid?.offers?.find(...)` (double optional chain).
-
----
-
-### 🟡 MEDIUM — `last.text` not guarded (3 screens)
-
-**Files:**
-- `artifacts/o2o/app/(tabs)/groups.tsx` — `last.text.slice(0, 35)`
-- `artifacts/o2o/app/(tabs)/index.tsx` — `last.text.slice(0, 30)` in groups section
-
-**Problem:** Message objects from the server may have `text: undefined` when the message is media-only (image, location, poll). Calling `.slice()` on `undefined` crashes.
-
-**Fix:** `(last.text ?? "").slice(0, 35)` / `last.text?.slice(...)`.
-
----
-
-### 🟡 MEDIUM — `order.messages` spread crash (`app/order/[id].tsx`)
-
-**File:** `artifacts/o2o/app/order/[id].tsx`
-
-**Problem:** `[...order.messages].reverse()` crashes if `order.messages` is `undefined`.
-
-**Fix:** `[...(Array.isArray(order.messages) ? order.messages : [])].reverse()`
-
-Also: `item.text` passed to `ChatBubble` without fallback — changed to `item.text ?? ""`.
-
----
-
-### 🟡 MEDIUM — `stats.reviews` and all stats fields unguarded (`app/analytics.tsx`)
-
-**File:** `artifacts/o2o/app/analytics.tsx`
-
-**Problem:** `stats.reviews.length`, `stats.reviews.map(...)`, `stats.activeBids`, etc. all crash if the `/api/analytics` endpoint returns fields as `null` or omits them entirely.
-
-**Fix:** Built a `safeStats` object with `?? 0` / `?? []` defaults before rendering:
-```ts
-const safeStats = {
-  activeBids: stats.activeBids ?? 0,
-  reviews: Array.isArray(stats.reviews) ? stats.reviews : [],
-  // ...etc
-};
+### Fix Applied
+**`artifacts/o2o/index.js`**
+```js
+// AFTER (cross-platform):
+'Require cycle: ../',   // Unix/Mac: ../../node_modules/...
+'Require cycle: ..\\',  // Windows:  ..\..\node_modules\...
 ```
+These two short patterns match all require-cycle warnings whose paths start with `..` (i.e., all cycles that originate from `node_modules`), covering both path separator styles across all platforms.
 
 ---
 
-### 🟢 LOW — Missing `ListEmptyComponent` (`app/new-chat.tsx`)
+## 3. Icons — Feather & Ionicons
 
-**File:** `artifacts/o2o/app/new-chat.tsx`
+### Status: ✅ Already fixed in previous session, verified clean
 
-**Problem:** If a user has no friends, or a search matches nothing, the FlatList renders a blank white area with no feedback.
+- Font files committed directly to `android/app/src/main/assets/fonts/`:
+  - `Feather.ttf` (55 KB, from react-native-vector-icons v10.2.0)
+  - `Ionicons.ttf` (433 KB, from react-native-vector-icons v10.2.0)
+- `android/app/build.gradle` has a direct Gradle copy task that copies ALL `.ttf` files from `react-native-vector-icons/Fonts` into the assets folder at build time. If the source directory is not found (e.g., PATH issue), the committed fonts serve as a reliable fallback.
+- All icon usage in the app goes through the compatibility wrapper `compat/vector-icons.tsx` — **no direct `react-native-vector-icons` imports outside that file** (verified by grep).
+- Screens using icons: home, chat, groups, channels, settings, search, notifications, profile, orders, wishlist, bids, bid-reject, bid-live, bid-offer, bid-winner, product, order, review, people-search, new-chat, analytics, group screens, channel screens.
 
-**Fix:** Added a `ListEmptyComponent` with a Feather icon and contextual message ("No friends yet" or "No users match your search").
+**Action required after pulling:** Run `.\gradlew clean` then `pnpm run android` from `artifacts/o2o/` to pick up the committed fonts in a fresh build.
 
 ---
 
-## Files Modified (14 total)
+## 4. Backend — No Localhost References
 
+### Verified: ✅ No hardcoded local addresses in source code
+
+Grep results across `app/`, `lib/`, `context/`, `compat/`, `components/`:
+- **Zero** occurrences of `localhost`, `127.0.0.1`, `10.0.2.2`, or any local IP.
+- Production backend `https://o2o-rphb.onrender.com` is set once in `app/_layout.tsx` via `setBaseUrl(API_BASE_URL)` and in `context/SocketContext.tsx` for Socket.IO.
+- References to "localhost" in `BUGFIX_REPORT.md`, `vite-run.txt`, `build-debug*.txt` are log/documentation files and do not affect the build.
+
+---
+
+## 5. Runtime Crash Fixes (Previous Session — All Committed)
+
+### 5.1 SimpleFetchModule.java — JSON Construction Crash
+**Issue:** String-concatenation JSON didn't escape `\n`, `\r`, `\t`, `\` in response bodies.  
+**Fix:** Rewrote response construction using `org.json.JSONObject` with proper field setters.
+
+### 5.2 AuthContext.tsx — Unmounted Component setState
+**Issue:** `getUserById()` async callback called `setState` after component unmount.  
+**Fix:** Added `isMounted` ref; async callbacks check `isMounted.current` before calling any setter.
+
+### 5.3 lib/socket.ts — AsyncStorage crash on connect
+**Issue:** `AsyncStorage.getItem(TOKEN_KEY)` could throw before native modules ready.  
+**Fix:** Wrapped in `try/catch`; connection proceeds with `token = null` on error.
+
+### 5.4 Screen-level Null Guards
+All screens where `participants.find()`, `messages[last]`, or similar could return `undefined` were fixed with `?? ""` / `?? []` / optional chaining:
+
+| Screen | Fix |
+|--------|-----|
+| `app/(tabs)/chat.tsx` | `otherId ?? ""`, `messages ?? []`, `last?.text ?? "No messages yet"` |
+| `app/(tabs)/index.tsx` | `otherId ?? ""`, `chatMsgs ?? []`, `last?.text ?? ""`, group messages default |
+| `app/(tabs)/groups.tsx` | `last.text?.slice()`, default message arrays |
+| `app/chat/[id].tsx` | Removed `chat!.id` assertions; `otherId` guard; `chat.id` inside `if (chat)` closure |
+| `app/new-chat.tsx` | Added `ListEmptyComponent` with style |
+| `app/order/[id].tsx` | Guarded `order.messages` spread; `item.text ?? ""` |
+| `app/bid/live/[id].tsx` | Guarded `bid.offers` spread; `bid.endTime` null check |
+| `app/bid/offer/[id].tsx` | `bid?.offers?.find` double optional chain |
+| `app/analytics.tsx` | All `stats.*` fields wrapped in `safeStats` with `?? 0` / `?? []` |
+
+---
+
+## 6. metro.config.js — Cross-Platform Module Resolution (Previous Session)
+
+**Issue:** Original config used forward-slash string paths that broke on Windows.  
+**Fix:** Rewrote using `path.join()` + `fs.existsSync()` for cross-platform monorepo module deduplication.
+
+---
+
+## 7. Android Build Configuration
+
+### build.gradle
+- Uses `def projectRoot = rootDir.getAbsoluteFile().getParentFile().getAbsolutePath()` (correct — resolves to `artifacts/o2o/`).
+- `apply from: ... react.gradle` — uses `node --print` to resolve path (requires Node in PATH during Gradle, which is standard).
+- Hermes enabled via `project.ext.react = [enableHermes: true]`.
+- Font copy task: Searches pnpm monorepo node_modules tree, falls back to committed fonts.
+- Bundle disabled in release via `afterEvaluate` (bundled manually).
+- `packagingOptions` picks first for native `.so` conflicts.
+
+### settings.gradle
+- `rootProject.name = 'O2O'` — must match `app.json` name field (`"name": "main"`) for `AppRegistry`.
+- Autolinking via `native_modules.gradle` resolved with `node --print`.
+
+### MainApplication.java
+- `getJSMainModuleName()` returns `"index"` — matches `metro.config.js` projectRoot + `index.js` location. ✅
+- `getMainComponentName()` returns `"main"` — matches `AppRegistry.registerComponent("main", ...)` in `index.js`. ✅
+- `SimpleFetchPackage` manually added (can't be autolinked). ✅
+- `PackageList(this).getPackages()` handles all other autolinked packages. ✅
+
+---
+
+## 8. Navigation & Routing
+
+### Status: ✅ Correct
+
+- Custom `compat/router.tsx` wraps `@react-navigation/native` + `@react-navigation/native-stack` + `@react-navigation/bottom-tabs`.
+- All routes declared in `app/_layout.tsx` as `<Stack.Screen>` components — no dynamic file-based routing (correct for React Native CLI, not Expo Router).
+- `navigationRef` created with `createNavigationContainerRef` and passed to `<NavigationContainer ref={navigationRef}>`.
+- `router.push`, `router.replace`, `router.back`, `router.setParams` all guard `navigationRef.isReady()` before calling.
+
+---
+
+## 9. Authentication
+
+### Status: ✅ Correct
+
+- `AuthContext.tsx` manages user state, token storage (`@react-native-async-storage/async-storage`), login/logout/OTP flows.
+- `isMounted` ref prevents setState-after-unmount.
+- `clearStoredTokens()` is called in `try/catch` inside logout to prevent crashes if storage fails.
+- Session restore on app launch via `AsyncStorage.getItem(TOKEN_KEY)` → `getUserById`.
+
+---
+
+## 10. Socket.IO
+
+### Status: ✅ Correct
+
+- `lib/socket.ts`: `io("https://o2o-rphb.onrender.com", { transports: ["websocket", "polling"], ... })`.
+- Token read safely with `try/catch` around `AsyncStorage.getItem`.
+- `SocketContext.tsx` connects on auth, disconnects on logout.
+- `reconnectionAttempts: 10` with exponential backoff.
+
+---
+
+## 11. Full File Inventory
+
+### Files Modified This Session
 | File | Change |
 |------|--------|
-| `android/.../SimpleFetchModule.java` | Replace string-concat JSON with `JSONObject` |
-| `index.js` | Remove `LogBox.ignoreAllLogs()`; add targeted ignores |
-| `metro.config.js` | Add AsyncStorage + socket.io-client to deduplicated modules |
-| `lib/socket.ts` | Wrap `AsyncStorage.getItem` in try/catch |
-| `context/AuthContext.tsx` | Guard `clearStoredTokens()` in logout |
-| `app/(tabs)/chat.tsx` | Guard `otherId`, default `messages` array |
-| `app/chat/[id].tsx` | Remove `chat!.id` assertions; guard `otherId` |
-| `app/(tabs)/groups.tsx` | Guard `last.text`, default `messages` array |
-| `app/(tabs)/index.tsx` | Guard `otherId`, `last.text`, default arrays |
-| `app/new-chat.tsx` | Add `ListEmptyComponent` + styles |
-| `app/order/[id].tsx` | Guard `order.messages` spread; `item.text ?? ""` |
-| `app/bid/live/[id].tsx` | Guard `bid.offers` spread; `bid.endTime` null check |
-| `app/bid/offer/[id].tsx` | Double optional chain `bid?.offers?.find` |
-| `app/analytics.tsx` | Guard all `stats.*` fields with `safeStats` defaults |
+| `metro.config.js` | Added `projectRoot` export; removed `react/jsx-runtime` sub-paths; added `sourceExts`; improved comments |
+| `index.js` | Fixed Windows LogBox `Require cycle` patterns |
+| `package.json` | Added `--projectRoot .` to `dev` script |
+| `BUGFIX_REPORT.md` | This file |
+
+### Files Modified Previous Session
+| File | Change |
+|------|--------|
+| `android/app/src/main/java/com/anonymous/o2o/SimpleFetchModule.java` | Rewrote JSON with `JSONObject` |
+| `android/app/build.gradle` | Replaced `fonts.gradle` with direct Gradle copy task |
+| `android/app/src/main/assets/fonts/Feather.ttf` | Committed font file |
+| `android/app/src/main/assets/fonts/Ionicons.ttf` | Committed font file |
+| `index.js` | Removed `LogBox.ignoreAllLogs()`; added targeted ignores |
+| `metro.config.js` | Rewrote for cross-platform (path.join, fs.existsSync) |
+| `lib/socket.ts` | AsyncStorage try/catch |
+| `context/AuthContext.tsx` | isMounted ref; clearStoredTokens guard |
+| `app/(tabs)/chat.tsx` | otherId guard; messages default |
+| `app/(tabs)/index.tsx` | otherId, last.text, array defaults |
+| `app/(tabs)/groups.tsx` | last.text, message defaults |
+| `app/chat/[id].tsx` | Removed `!` assertions; chat.id closure guard |
+| `app/new-chat.tsx` | ListEmptyComponent |
+| `app/order/[id].tsx` | order.messages guard |
+| `app/bid/live/[id].tsx` | bid.offers guard; endTime null check |
+| `app/bid/offer/[id].tsx` | Double optional chain |
+| `app/analytics.tsx` | safeStats wrapper with defaults |
+| `react-native.config.js` | RN 0.68 autolinking compat for safe-area, screens, svg |
 
 ---
 
-## Verification Checklist (before APK release)
+## 12. Verification Checklist
 
-- [ ] `cd artifacts/o2o && pnpm install` (runs postinstall-patches.mjs)
-- [ ] `cd artifacts/o2o && pnpm run typecheck` — must pass clean
-- [ ] Build debug APK: `cd artifacts/o2o/android && ./gradlew assembleDebug`
-- [ ] Confirm `strings.xml` `app_name` and Metro bundle name ("main") match — ✅ verified (`MainActivity.getMainComponentName()` returns `"main"`)
-- [ ] Install APK on physical Android device (no emulator required)
-- [ ] Login → verify API calls succeed (SimpleFetchModule JSON fix)
-- [ ] Open Chats tab with 0 participants — must not crash
-- [ ] Open Groups tab with media-only last message — must not crash
-- [ ] Open Analytics screen with incomplete server response — must not crash
-- [ ] Test logout while AsyncStorage under load — must not crash
+| Check | Status |
+|-------|--------|
+| No localhost / 127.0.0.1 / 10.0.2.2 in source | ✅ Verified clean |
+| Metro projectRoot explicitly set | ✅ Fixed |
+| Metro watchFolders covers monorepo | ✅ |
+| Node module deduplication (react, react-native, AsyncStorage, etc.) | ✅ |
+| Font files committed to assets/fonts/ | ✅ Feather.ttf, Ionicons.ttf |
+| All icon usage via compat/vector-icons.tsx | ✅ |
+| AppRegistry name matches MainActivity | ✅ "main" |
+| JS entry name matches MainApplication | ✅ "index" |
+| No non-null assertions (!) on nullable data | ✅ Replaced with ??, optional chaining |
+| AsyncStorage operations try/catch guarded | ✅ |
+| isMounted ref prevents setState-after-unmount | ✅ |
+| All routes declared in _layout.tsx | ✅ |
+| NavigationContainer ref guards isReady() | ✅ |
+| Hermes engine enabled | ✅ |
+| Native .so conflicts handled (pickFirst) | ✅ |
+| Kotlin JVM target consistent (1.8) | ✅ |
+| LogBox patterns cross-platform (Win + Unix) | ✅ Fixed |
 
 ---
 
-## Remaining Recommendations (not in scope of this fix session)
+## 13. How to Build After Pulling
 
-1. **TypeScript strict mode** — Enable `"strict": true` in `tsconfig.json` to catch future non-null assertion bugs at compile time.
-2. **API response schema validation** — Use `zod` or similar to parse and validate server responses at the `customFetch` boundary, so malformed payloads produce clear errors instead of silent undefined values deep in components.
-3. **SimpleFetchModule response headers** — Currently hardcodes `content-type: application/json` on the JS side. For future non-JSON endpoints, the Java module should forward the actual `Content-Type` header.
-4. **Error boundary** — Add a React Error Boundary wrapping the Navigation tree to catch and display uncaught render errors gracefully rather than showing a blank screen.
+```bash
+# 1. Pull latest code
+git -C D:\downloads\O2Os\O2O pull origin main
+
+# 2. Install dependencies (from workspace root or artifacts/o2o)
+cd D:\downloads\O2Os\O2O
+pnpm install
+
+# 3. Clean Android build (REQUIRED after font or Gradle changes)
+cd D:\downloads\O2Os\O2O\artifacts\o2o\android
+.\gradlew clean
+
+# 4. Run on device (from artifacts/o2o/)
+cd D:\downloads\O2Os\O2O\artifacts\o2o
+pnpm run android
+```
+
+---
+
+## 14. Remaining Recommendations (Not Blocking)
+
+| Item | Priority | Notes |
+|------|----------|-------|
+| TypeScript strict mode | Low | Add `"strict": true` to `tsconfig.json` to catch null issues at compile time |
+| Zod API response validation | Medium | Wrap API calls in Zod schemas to surface malformed server responses instead of crashing at render |
+| React Error Boundary around tab screens | Low | `ErrorBoundary` is already at root; consider per-screen boundaries for more granular recovery |
+| Production keystore | High | Currently using debug keystore for release builds — set `MYAPP_RELEASE_*` gradle properties before publishing to Play Store |
+| SimpleFetchModule Content-Type forwarding | Low | Currently hardcodes `application/json` — forward real `Content-Type` header from server response |
