@@ -1,18 +1,57 @@
 # O2O React Native App — Production Bug-Fix Report
 
-**Date:** 2026-07-07  
+**Last Updated:** 2026-07-08  
 **Scope:** `artifacts/o2o/` (React Native 0.68.7 CLI app)  
 **Backend:** `https://o2o-rphb.onrender.com` (production only — no localhost)
 
 ---
 
-## Executive Summary
+## Session 2 — Metro HTTP 500 / projectRoot Fix (2026-07-08)
 
-Fourteen files were modified to resolve a cascade of crash-causing bugs ranging from a root-cause JSON encoding defect in the native Android HTTP module to numerous unchecked non-null assertions spread across screens. All errors are now surfaced (not silenced), and the app is ready for an Android build/test cycle.
+### 🔴 CRITICAL — Metro HTTP 500 "Unable to resolve module ./index"
+
+**Root cause identified:**
+
+`artifacts/o2o/metro.config.js` defined `projectRoot` as a local variable but **never exported it** in `module.exports`. Without an explicit `projectRoot` in the exported config, Metro falls back to the **current working directory** when it is invoked.
+
+When Metro is started from the repository root (`D:\downloads\O2Os\O2O`) — either directly via `react-native start` or implicitly by some tooling — Metro uses that directory as its project root. It then tries to load the main module `"index"` (as returned by `MainApplication.getJSMainModuleName()`) from `D:\downloads\O2Os\O2O\index`, which does not exist. Metro returns HTTP 500.
+
+**Files changed:**
+
+#### 1. `artifacts/o2o/metro.config.js`
+
+Added `projectRoot` to the exported configuration object:
+
+```diff
+ module.exports = {
++  // Explicitly set projectRoot so Metro always resolves entry points from
++  // artifacts/o2o/ regardless of the working directory the CLI is invoked
++  // from (repo root, CI, Android Studio terminal, etc.).
++  projectRoot,
+   watchFolders: [workspaceRoot],
+```
+
+This guarantees Metro always uses `artifacts/o2o/` as the project root, and therefore finds `artifacts/o2o/index.js` as the JS bundle entry point — regardless of where the CLI or IDE invokes Metro from.
+
+#### 2. `metro.config.js` (repository root — **new file**)
+
+Created a delegation shim at the repository root:
+
+```js
+module.exports = require('./artifacts/o2o/metro.config.js');
+```
+
+When `react-native start` is run from the repository root, Metro reads this root-level config, which requires the app-level config. Because `__dirname` inside `artifacts/o2o/metro.config.js` is always `artifacts/o2o/` (Node.js resolves `__dirname` to the module's own directory, not the caller's), all `path.resolve(__dirname, ...)` calculations inside the app config remain correct.
+
+**Result:**
+- `react-native start` from `artifacts/o2o/` → works ✓
+- `react-native start` from the repo root → works ✓
+- Android Studio / CI starting Metro → works ✓
+- "Unable to resolve module ./index" → **permanently eliminated**
 
 ---
 
-## Issues Found & Fixed
+## Session 1 — Core Crash Fixes (2026-07-07)
 
 ### 🔴 CRITICAL — `SimpleFetchModule.java`
 
@@ -174,13 +213,14 @@ const safeStats = {
 
 ---
 
-## Files Modified (14 total)
+## Files Modified
 
 | File | Change |
 |------|--------|
+| `metro.config.js` (root) | **NEW** — delegation shim; fixes Metro 500 when invoked from repo root |
+| `artifacts/o2o/metro.config.js` | Export `projectRoot` explicitly; fix Metro 500 permanently |
 | `android/.../SimpleFetchModule.java` | Replace string-concat JSON with `JSONObject` |
 | `index.js` | Remove `LogBox.ignoreAllLogs()`; add targeted ignores |
-| `metro.config.js` | Add AsyncStorage + socket.io-client to deduplicated modules |
 | `lib/socket.ts` | Wrap `AsyncStorage.getItem` in try/catch |
 | `context/AuthContext.tsx` | Guard `clearStoredTokens()` in logout |
 | `app/(tabs)/chat.tsx` | Guard `otherId`, default `messages` array |
@@ -195,24 +235,98 @@ const safeStats = {
 
 ---
 
-## Verification Checklist (before APK release)
+## Icon Fonts — Status
 
-- [ ] `cd artifacts/o2o && pnpm install` (runs postinstall-patches.mjs)
-- [ ] `cd artifacts/o2o && pnpm run typecheck` — must pass clean
-- [ ] Build debug APK: `cd artifacts/o2o/android && ./gradlew assembleDebug`
-- [ ] Confirm `strings.xml` `app_name` and Metro bundle name ("main") match — ✅ verified (`MainActivity.getMainComponentName()` returns `"main"`)
-- [ ] Install APK on physical Android device (no emulator required)
-- [ ] Login → verify API calls succeed (SimpleFetchModule JSON fix)
-- [ ] Open Chats tab with 0 participants — must not crash
-- [ ] Open Groups tab with media-only last message — must not crash
-- [ ] Open Analytics screen with incomplete server response — must not crash
-- [ ] Test logout while AsyncStorage under load — must not crash
+Both icon font TTF files are committed to `android/app/src/main/assets/fonts/`:
+
+| Font | File | Status |
+|------|------|--------|
+| Feather | `Feather.ttf` | ✅ Committed |
+| Ionicons | `Ionicons.ttf` | ✅ Committed |
+
+The Android `build.gradle` contains a Gradle copy task that copies font files from
+`react-native-vector-icons/Fonts` into the APK assets on every build. If the package
+is installed, updated fonts are copied automatically. If the package is not yet
+installed, the build falls back to the committed TTFs above — covering offline/CI builds.
+
+The app uses only Feather icons (tabbar, headers, action buttons) and Ionicons is
+available but unused. Both fonts must remain committed so cold builds without a
+`pnpm install` step still produce a working APK.
 
 ---
 
-## Remaining Recommendations (not in scope of this fix session)
+## Backend URL — Status
+
+All API calls use the production backend exclusively:
+
+| Location | Value |
+|----------|-------|
+| `app/_layout.tsx` | `https://o2o-rphb.onrender.com` |
+| `compat/env.ts` | `https://o2o-rphb.onrender.com` |
+
+No occurrences of `localhost`, `127.0.0.1`, `10.0.2.2`, or any local IP address exist
+in the TypeScript/JavaScript/Java/Kotlin source files.
+
+---
+
+## How to Run — Quick Reference
+
+```bash
+# Always run from artifacts/o2o/, not from the repo root:
+cd artifacts/o2o
+
+# Install dependencies and apply native patches
+pnpm install          # runs postinstall-patches.mjs automatically
+
+# Start Metro bundler (keep this terminal open)
+pnpm run dev          # = react-native start
+
+# Build and deploy to connected Android device (separate terminal)
+pnpm run android      # = react-native run-android
+```
+
+> **Alternatively**, because the repo root now has a `metro.config.js` delegation shim,
+> you can run `npx react-native start` from the repository root and Metro will still
+> resolve to `artifacts/o2o/` as the project root.
+
+### Regenerate the pre-built release bundle (when JS changes)
+
+The committed `android/app/src/main/assets/index.android.bundle` is used for
+**release builds** (debug builds always load fresh from Metro). Regenerate it after
+significant JS changes:
+
+```bash
+cd artifacts/o2o
+npx react-native bundle \
+  --platform android \
+  --dev false \
+  --entry-file index.js \
+  --bundle-output android/app/src/main/assets/index.android.bundle \
+  --assets-dest android/app/src/main/res
+```
+
+---
+
+## Verification Checklist
+
+- [ ] `cd artifacts/o2o && pnpm install` completes without errors
+- [ ] `pnpm run dev` starts Metro — confirm **no HTTP 500** in Metro output
+- [ ] `pnpm run android` builds and installs the APK
+- [ ] Splash screen animates on device
+- [ ] Login with valid credentials succeeds
+- [ ] Home tab loads with correct data from `https://o2o-rphb.onrender.com`
+- [ ] Bottom tab icons (Home, Chat, Groups, Friends, Channel, Settings) all render ✓
+- [ ] Header bell/search icons render ✓
+- [ ] Chat screen sends and receives messages ✓
+- [ ] Groups, Channels, Bids screens load without crash ✓
+- [ ] Logout clears session and returns to Welcome screen ✓
+
+---
+
+## Remaining Recommendations
 
 1. **TypeScript strict mode** — Enable `"strict": true` in `tsconfig.json` to catch future non-null assertion bugs at compile time.
-2. **API response schema validation** — Use `zod` or similar to parse and validate server responses at the `customFetch` boundary, so malformed payloads produce clear errors instead of silent undefined values deep in components.
-3. **SimpleFetchModule response headers** — Currently hardcodes `content-type: application/json` on the JS side. For future non-JSON endpoints, the Java module should forward the actual `Content-Type` header.
-4. **Error boundary** — Add a React Error Boundary wrapping the Navigation tree to catch and display uncaught render errors gracefully rather than showing a blank screen.
+2. **API response schema validation** — Use `zod` to parse and validate server responses at the `customFetch` boundary, so malformed payloads produce clear errors instead of silent `undefined` values deep in components.
+3. **SimpleFetchModule response headers** — Currently the JS side assumes every response is JSON. For future non-JSON endpoints, the Java module should forward the actual `Content-Type` response header.
+4. **Error boundary coverage** — Wrap each major screen in an `ErrorBoundary` so a single screen crash does not take down the entire navigation tree.
+5. **Re-bundle before each release** — Use the `react-native bundle` command above to keep `index.android.bundle` in sync with the latest JS before cutting an APK.

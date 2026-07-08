@@ -37,6 +37,12 @@ const DEDUPLICATED_MODULES = [
 ];
 
 module.exports = {
+  // Explicitly set projectRoot so Metro always resolves entry points from
+  // artifacts/o2o/ regardless of the working directory the CLI is invoked
+  // from (repo root, CI, Android Studio terminal, etc.).
+  // WITHOUT this, Metro defaults to cwd which can be the workspace root,
+  // causing "Unable to resolve module ./index" HTTP 500 on first launch.
+  projectRoot,
   watchFolders: [workspaceRoot],
   resolver: {
     nodeModulesPaths: [
