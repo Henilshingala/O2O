@@ -159,6 +159,18 @@ if (asyncStorageDir) {
       'ReactDatabaseSupplier.java: BuildConfig.AsyncStorage_db_size → 6'
     ],
   ]);
+
+  // RN 0.68 Old Architecture fix: TurboModuleRegistry.get('RNCAsyncStorage') returns
+  // null because it's a plain NativeModule, not a TurboModule. Patch the JS to check
+  // NativeModules FIRST so AsyncStorage is never undefined at runtime.
+  const rctAsyncStoragePath = join(asyncStorageDir, 'lib/commonjs/RCTAsyncStorage.js');
+  patchFile(rctAsyncStoragePath, [
+    [
+      `let RCTAsyncStorage = _reactNative.TurboModuleRegistry ? _reactNative.TurboModuleRegistry.get('PlatformLocalStorage') || // Support for external modules, like react-native-windows\n_reactNative.TurboModuleRegistry.get('RNC_AsyncSQLiteDBStorage') || _reactNative.TurboModuleRegistry.get('RNCAsyncStorage') : _reactNative.NativeModules['PlatformLocalStorage'] || // Support for external modules, like react-native-windows\n_reactNative.NativeModules['RNC_AsyncSQLiteDBStorage'] || _reactNative.NativeModules['RNCAsyncStorage'];`,
+      `// RN 0.68 Old Architecture: NativeModules first, TurboModuleRegistry fallback\nlet RCTAsyncStorage = _reactNative.NativeModules['PlatformLocalStorage'] ||\n  _reactNative.NativeModules['RNC_AsyncSQLiteDBStorage'] ||\n  _reactNative.NativeModules['RNCAsyncStorage'];\nif (!RCTAsyncStorage && _reactNative.TurboModuleRegistry) {\n  RCTAsyncStorage = _reactNative.TurboModuleRegistry.get('PlatformLocalStorage') ||\n    _reactNative.TurboModuleRegistry.get('RNC_AsyncSQLiteDBStorage') ||\n    _reactNative.TurboModuleRegistry.get('RNCAsyncStorage');\n}`,
+      'RCTAsyncStorage.js: NativeModules-first lookup for Old Architecture RN 0.68'
+    ],
+  ]);
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
