@@ -1,0 +1,205 @@
+This is NOT a new project setup.
+
+First, pull the latest code from GitHub and synchronize everything before making any changes.
+
+Repository:
+https://github.com/Henilshingala/O2O
+
+Do NOT overwrite or revert my latest commits.
+
+This is a React Native CLI project ONLY.
+
+Target platform:
+- Android ONLY
+- Keep native Android code only.
+- Do NOT add Expo.
+- Do NOT add iOS code.
+- Do NOT add Web code.
+- Do NOT convert anything to Expo.
+- Do NOT create a new project.
+- Fix the existing codebase only.
+
+Current critical issue:
+
+When I run the Android app I immediately get:
+
+Metro HTTP 500
+
+Unable to resolve module ./index
+
+Metro is trying to load:
+
+D:\downloads\O2Os\O2O\index
+
+This error MUST be fixed permanently.
+
+I never want to see this error again.
+
+Do NOT patch around it.
+
+Find and fix the actual root cause.
+
+Check and repair:
+
+- index.js / index.ts
+- package.json main field
+- app.json
+- metro.config.js
+- babel.config.js
+- react-native.config.js
+- monorepo workspace configuration
+- Metro projectRoot
+- watchFolders
+- resolver
+- aliases
+- pnpm hoisting
+- module resolution
+- React Native entry registration
+- AppRegistry registration
+- Android build configuration
+
+Delete all caches and rebuild correctly.
+
+Verify that Metro starts with zero errors.
+
+Verify there is no HTTP 500.
+
+Verify the application launches successfully every time.
+
+------------------------------------------------
+
+Also fix every remaining UI issue.
+
+Currently many icons are missing.
+
+Make sure ALL icons display correctly throughout the app, including but not limited to:
+
+- Home
+- Search
+- Groups
+- Chats
+- Channels
+- Marketplace
+- Orders
+- Wishlist
+- Notifications
+- Profile
+- Settings
+- Bottom navigation
+- Header actions
+- Floating buttons
+- Toolbar icons
+- Every screen
+
+Verify every icon library is installed, linked, imported and rendered correctly.
+
+------------------------------------------------
+
+Perform a complete Android production audit.
+
+Inspect every file.
+
+Fix every issue including:
+
+- Runtime crashes
+- Metro errors
+- Babel errors
+- Build errors
+- Android errors
+- TypeScript errors
+- ESLint errors
+- Navigation issues
+- Authentication issues
+- API issues
+- Socket.IO issues
+- AsyncStorage issues
+- FlatList issues
+- Memory leaks
+- Duplicate dependencies
+- Invalid imports
+- Missing assets
+- Missing fonts
+- Missing icons
+- Missing images
+- Broken routes
+- State management issues
+- Network issues
+- Performance issues
+
+------------------------------------------------
+
+Backend requirements:
+
+Use ONLY:
+
+https://o2o-rphb.onrender.com
+
+Replace every occurrence of:
+
+- localhost
+- 127.0.0.1
+- emulator IP
+- local IP
+- any development backend
+
+Verify every API endpoint works correctly.
+
+------------------------------------------------
+
+Verify all features:
+
+- Splash Screen
+- Login
+- Signup
+- Session restore
+- Logout
+- Home
+- Products
+- Marketplace
+- Search
+- Chats
+- Groups
+- Channels
+- Orders
+- Wishlist
+- Notifications
+- Profile
+- Settings
+- Uploads
+- Images
+- Every existing screen
+
+------------------------------------------------
+
+Before finishing, verify:
+
+- pnpm install succeeds
+- Metro starts
+- Android builds
+- Android installs
+- App launches
+- Splash screen appears
+- Login works
+- Signup works
+- Home loads
+- Every icon is visible
+- No blank screens
+- No Red Screen
+- No Metro HTTP 500
+- No "Unable to resolve module ./index"
+- No runtime crashes
+
+Do not stop after fixing one issue. Continue fixing until the entire Android application is fully functional and production-ready.
+
+Finally:
+
+- Commit all changes.
+- Push everything to GitHub:
+  https://github.com/Henilshingala/O2O
+
+Return a detailed Markdown report listing:
+- Every issue found
+- Every file modified
+- Every fix applied
+- Every verification performed
+- Any remaining recommendations (if any)
