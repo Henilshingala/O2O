@@ -21,48 +21,63 @@ const workspaceRoot = path.resolve(projectRoot, "../..");
  * so callers can skip the mapping rather than pointing Metro at a ghost path.
  */
 function resolveModule(name) {
-  const localPath = path.join(projectRoot, "node_modules", name);
-  if (fs.existsSync(localPath)) return localPath;
+  const candidates = [
+    path.join(projectRoot, "node_modules", name),
+    path.join(workspaceRoot, "node_modules", name),
+    path.join(workspaceRoot, "node_modules", ".pnpm", "node_modules", name),
+  ];
 
-  const workspacePath = path.join(workspaceRoot, "node_modules", name);
-  if (fs.existsSync(workspacePath)) return workspacePath;
-
-  // Package not found in either tree — return null so the caller can skip it.
+  for (const p of candidates) {
+    if (fs.existsSync(p)) {
+      return fs.realpathSync(p);
+    }
+  }
   return null;
 }
 
-// Packages that must resolve to exactly ONE copy across the whole monorepo.
-// Listing:  only TRUE singletons whose duplication causes hard runtime crashes.
-//   • react              — duplicate instances break all hook rules
-//   • react-native       — duplicate native module registry
-//   • async-storage      — duplicate NativeModule reference → getItem undefined
-//   • @react-navigation  — duplicate NavigationContext → "No navigator" errors
-//
-// Intentionally NOT listed:
-//   • react/jsx-runtime, react/jsx-dev-runtime — sub-paths, not packages;
-//     handled automatically once "react" is pinned above
-//   • socket.io-client, engine.io-client       — transitives; pnpm does not
-//     always hoist them to the workspace root; mapping to a missing path would
-//     crash Metro instead of helping
-const DEDUPLICATED_MODULES = [
+const modulesToResolve = new Set([
   "react",
   "react-native",
-  "@react-navigation/native",
-  "@react-native-async-storage/async-storage",
-  "react-native-safe-area-context",
-  "react-native-screens",
-];
+  "react-native-reanimated",
+  "react-native-gesture-handler",
+]);
 
-// Build the extraNodeModules map, skipping any package that cannot be found
-// on disk.  A missing entry is far safer than an entry pointing at a ghost
-// path, which would give Metro a directory-not-found error at bundle time.
+function scan(dir) {
+  if (!fs.existsSync(dir)) return;
+  try {
+    const entries = fs.readdirSync(dir, { withFileTypes: true });
+    for (const entry of entries) {
+      if (entry.name.startsWith(".")) continue;
+      if (entry.name.startsWith("@")) {
+        const scopeDir = path.join(dir, entry.name);
+        if (fs.existsSync(scopeDir)) {
+          const subEntries = fs.readdirSync(scopeDir, { withFileTypes: true });
+          for (const subEntry of subEntries) {
+            modulesToResolve.add(`${entry.name}/${subEntry.name}`);
+          }
+        }
+      } else {
+        modulesToResolve.add(entry.name);
+      }
+    }
+  } catch (e) {
+    console.warn(`[metro.config] Failed to scan directory ${dir}:`, e);
+  }
+}
+
+scan(path.join(projectRoot, "node_modules"));
+scan(path.join(workspaceRoot, "node_modules"));
+scan(path.join(workspaceRoot, "node_modules", ".pnpm", "node_modules"));
+
+// Build the extraNodeModules map with real physical paths
 const extraNodeModules = {};
-for (const name of DEDUPLICATED_MODULES) {
+for (const name of modulesToResolve) {
+  if (name.startsWith("@workspace/")) {
+    continue;
+  }
   const resolved = resolveModule(name);
   if (resolved) {
     extraNodeModules[name] = resolved;
-  } else {
-    console.warn(`[metro.config] WARNING: ${name} not found in node_modules — skipping deduplication for this package`);
   }
 }
 

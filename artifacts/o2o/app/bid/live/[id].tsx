@@ -36,6 +36,21 @@ export default function LiveBidScreen() {
   const [tick, setTick] = useState(0);
   const queryClient = useQueryClient();
 
+  const bid = getBid(params.id);
+  const msLeft = bid?.endTime ? new Date(bid.endTime).getTime() - Date.now() : 0;
+  const isExpired = msLeft <= 0;
+  const safeOffers = bid && Array.isArray(bid.offers) ? bid.offers : [];
+
+  const handleTimerEnd = useCallback(() => {
+    if (bid?.status === "active" && safeOffers.length > 0) {
+      router.push({ pathname: "/bid/winner/[id]", params: { id: bid.id } });
+    }
+  }, [bid, safeOffers.length]);
+
+  useEffect(() => {
+    if (isExpired && bid?.status === "active") handleTimerEnd();
+  }, [isExpired, bid?.status, handleTimerEnd]);
+
   useEffect(() => {
     const t = setInterval(() => setTick((x) => x + 1), 1000);
     return () => clearInterval(t);
@@ -57,13 +72,8 @@ export default function LiveBidScreen() {
     };
   }, [params.id, queryClient]);
 
-  if (!user) return null;
-  const bid = getBid(params.id);
-  if (!bid) return null;
+  if (!user || !bid) return null;
 
-  const msLeft = bid.endTime ? new Date(bid.endTime).getTime() - Date.now() : 0;
-  const isExpired = msLeft <= 0;
-  const safeOffers = Array.isArray(bid.offers) ? bid.offers : [];
   const sortedOffers = [...safeOffers].sort((a, b) => a.price - b.price);
   const bestOffer = sortedOffers[0];
   const prices = safeOffers.map((o) => o.price);
@@ -75,16 +85,6 @@ export default function LiveBidScreen() {
     endBid(bid.id);
     router.push({ pathname: "/bid/winner/[id]", params: { id: bid.id } });
   };
-
-  const handleTimerEnd = useCallback(() => {
-    if (bid.status === "active" && safeOffers.length > 0) {
-      router.push({ pathname: "/bid/winner/[id]", params: { id: bid.id } });
-    }
-  }, [bid]);
-
-  useEffect(() => {
-    if (isExpired && bid.status === "active") handleTimerEnd();
-  }, [isExpired]);
 
   return (
     <View style={[styles.root, { backgroundColor: colors.background }]}>
