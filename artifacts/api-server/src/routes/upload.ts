@@ -11,7 +11,7 @@ import { v2 as cloudinary } from "cloudinary";
 
 const uploadLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
-  max: 30,
+  max: 200, // allow up to 200 uploads per 15min window (for album uploads)
   message: { error: "Too many uploads. Try again later." },
 });
 
@@ -25,17 +25,28 @@ cloudinary.config({
   api_secret: process.env.CLOUDINARY_API_SECRET,
 });
 
-const MAX_IMAGE_SIZE = 10 * 1024 * 1024;
-const MAX_VIDEO_SIZE = 50 * 1024 * 1024;
+const MAX_IMAGE_SIZE = 15 * 1024 * 1024;   // 15 MB
+const MAX_VIDEO_SIZE = 100 * 1024 * 1024;  // 100 MB
+const MAX_DOC_SIZE   = 50 * 1024 * 1024;   // 50 MB
 
 const ALLOWED_MIME_TYPES = new Set([
   "image/jpeg",
   "image/png",
   "image/gif",
   "image/webp",
+  "image/heic",
+  "image/heif",
   "video/mp4",
   "video/quicktime",
   "video/webm",
+  "video/3gpp",
+  "audio/mpeg",
+  "audio/mp4",
+  "audio/ogg",
+  "audio/wav",
+  "audio/webm",
+  "audio/aac",
+  "audio/m4a",
   "application/pdf",
   "application/msword",
   "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
@@ -45,25 +56,15 @@ const ALLOWED_MIME_TYPES = new Set([
   "application/vnd.ms-powerpoint",
   "application/vnd.openxmlformats-officedocument.presentationml.presentation",
   "application/zip",
+  "application/octet-stream", // generic fallback used by many Android pickers
 ]);
 
 const ALLOWED_EXTENSIONS = new Set([
-  ".jpg",
-  ".jpeg",
-  ".png",
-  ".gif",
-  ".webp",
-  ".mp4",
-  ".mov",
-  ".webm",
-  ".pdf",
-  ".doc",
-  ".docx",
-  ".txt",
-  ".xls",
-  ".xlsx",
-  ".ppt",
-  ".pptx",
+  ".jpg", ".jpeg", ".png", ".gif", ".webp", ".heic", ".heif",
+  ".mp4", ".mov", ".webm", ".3gp",
+  ".mp3", ".m4a", ".ogg", ".wav", ".aac",
+  ".pdf", ".doc", ".docx", ".txt",
+  ".xls", ".xlsx", ".ppt", ".pptx",
   ".zip",
 ]);
 
@@ -75,7 +76,7 @@ if (!fs.existsSync(uploadDir)) {
 const storage = multer.diskStorage({
   destination: (_req, _file, cb) => cb(null, uploadDir),
   filename: (_req, file, cb) => {
-    const ext = path.extname(file.originalname).toLowerCase();
+    const ext = path.extname(file.originalname).toLowerCase() || ".bin";
     cb(null, `upload_${Date.now()}_${Math.random().toString(36).slice(2)}${ext}`);
   },
 });
@@ -85,11 +86,11 @@ const upload = multer({
   limits: { fileSize: MAX_VIDEO_SIZE },
   fileFilter: (_req, file, cb) => {
     const ext = path.extname(file.originalname).toLowerCase();
-    if (!ALLOWED_EXTENSIONS.has(ext)) {
-      return cb(new Error("Invalid file extension"));
-    }
-    if (!ALLOWED_MIME_TYPES.has(file.mimetype)) {
-      return cb(new Error("Invalid file type"));
+    // Accept if extension is known OR if mime is application/octet-stream (generic document)
+    const extOk = ALLOWED_EXTENSIONS.has(ext) || ext === "";
+    const mimeOk = ALLOWED_MIME_TYPES.has(file.mimetype);
+    if (!extOk && !mimeOk) {
+      return cb(new Error(`Unsupported file type: ${file.mimetype}`));
     }
     cb(null, true);
   },
@@ -115,14 +116,26 @@ function cleanupTempFile(filePath: string) {
   fs.unlink(filePath, () => {});
 }
 
+function getCloudinaryResourceType(mime: string): "image" | "video" | "auto" {
+  if (mime.startsWith("image/")) return "image";
+  if (mime.startsWith("video/")) return "video";
+  if (mime.startsWith("audio/")) return "video"; // Cloudinary stores audio under "video"
+  return "auto"; // for documents, uses "raw" but "auto" works too
+}
+
 router.post("/", upload.single("file"), async (req: AuthRequest, res) => {
   if (!req.file) {
     return res.status(400).json({ error: "No file uploaded" });
   }
 
   const filePath = req.file.path;
-  const isVideo = req.file.mimetype.startsWith("video/");
-  const maxSize = isVideo ? MAX_VIDEO_SIZE : MAX_IMAGE_SIZE;
+  const mime = req.file.mimetype;
+  const isVideo = mime.startsWith("video/");
+  const isAudio = mime.startsWith("audio/");
+  const isImage = mime.startsWith("image/");
+
+  // Size check per category
+  const maxSize = isVideo ? MAX_VIDEO_SIZE : isAudio ? MAX_DOC_SIZE : isImage ? MAX_IMAGE_SIZE : MAX_DOC_SIZE;
 
   if (req.file.size > maxSize) {
     cleanupTempFile(filePath);
@@ -132,8 +145,9 @@ router.post("/", upload.single("file"), async (req: AuthRequest, res) => {
   }
 
   try {
+    const resourceType = getCloudinaryResourceType(mime);
     const result = await uploadToCloudinary(filePath, {
-      resource_type: isVideo ? "video" : "auto",
+      resource_type: resourceType,
       folder: "o2o_uploads",
     });
 
@@ -147,10 +161,10 @@ router.post("/", upload.single("file"), async (req: AuthRequest, res) => {
       url,
       uploaderId: req.user!.userId,
       size: req.file.size,
-      type: req.file.mimetype,
+      type: mime,
     });
 
-    return res.json({ url, id: fileId });
+    return res.json({ url, id: fileId, mimeType: mime, fileName: req.file.originalname });
   } catch (error) {
     cleanupTempFile(filePath);
     req.log.error(error);
@@ -165,10 +179,11 @@ router.use((err: Error, _req: AuthRequest, res: import("express").Response, next
     }
     return res.status(400).json({ error: err.message });
   }
-  if (err.message === "Invalid file extension" || err.message === "Invalid file type") {
+  if (err.message?.startsWith("Unsupported file type") || err.message === "Invalid file extension" || err.message === "Invalid file type") {
     return res.status(400).json({ error: err.message });
   }
   return next(err);
 });
 
 export default router;
+
