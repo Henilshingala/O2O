@@ -158,6 +158,7 @@ router.post("/", upload.single("file"), async (req: AuthRequest, res) => {
       process.env.CLOUDINARY_API_KEY &&
       process.env.CLOUDINARY_API_SECRET
     );
+    console.log(`[upload] hasCloudinary=${hasCloudinary}, mime=${mime}, size=${req.file.size}`);
 
     let url: string;
     if (hasCloudinary) {
@@ -177,6 +178,7 @@ router.post("/", upload.single("file"), async (req: AuthRequest, res) => {
       url = `/uploads/${filename}`;
     }
 
+    console.log(`[upload] success url=${url}`);
     const fileId = `file_${Date.now()}`;
 
     await db.insert(fileUploads).values({
@@ -188,10 +190,11 @@ router.post("/", upload.single("file"), async (req: AuthRequest, res) => {
     });
 
     return res.json({ url, id: fileId, mimeType: mime, fileName: req.file.originalname });
-  } catch (error) {
+  } catch (error: any) {
     cleanupTempFile(filePath);
-    req.log.error(error);
-    return res.status(500).json({ error: "Upload failed" });
+    console.error("[upload] error:", error?.message, error?.stack);
+    req.log?.error(error);
+    return res.status(500).json({ error: "Upload failed", detail: error?.message });
   }
 });
 

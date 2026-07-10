@@ -394,10 +394,11 @@ router.get("/counts", async (req: AuthRequest, res) => {
 
     let bidWhere = eq(schema.bids.buyerId, userId);
     if (sellerChannelIds.length > 0) {
+      const channelIdLiterals = sql.join(sellerChannelIds.map(id => sql`${id}`), sql`,`);
       bidWhere = or(
         eq(schema.bids.buyerId, userId),
         eq(schema.bids.allSellers, true),
-        sql`EXISTS (SELECT 1 FROM jsonb_array_elements_text(${schema.bids.selectedSellers}) elem WHERE elem = ANY(${sellerChannelIds}))`,
+        sql`EXISTS (SELECT 1 FROM jsonb_array_elements_text(${schema.bids.selectedSellers}) elem WHERE elem IN (${channelIdLiterals}))`,
       ) as typeof bidWhere;
     }
 
@@ -530,8 +531,12 @@ router.post("/chats/:id/messages", validateBody(sendMessageSchema), async (req: 
       emitToUser(otherId, "notification:new", { type: "new_message" });
     }
     return res.json(newMsg);
-  } catch (error) { return res.status(500).json({ error: "Server error" }); }
+  } catch (error: any) {
+    console.error("[POST /chats/:id/messages] error:", error?.message, error?.stack);
+    return res.status(500).json({ error: "Server error", detail: error?.message });
+  }
 });
+
 
 router.get("/chats/:id/messages", async (req: AuthRequest, res) => {
   try {
@@ -790,10 +795,11 @@ router.get("/bids", async (req: AuthRequest, res) => {
 
     let bidWhere = eq(schema.bids.buyerId, userId);
     if (channelIds.length > 0) {
+      const channelIdLiterals = sql.join(channelIds.map(id => sql`${id}`), sql`,`);
       bidWhere = or(
         eq(schema.bids.buyerId, userId),
         eq(schema.bids.allSellers, true),
-        sql`EXISTS (SELECT 1 FROM jsonb_array_elements_text(${schema.bids.selectedSellers}) elem WHERE elem = ANY(${channelIds}))`,
+        sql`EXISTS (SELECT 1 FROM jsonb_array_elements_text(${schema.bids.selectedSellers}) elem WHERE elem IN (${channelIdLiterals}))`,
       ) as typeof bidWhere;
     }
 

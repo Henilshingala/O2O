@@ -21,8 +21,10 @@ import { useAuth } from "@/context/AuthContext";
 import { useData } from "@/context/DataContext";
 import { useRealtimeMessages } from "@/hooks/useRealtimeMessages";
 import { useColors } from "@/hooks/useColors";
-import { uploadFileWithProgress, type UploadAsset } from "@/lib/uploadMedia";
 import type { Chat, Message } from "@/types";
+
+const LOG = (step: string, data?: any) =>
+  console.log(`[ChatScreen] ${step}`, data !== undefined ? JSON.stringify(data) : "");
 
 export default function ChatScreen() {
   const colors = useColors();
@@ -148,12 +150,47 @@ export default function ChatScreen() {
     [setMessages]
   );
 
-  /** Real send (after upload) from ChatAttachMenu */
+  /**
+   * Called by ChatAttachMenu AFTER the upload completes.
+   * We bypass the hook's sendMessage() (which would add a second optimistic entry)
+   * and call sendChatMessage directly. The socket event will deliver the real message
+   * to both participants and the useRealtimeMessages hook will render it.
+   */
   const handleAttachSend = useCallback(
-    (msg: Omit<Message, "id">) => {
-      sendMessage({ ...msg, chatId: chat?.id });
+    async (msg: Omit<Message, "id">) => {
+      if (!chat) {
+        LOG("handleAttachSend: no active chat, dropping message");
+        return;
+      }
+      try {
+        LOG("handleAttachSend: POSTing message to backend", {
+          chatId: chat.id,
+          type: msg.type,
+          hasUrl: !!(msg.metadata as any)?.url,
+        });
+        const saved = await sendChatMessage(chat.id, { ...msg, chatId: chat.id });
+        LOG("handleAttachSend: message saved", { id: saved.id });
+        // Insert the saved message into local state so sender sees it immediately
+        // (socket will also deliver it, deduplication is handled by useRealtimeMessages)
+        setMessages((prev) => {
+          if (prev.some((m) => m.id === saved.id)) return prev;
+          return [{ ...saved, status: "sent" as const }, ...prev];
+        });
+      } catch (err: any) {
+        LOG("handleAttachSend: FAILED", err?.message);
+        // Surface error in UI briefly — the placeholder was already removed by
+        // onResolvePlaceholder, so we add a failed sentinel entry
+        const errorMsg: Message = {
+          ...msg,
+          id: `err_${Date.now()}`,
+          status: "failed" as const,
+          chatId: chat.id,
+          metadata: { ...(msg.metadata as any), uploadError: err?.message ?? "Send failed" },
+        };
+        setMessages((prev) => [errorMsg, ...prev]);
+      }
     },
-    [sendMessage, chat?.id]
+    [sendChatMessage, chat, setMessages]
   );
 
   /** Retry a failed upload — currently re-triggers the message flow */
