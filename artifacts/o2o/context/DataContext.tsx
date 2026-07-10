@@ -157,18 +157,27 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
   }, [chats]);
 
   const sendChatMessage = useCallback(async (chatId: string, msg: Omit<Message, "id">): Promise<Message> => {
-    const newMsg = await customFetch<Message>(`/api/data/chats/${chatId}/messages`, {
-      method: "POST",
-      body: JSON.stringify(msg),
-    });
-    queryClient.setQueryData<Chat[]>(["chats"], (old) =>
-      old?.map((c) =>
-        c.id === chatId
-          ? { ...c, messages: c.messages.some((m) => m.id === newMsg.id) ? c.messages : [...c.messages, newMsg] }
-          : c
-      ) ?? old
-    );
-    return newMsg;
+    console.log(`[SEND_CHAT_MESSAGE_ENTER] chatId=${chatId}`);
+    try {
+      console.log(`[POST_MESSAGES_BEGIN] /api/data/chats/${chatId}/messages`);
+      const newMsg = await customFetch<Message>(`/api/data/chats/${chatId}/messages`, {
+        method: "POST",
+        body: JSON.stringify(msg),
+      });
+      console.log(`[POST_MESSAGES_SUCCESS] received id=${newMsg?.id}`);
+
+      queryClient.setQueryData<Chat[]>(["chats"], (old) =>
+        old?.map((c) =>
+          c.id === chatId
+            ? { ...c, messages: c.messages.some((m) => m.id === newMsg.id) ? c.messages : [...c.messages, newMsg] }
+            : c
+        ) ?? old
+      );
+      return newMsg;
+    } catch (err: any) {
+      console.error(`[POST_MESSAGES_FAILED]`, err);
+      throw err;
+    }
   }, [queryClient]);
 
   const createGroup = useCallback(async (g: Omit<Group, "id" | "createdAt" | "updatedAt" | "messages">): Promise<Group> => {

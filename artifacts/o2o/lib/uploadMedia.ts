@@ -93,6 +93,12 @@ export function uploadFileWithProgress(
     const url = `${base}/api/upload`;
     xhr.open("POST", url);
     if (token) xhr.setRequestHeader("Authorization", `Bearer ${token}`);
+    
+    // CRITICAL FIX: React Native Android XHR polyfill often hangs at 100% and never fires `onload`
+    // because it doesn't correctly process the HTTP keep-alive termination for multipart form data.
+    // Forcing `Connection: close` tells the server to terminate the socket immediately after response,
+    // which forces the OS to trigger the socket close event, allowing the JS bridge to fire `onload`.
+    xhr.setRequestHeader("Connection", "close");
 
     const startTime = Date.now();
 
@@ -123,14 +129,17 @@ export function uploadFileWithProgress(
     // `readystatechange`/`loadend` fallbacks can safely call it exactly once.
     let settled = false;
     const settleFromResponse = () => {
+      console.log(`[UPLOAD_SETTLE] status=${xhr?.status} readyState=${xhr?.readyState} settled=${settled}`);
       if (settled || state === "cancelled") return;
       settled = true;
       if (xhr!.status >= 200 && xhr!.status < 300) {
         try {
           const data = JSON.parse(xhr!.responseText);
+          console.log(`[UPLOAD_SUCCESS] parsed url=${data.url}`);
           state = "done";
           resolve(data.url);
-        } catch {
+        } catch (e: any) {
+          console.error(`[UPLOAD_PARSE_ERROR] responseText=${xhr!.responseText}`, e);
           state = "failed";
           reject(new Error(`Upload failed: could not parse server response`));
         }
@@ -141,22 +150,30 @@ export function uploadFileWithProgress(
           const d = JSON.parse(xhr!.responseText);
           if (d.error) errMsg = `Upload failed: ${d.error}`;
         } catch {/* ignore */}
+        console.error(`[UPLOAD_HTTP_ERROR] ${errMsg}`);
         reject(new Error(errMsg));
       }
     };
 
-    xhr.onload = settleFromResponse;
+    xhr.onload = () => {
+      console.log("[UPLOAD_XHR_ONLOAD]");
+      settleFromResponse();
+    };
 
     // Fallback: if `onload` never fires but the request did complete
     // (readyState 4 with a status), settle anyway instead of leaving the
     // upload placeholder stuck indefinitely.
     xhr.onreadystatechange = () => {
-      if (xhr!.readyState === 4 && xhr!.status !== 0) {
-        settleFromResponse();
+      if (xhr!.readyState === 4) {
+        console.log(`[UPLOAD_XHR_READYSTATE] readyState=4 status=${xhr!.status}`);
+        if (xhr!.status !== 0) {
+          settleFromResponse();
+        }
       }
     };
 
-    xhr.onerror = () => {
+    xhr.onerror = (e) => {
+      console.error(`[UPLOAD_XHR_ONERROR]`, e);
       if (state === "cancelled" || settled) return;
       settled = true;
       state = "failed";
@@ -180,11 +197,13 @@ export function uploadFileWithProgress(
     }
 
     signal?.addEventListener("abort", () => {
+      console.log("[UPLOAD_ABORTED]");
       state = "cancelled";
       xhr?.abort();
       reject(new Error("Upload cancelled"));
     });
 
+    console.log(`[UPLOAD_BEGIN] url=${url} fileName=${asset.fileName || fallbackName}`);
     xhr.send(formData);
   };
 
