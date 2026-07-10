@@ -67,8 +67,6 @@ export function ChatAttachMenu({
 }: ChatAttachMenuProps) {
   const colors = useColors();
 
-  if (!visible) return null;
-
   const now = () => new Date().toISOString();
 
   const roomMeta = {
@@ -311,6 +309,8 @@ export function ChatAttachMenu({
       onClose();
     }
   };
+
+  if (!visible) return null;
 
   return (
     <View
