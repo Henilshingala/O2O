@@ -15,7 +15,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Feather } from "@/compat/vector-icons";
 import * as Haptics from "@/compat/haptics";
 import { Avatar } from "@/components/ui/Avatar";
-import { ChatAttachMenu } from "@/components/ChatAttachMenu";
+import { ChatAttachMenu, type ChatAttachMenuHandle } from "@/components/ChatAttachMenu";
 import { MessageContent } from "@/components/MessageContent";
 import { useAuth } from "@/context/AuthContext";
 import { useData } from "@/context/DataContext";
@@ -39,6 +39,7 @@ export default function ChatScreen() {
   const [showPollModal, setShowPollModal] = useState(false);
   const [pollQuestion, setPollQuestion] = useState("");
   const [pollOptions, setPollOptions] = useState(["", ""]);
+  const attachMenuRef = useRef<ChatAttachMenuHandle>(null);
 
   // Track upload placeholders: tempId → local progress/state so we can update them
   const uploadPlaceholders = useRef<
@@ -197,9 +198,14 @@ export default function ChatScreen() {
     [sendChatMessage, chat, setMessages]
   );
 
-  /** Retry a failed upload — currently re-triggers the message flow */
+  /** Retry a failed upload — resets the placeholder and re-runs the original upload */
   const handleRetryUpload = useCallback(
     (failedId: string) => {
+      // Only flip the UI back to "sending" if a retry attempt actually starts
+      // (attachMenuRef won't have anything to retry, or may already have one
+      // in flight, in which case we leave the failed state as-is).
+      const started = attachMenuRef.current?.retry(failedId) ?? false;
+      if (!started) return;
       setMessages((prev) =>
         prev.map((m) =>
           m.id === failedId
@@ -211,7 +217,6 @@ export default function ChatScreen() {
             : m
         )
       );
-      // TODO: Store original asset ref and re-run upload
     },
     [setMessages]
   );
@@ -339,6 +344,7 @@ export default function ChatScreen() {
       </View>
 
       <ChatAttachMenu
+        ref={attachMenuRef}
         visible={showAttachMenu}
         onClose={() => setShowAttachMenu(false)}
         senderId={user.id}

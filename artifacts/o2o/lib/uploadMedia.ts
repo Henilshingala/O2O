@@ -115,8 +115,16 @@ export function uploadFileWithProgress(
       });
     }
 
-    xhr.onload = () => {
-      if (state === "cancelled") return;
+    // Some React Native / Android XHR polyfills fail to fire `onload` reliably
+    // for multipart/form-data uploads (progress reaches 100% but the request
+    // never "completes" from JS's perspective), leaving the caller's promise
+    // pending forever even though the server already received and processed
+    // the upload. Settle from a single place so both `onload` and the
+    // `readystatechange`/`loadend` fallbacks can safely call it exactly once.
+    let settled = false;
+    const settleFromResponse = () => {
+      if (settled || state === "cancelled") return;
+      settled = true;
       if (xhr!.status >= 200 && xhr!.status < 300) {
         try {
           const data = JSON.parse(xhr!.responseText);
@@ -137,13 +145,27 @@ export function uploadFileWithProgress(
       }
     };
 
+    xhr.onload = settleFromResponse;
+
+    // Fallback: if `onload` never fires but the request did complete
+    // (readyState 4 with a status), settle anyway instead of leaving the
+    // upload placeholder stuck indefinitely.
+    xhr.onreadystatechange = () => {
+      if (xhr!.readyState === 4 && xhr!.status !== 0) {
+        settleFromResponse();
+      }
+    };
+
     xhr.onerror = () => {
-      if (state === "cancelled") return;
+      if (state === "cancelled" || settled) return;
+      settled = true;
       state = "failed";
       reject(new Error("Upload failed: network error"));
     };
 
     xhr.ontimeout = () => {
+      if (settled) return;
+      settled = true;
       state = "failed";
       reject(new Error("Upload failed: request timed out"));
     };

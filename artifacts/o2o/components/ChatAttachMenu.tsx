@@ -1,4 +1,4 @@
-import React, { useCallback, useRef, useState } from "react";
+import React, { forwardRef, useCallback, useImperativeHandle, useRef, useState } from "react";
 import {
   PermissionsAndroid,
   Platform,
@@ -52,7 +52,13 @@ interface ChatAttachMenuProps {
   onShowPoll?: () => void;
 }
 
-export function ChatAttachMenu({
+export interface ChatAttachMenuHandle {
+  /** Re-run the upload for a previously failed/cancelled placeholder. Returns
+   * false (no-op) if there is nothing to retry or a retry is already running. */
+  retry: (tempId: string) => boolean;
+}
+
+export const ChatAttachMenu = forwardRef<ChatAttachMenuHandle, ChatAttachMenuProps>(function ChatAttachMenu({
   visible,
   onClose,
   onSend,
@@ -64,8 +70,17 @@ export function ChatAttachMenu({
   channelId,
   bottomInset = 16,
   onShowPoll,
-}: ChatAttachMenuProps) {
+}: ChatAttachMenuProps, ref) {
   const colors = useColors();
+
+  // Remember what was uploaded per placeholder so a failed upload can be retried
+  // without re-picking the file.
+  const retryable = useRef<
+    Map<string, { asset: UploadAsset; type: "image" | "video" | "audio" | "file"; label: string; extraMeta: Record<string, unknown> }>
+  >(new Map());
+  // Guards against duplicate concurrent uploads if retry is tapped more than once
+  // for the same placeholder before the previous attempt finishes.
+  const inFlightRetries = useRef<Set<string>>(new Set());
 
   const now = () => new Date().toISOString();
 
@@ -87,27 +102,44 @@ export function ChatAttachMenu({
       asset: UploadAsset,
       type: "image" | "video" | "audio" | "file",
       label: string,
-      extraMeta: Record<string, unknown> = {}
+      extraMeta: Record<string, unknown> = {},
+      existingTempId?: string
     ) => {
       if (!asset.uri) return;
 
-      const tempId = `temp_upload_${Date.now()}_${Math.random().toString(36).slice(2)}`;
+      const isRetry = !!existingTempId;
+      const tempId = existingTempId ?? `temp_upload_${Date.now()}_${Math.random().toString(36).slice(2)}`;
       const fallback = asset.fileName || `upload.${type === "video" ? "mp4" : type === "audio" ? "m4a" : "jpg"}`;
 
-      console.log(`[UPLOAD_START] tempId=${tempId} type=${type} file=${fallback}`);
+      if (isRetry) {
+        // Ignore duplicate retry taps while an attempt for this placeholder
+        // is already in flight, so we never fire two concurrent uploads
+        // (which would otherwise both succeed and create two messages).
+        if (inFlightRetries.current.has(tempId)) return;
+        inFlightRetries.current.add(tempId);
+      }
 
-      // Show placeholder immediately
-      onSendPlaceholder(tempId, {
-        senderId,
-        text: label,
-        timestamp: now(),
-        type,
-        status: "sending" as const,
-        metadata: { fileName: asset.fileName || fallback, uploading: true, ...extraMeta },
-        ...roomMeta,
-      });
+      console.log(`[UPLOAD_START] tempId=${tempId} type=${type} file=${fallback} retry=${isRetry}`);
+      retryable.current.set(tempId, { asset, type, label, extraMeta });
 
-      onClose();
+      if (isRetry) {
+        // Reset the existing placeholder back to a "sending" state instead of
+        // creating a duplicate bubble.
+        onResolvePlaceholder(tempId, { url: `__progress__${JSON.stringify(null)}` });
+      } else {
+        // Show placeholder immediately
+        onSendPlaceholder(tempId, {
+          senderId,
+          text: label,
+          timestamp: now(),
+          type,
+          status: "sending" as const,
+          metadata: { fileName: asset.fileName || fallback, uploading: true, ...extraMeta },
+          ...roomMeta,
+        });
+      }
+
+      if (!isRetry) onClose();
 
       let lastProgress: UploadProgress | null = null;
 
@@ -127,6 +159,7 @@ export function ChatAttachMenu({
         console.log(`[UPLOAD_RESPONSE] parsed correctly`);
         // Replace placeholder with real message
         onResolvePlaceholder(tempId, { url });
+        retryable.current.delete(tempId);
         console.log(`[MESSAGE_CREATE_REQUEST] calling onSend`);
         onSend({
           senderId,
@@ -141,10 +174,21 @@ export function ChatAttachMenu({
         const errMsg = err?.message ?? "Upload failed";
         console.error(`[UPLOAD_FAILED] ${errMsg}`);
         onResolvePlaceholder(tempId, { error: errMsg });
+      } finally {
+        if (isRetry) inFlightRetries.current.delete(tempId);
       }
     },
     [senderId, onClose, onSend, onSendPlaceholder, onResolvePlaceholder, chatId, groupId, channelId]
   );
+
+  useImperativeHandle(ref, () => ({
+    retry: (tempId: string) => {
+      const entry = retryable.current.get(tempId);
+      if (!entry || inFlightRetries.current.has(tempId)) return false;
+      uploadAndSend(entry.asset, entry.type, entry.label, entry.extraMeta, tempId);
+      return true;
+    },
+  }));
 
   // ── Gallery (multi-select up to 100) ──────────────────────────────────────
   const handlePickMedia = async () => {
@@ -380,7 +424,7 @@ export function ChatAttachMenu({
       )}
     </View>
   );
-}
+});
 
 const styles = StyleSheet.create({
   menu: {
