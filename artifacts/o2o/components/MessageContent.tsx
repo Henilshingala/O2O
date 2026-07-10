@@ -144,8 +144,6 @@ export function MessageContent({
     );
   }
 
-  }
-
   // ── Audio ────────────────────────────────────────────────────────────────
 
   if (item.type === "audio") {
