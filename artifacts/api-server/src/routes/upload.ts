@@ -36,6 +36,15 @@ const ALLOWED_MIME_TYPES = new Set([
   "video/mp4",
   "video/quicktime",
   "video/webm",
+  "application/pdf",
+  "application/msword",
+  "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+  "text/plain",
+  "application/vnd.ms-excel",
+  "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+  "application/vnd.ms-powerpoint",
+  "application/vnd.openxmlformats-officedocument.presentationml.presentation",
+  "application/zip",
 ]);
 
 const ALLOWED_EXTENSIONS = new Set([
@@ -47,6 +56,15 @@ const ALLOWED_EXTENSIONS = new Set([
   ".mp4",
   ".mov",
   ".webm",
+  ".pdf",
+  ".doc",
+  ".docx",
+  ".txt",
+  ".xls",
+  ".xlsx",
+  ".ppt",
+  ".pptx",
+  ".zip",
 ]);
 
 const uploadDir = path.join(os.tmpdir(), "o2o-uploads");

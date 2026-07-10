@@ -1,6 +1,7 @@
 import { router } from "@/compat/router";
 import React, { useState } from "react";
 import {
+  Image,
   KeyboardAvoidingView,
   Platform,
   ScrollView,
@@ -41,10 +42,10 @@ export default function LoginScreen() {
       } else {
         Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
         setError(result.error ?? "Login failed");
+        setLoading(false);
       }
     } catch (e: any) {
       setError(e?.message ?? "An unexpected error occurred");
-    } finally {
       setLoading(false);
     }
   };
@@ -63,9 +64,11 @@ export default function LoginScreen() {
         showsVerticalScrollIndicator={false}
       >
         <View style={styles.header}>
-          <View style={[styles.logoBox, { backgroundColor: colors.primary }]}>
-            <Text style={styles.logoText}>O2O</Text>
-          </View>
+          <Image
+            source={require("../assets/images/logo.png")}
+            style={styles.logoImage}
+            resizeMode="contain"
+          />
           <Text style={[styles.title, { color: colors.foreground }]}>LOGIN</Text>
           <Text style={[styles.subtitle, { color: colors.mutedForeground }]}>
             Sign in to your account
@@ -129,15 +132,12 @@ export default function LoginScreen() {
 const styles = StyleSheet.create({
   container: { flexGrow: 1, paddingHorizontal: 24 },
   header: { alignItems: "center", marginBottom: 36 },
-  logoBox: {
-    width: 64,
-    height: 64,
-    borderRadius: 18,
-    alignItems: "center",
-    justifyContent: "center",
+  logoImage: {
+    width: 80,
+    height: 80,
+    borderRadius: 20,
     marginBottom: 16,
   },
-  logoText: { fontSize: 22, fontWeight: "900", color: "#fff" },
   title: { fontSize: 26, fontWeight: "900", letterSpacing: 2 },
   subtitle: { fontSize: 14, marginTop: 4 },
   form: { gap: 0 },

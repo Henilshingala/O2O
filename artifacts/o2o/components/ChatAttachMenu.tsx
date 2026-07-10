@@ -10,6 +10,7 @@ import {
 import { Feather, Ionicons } from "@/compat/vector-icons";
 import { launchCamera, launchImageLibrary } from "react-native-image-picker";
 import Geolocation from "react-native-geolocation-service";
+import DocumentPicker from "react-native-document-picker";
 import { useColors } from "@/hooks/useColors";
 import { uploadFile } from "@/lib/uploadMedia";
 import type { Message } from "@/types";
@@ -107,37 +108,56 @@ export function ChatAttachMenu({
   };
 
   const handleDocument = async () => {
-    // Use document picker for files
-    const response = await launchImageLibrary({
-      mediaType: "photo",
-      quality: 1,
-      selectionLimit: 1,
-    });
-    if (response.assets?.[0]) {
-      const asset = response.assets[0];
-      await uploadAndSend(
-        asset,
-        "file",
-        asset.fileName || "Document",
-        { fileName: asset.fileName || "Document" }
-      );
-    } else {
-      onClose();
+    try {
+      const response = await DocumentPicker.pickSingle({
+        type: [DocumentPicker.types.allFiles],
+      });
+      if (response) {
+        await uploadAndSend(
+          {
+            uri: response.uri,
+            type: response.type,
+            fileName: response.name,
+          },
+          "file",
+          response.name || "Document",
+          { fileName: response.name || "Document" }
+        );
+      }
+    } catch (err) {
+      if (DocumentPicker.isCancel(err)) {
+        onClose();
+      } else {
+        console.error("Document picking error:", err);
+        onClose();
+      }
     }
   };
 
   const handleVoice = async () => {
-    // For voice, we would need a dedicated audio recorder
-    // For now, allow selecting audio files from gallery
-    const response = await launchImageLibrary({
-      mediaType: "video",
-      quality: 0.8,
-      selectionLimit: 1,
-    });
-    if (response.assets?.[0]) {
-      await uploadAndSend(response.assets[0], "audio", "Voice message", { mimeType: "audio" });
-    } else {
-      onClose();
+    try {
+      const response = await DocumentPicker.pickSingle({
+        type: [DocumentPicker.types.audio],
+      });
+      if (response) {
+        await uploadAndSend(
+          {
+            uri: response.uri,
+            type: response.type,
+            fileName: response.name,
+          },
+          "audio",
+          response.name || "Voice message",
+          { mimeType: response.type || "audio" }
+        );
+      }
+    } catch (err) {
+      if (DocumentPicker.isCancel(err)) {
+        onClose();
+      } else {
+        console.error("Audio picking error:", err);
+        onClose();
+      }
     }
   };
 

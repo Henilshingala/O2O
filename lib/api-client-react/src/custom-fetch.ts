@@ -387,7 +387,8 @@ export async function customFetch<T = unknown>(
 
   let response: Response;
   try {
-    if (NativeModules.SimpleFetch) {
+    const isFormData = typeof FormData !== "undefined" && init.body instanceof FormData;
+    if (NativeModules.SimpleFetch && !isFormData) {
       let bodyStr = "";
       if (init.body) {
         bodyStr = typeof init.body === "string" ? init.body : JSON.stringify(init.body);

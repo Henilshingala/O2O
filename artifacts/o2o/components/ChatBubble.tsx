@@ -18,37 +18,36 @@ export function ChatBubble({ text, timestamp, isMine, senderName }: ChatBubblePr
   const colors = useColors();
 
   return (
-    <View style={[styles.row, isMine && styles.rowMine]}>
-      <View
-        style={[
-          styles.bubble,
-          {
-            backgroundColor: isMine ? colors.senderBubble : colors.receiverBubble,
-            maxWidth: "78%",
-          },
-        ]}
-      >
-        {!isMine && senderName && (
-          <Text style={[styles.sender, { color: colors.primary }]}>{senderName}</Text>
-        )}
-        <Text style={[styles.text, { color: isMine ? "#fff" : colors.foreground }]}>
-          {text}
-        </Text>
-        <Text style={[styles.time, { color: isMine ? "rgba(255,255,255,0.7)" : colors.mutedForeground }]}>
-          {formatTime(timestamp)}
-        </Text>
-      </View>
+    <View
+      style={[
+        styles.bubble,
+        {
+          backgroundColor: isMine ? colors.senderBubble : colors.receiverBubble,
+          alignSelf: isMine ? "flex-end" : "flex-start",
+        },
+      ]}
+    >
+      {!isMine && senderName && (
+        <Text style={[styles.sender, { color: colors.primary }]}>{senderName}</Text>
+      )}
+      <Text style={[styles.text, { color: isMine ? "#fff" : colors.foreground }]}>
+        {text}
+      </Text>
+      <Text style={[styles.time, { color: isMine ? "rgba(255,255,255,0.7)" : colors.mutedForeground }]}>
+        {formatTime(timestamp)}
+      </Text>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  row: { flexDirection: "row", marginVertical: 4, paddingHorizontal: 16 },
-  rowMine: { justifyContent: "flex-end" },
   bubble: {
     borderRadius: 16,
     paddingHorizontal: 14,
     paddingVertical: 10,
+    marginVertical: 4,
+    marginHorizontal: 16,
+    maxWidth: "80%",
     shadowColor: "#000",
     shadowOpacity: 0.05,
     shadowRadius: 3,

@@ -74,10 +74,10 @@ export default function SignupScreen() {
       } else {
         Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
         setErrors({ general: result.error ?? "Signup failed" });
+        setLoading(false);
       }
     } catch (err: any) {
       setErrors({ general: "Fatal Error: " + err?.message });
-    } finally {
       setLoading(false);
     }
   };

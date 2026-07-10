@@ -163,10 +163,10 @@ export function MessageContent({ item, isMine, senderName, onPollVote }: Message
   }
 
   return (
-    <View style={[styles.wrapper, isMine ? styles.mine : styles.theirs]}>
+    <View style={{ width: "100%" }}>
       <ChatBubble text={item.text} timestamp={item.timestamp} isMine={isMine} senderName={senderName} />
       {isMine && item.status && (
-        <View style={[styles.statusRow, styles.textStatus]}>
+        <View style={[styles.statusRow, styles.textStatus, { alignSelf: "flex-end", marginRight: 16 }]}>
           <MessageStatusIcon status={item.status} isMine={isMine} />
           {item.status === "failed" && <Text style={styles.failedText}>Failed to send</Text>}
         </View>
