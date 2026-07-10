@@ -71,7 +71,8 @@ export default function ChatScreen() {
       initialMessages: chat?.messages ?? [],
       queryKey: ["chats"],
       onSend: (msg) => {
-        if (chat) sendChatMessage(chat.id, { ...msg, chatId: chat.id });
+        if (chat) return sendChatMessage(chat.id, { ...msg, chatId: chat.id });
+        return Promise.reject(new Error("No active chat"));
       },
     });
 
@@ -118,7 +119,7 @@ export default function ChatScreen() {
       }
 
       // Progress update
-      if (result.url.startsWith("__progress__")) {
+      if (result.url && typeof result.url === "string" && result.url.startsWith("__progress__")) {
         try {
           const progress = JSON.parse(result.url.slice("__progress__".length));
           setMessages((prev) =>

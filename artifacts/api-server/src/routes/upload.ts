@@ -4,10 +4,18 @@ import multer from "multer";
 import fs from "fs";
 import path from "path";
 import os from "os";
+import { fileURLToPath } from "url";
 import { requireAuth, type AuthRequest } from "../middlewares/auth";
 import { db } from "@workspace/db";
 import { fileUploads } from "@workspace/db/schema";
 import { v2 as cloudinary } from "cloudinary";
+
+const currentDir = path.dirname(fileURLToPath(import.meta.url));
+const localUploadsDir = path.resolve(currentDir, "..", "..", "uploads");
+
+if (!fs.existsSync(localUploadsDir)) {
+  fs.mkdirSync(localUploadsDir, { recursive: true });
+}
 
 const uploadLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
@@ -145,15 +153,30 @@ router.post("/", upload.single("file"), async (req: AuthRequest, res) => {
   }
 
   try {
-    const resourceType = getCloudinaryResourceType(mime);
-    const result = await uploadToCloudinary(filePath, {
-      resource_type: resourceType,
-      folder: "o2o_uploads",
-    });
+    const hasCloudinary = !!(
+      process.env.CLOUDINARY_CLOUD_NAME &&
+      process.env.CLOUDINARY_API_KEY &&
+      process.env.CLOUDINARY_API_SECRET
+    );
 
-    cleanupTempFile(filePath);
+    let url: string;
+    if (hasCloudinary) {
+      const resourceType = getCloudinaryResourceType(mime);
+      const result = await uploadToCloudinary(filePath, {
+        resource_type: resourceType,
+        folder: "o2o_uploads",
+      });
+      cleanupTempFile(filePath);
+      url = result.secure_url;
+    } else {
+      // Fallback to local file storage
+      const filename = path.basename(filePath);
+      const destPath = path.join(localUploadsDir, filename);
+      fs.copyFileSync(filePath, destPath);
+      cleanupTempFile(filePath);
+      url = `/uploads/${filename}`;
+    }
 
-    const url = result.secure_url;
     const fileId = `file_${Date.now()}`;
 
     await db.insert(fileUploads).values({
