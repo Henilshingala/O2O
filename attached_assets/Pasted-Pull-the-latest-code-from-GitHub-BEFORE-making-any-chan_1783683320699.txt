@@ -1,0 +1,415 @@
+Pull the latest code from GitHub BEFORE making any changes.
+
+Do NOT rewrite the application.
+Do NOT replace the existing architecture.
+Do NOT create a new chat system.
+Only fix the existing implementation.
+
+The backend is already working correctly.
+
+Verified from Render logs:
+
+✅ POST /api/upload returns 200
+✅ Cloudinary upload succeeds
+✅ Image URL is returned
+✅ Message is saved in PostgreSQL
+✅ Socket.IO emits the message
+✅ Message API returns 200
+
+Therefore this is NOT a backend problem.
+
+This is a React Native frontend state synchronization bug.
+
+Current bug:
+
+1. User selects an image/video/document.
+2. Upload skeleton appears.
+3. Progress reaches 100%.
+4. Remaining time becomes 0 sec.
+5. Upload succeeds.
+6. Backend saves the message.
+7. BUT the uploading skeleton never disappears.
+8. The real media message never appears for the sender.
+9. Receiver may also not receive the message immediately.
+
+Find the EXACT root cause.
+
+DO NOT GUESS.
+
+Trace the complete upload lifecycle from beginning to end.
+
+------------------------------------
+TRACE THIS ENTIRE FLOW
+------------------------------------
+
+Select media
+
+↓
+
+Create optimistic placeholder
+
+↓
+
+Start upload
+
+↓
+
+Progress updates
+
+↓
+
+POST /api/upload
+
+↓
+
+Receive upload response
+
+↓
+
+Extract Cloudinary URL
+
+↓
+
+Create chat message payload
+
+↓
+
+POST /api/data/chats/:chatId/messages
+
+↓
+
+Receive message response
+
+↓
+
+Socket.IO emit
+
+↓
+
+Socket.IO receive
+
+↓
+
+React Query invalidate
+
+↓
+
+Cache update
+
+↓
+
+Optimistic placeholder removal
+
+↓
+
+Insert real server message
+
+↓
+
+FlatList re-render
+
+↓
+
+Render Image component
+
+↓
+
+Image visible
+
+Every single step must be verified.
+
+------------------------------------
+INVESTIGATE THESE FILES
+------------------------------------
+
+Chat screen
+
+Chat message component
+
+Message bubble
+
+Image bubble
+
+Media renderer
+
+Upload manager
+
+Upload hook
+
+Chat reducer
+
+Chat context
+
+React Query mutations
+
+Socket.IO listeners
+
+Socket.IO emitters
+
+FlatList
+
+Message normalization
+
+Message mapper
+
+Message serializer
+
+Optimistic update logic
+
+Temporary message IDs
+
+Permanent message IDs
+
+Image component
+
+Video component
+
+Document component
+
+AsyncStorage cache
+
+React Query cache
+
+------------------------------------
+VERIFY ALL OF THESE
+------------------------------------
+
+✓ upload response
+
+✓ imageUrl
+
+✓ mediaUrl
+
+✓ fileUrl
+
+✓ attachmentUrl
+
+✓ thumbnail
+
+✓ mediaType
+
+✓ messageType
+
+✓ senderId
+
+✓ receiverId
+
+✓ chatId
+
+✓ temporary IDs
+
+✓ permanent IDs
+
+✓ duplicate filtering
+
+✓ optimistic updates
+
+✓ cache reconciliation
+
+✓ keyExtractor
+
+✓ renderItem
+
+✓ image rendering
+
+✓ socket listeners
+
+✓ socket emit
+
+✓ query invalidation
+
+✓ cache replacement
+
+✓ stale cache
+
+✓ race conditions
+
+✓ state updates
+
+✓ useEffect dependencies
+
+✓ React.memo
+
+✓ FlatList memoization
+
+✓ image loading
+
+------------------------------------
+VERY IMPORTANT
+------------------------------------
+
+If upload succeeds:
+
+Immediately remove the uploading placeholder.
+
+Immediately replace it with the real server message.
+
+Never leave an uploading skeleton after a successful upload.
+
+If message creation fails:
+
+Remove the placeholder.
+
+Show a Retry button.
+
+Never leave permanent loading UI.
+
+------------------------------------
+ALSO VERIFY
+------------------------------------
+
+Images
+
+Videos
+
+Documents
+
+Audio
+
+Location
+
+GIF
+
+Multiple images
+
+Multiple videos
+
+Mixed media
+
+Large files
+
+Small files
+
+Offline
+
+Slow network
+
+Poor internet
+
+Retry
+
+Cancel upload
+
+------------------------------------
+FIX THESE UI ISSUES
+------------------------------------
+
+• Upload skeleton never disappears
+• Image never appears
+• Video never appears
+• Document never appears
+• Chat does not refresh
+• Sender cannot see uploaded media
+• Receiver cannot see uploaded media instantly
+• Socket updates fail
+• React Query cache not updating
+• FlatList not refreshing
+• Message duplication
+• Missing thumbnails
+• Broken media preview
+
+------------------------------------
+DEBUG LOGS
+------------------------------------
+
+Add temporary logs for:
+
+UPLOAD_STARTED
+
+UPLOAD_PROGRESS
+
+UPLOAD_SUCCESS
+
+UPLOAD_RESPONSE
+
+MESSAGE_REQUEST
+
+MESSAGE_RESPONSE
+
+MESSAGE_SAVED
+
+SOCKET_EMIT
+
+SOCKET_RECEIVED
+
+CACHE_INVALIDATED
+
+CACHE_UPDATED
+
+PLACEHOLDER_CREATED
+
+PLACEHOLDER_REMOVED
+
+REAL_MESSAGE_INSERTED
+
+FLATLIST_RENDER
+
+IMAGE_RENDER
+
+VIDEO_RENDER
+
+DOCUMENT_RENDER
+
+Remove these logs after the issue is fixed.
+
+------------------------------------
+FINAL VERIFICATION
+------------------------------------
+
+Verify on a real Android device.
+
+Acceptance criteria:
+
+✓ Upload image
+
+✓ Upload video
+
+✓ Upload document
+
+✓ Upload audio
+
+✓ Upload location
+
+✓ Upload multiple files
+
+✓ Progress updates correctly
+
+✓ Skeleton disappears automatically
+
+✓ Real media replaces skeleton instantly
+
+✓ No manual refresh
+
+✓ No reopening chat
+
+✓ No duplicate messages
+
+✓ No stale cache
+
+✓ Sender sees media immediately
+
+✓ Receiver sees media immediately
+
+✓ Socket.IO updates instantly
+
+✓ React Query cache updates correctly
+
+✓ FlatList refreshes correctly
+
+✓ Images load correctly
+
+✓ Videos play correctly
+
+✓ Documents open correctly
+
+✓ No crashes
+
+✓ No warnings
+
+✓ No memory leaks
+
+✓ No infinite loading
+
+✓ Production-ready behavior identical to WhatsApp or Telegram.
+
+Do not stop until every acceptance criterion is verified on a physical Android device. Only finish when media upload, message creation, socket delivery, cache synchronization, and UI rendering all work correctly without requiring any manual refresh.
