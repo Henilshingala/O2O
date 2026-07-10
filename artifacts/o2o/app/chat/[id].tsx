@@ -75,48 +75,6 @@ export default function ChatScreen() {
       },
     });
 
-  if (!user) return null;
-  if (loading || !chat) {
-    return (
-      <View style={[styles.root, styles.centered, { backgroundColor: colors.background }]}>
-        <ActivityIndicator color={colors.primary} />
-      </View>
-    );
-  }
-
-  const otherId = chat.participants.find((p) => p !== user.id) ?? "";
-  const other = otherId ? getUserById(otherId) : undefined;
-
-  const send = () => {
-    if (!text.trim()) return;
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    sendMessage({
-      senderId: user.id,
-      text: text.trim(),
-      timestamp: new Date().toISOString(),
-      type: "text",
-      chatId: chat.id,
-    });
-    setText("");
-  };
-
-  const handleSendPoll = () => {
-    if (!pollQuestion.trim() || pollOptions.some((o) => !o.trim())) return;
-    sendMessage({
-      senderId: user.id,
-      text: pollQuestion,
-      timestamp: new Date().toISOString(),
-      type: "poll",
-      chatId: chat.id,
-      metadata: {
-        options: pollOptions.filter((o) => o.trim()).map((t) => ({ text: t, votes: [] })),
-      },
-    });
-    setShowPollModal(false);
-    setPollQuestion("");
-    setPollOptions(["", ""]);
-  };
-
   // ── ChatAttachMenu callbacks ──────────────────────────────────────────────
 
   /** Insert a "sending" placeholder into the FlatList immediately */
@@ -192,9 +150,9 @@ export default function ChatScreen() {
   /** Real send (after upload) from ChatAttachMenu */
   const handleAttachSend = useCallback(
     (msg: Omit<Message, "id">) => {
-      sendMessage({ ...msg, chatId: chat.id });
+      sendMessage({ ...msg, chatId: chat?.id });
     },
-    [sendMessage, chat.id]
+    [sendMessage, chat?.id]
   );
 
   /** Retry a failed upload — currently re-triggers the message flow */
@@ -215,6 +173,48 @@ export default function ChatScreen() {
     },
     [setMessages]
   );
+
+  if (!user) return null;
+  if (loading || !chat) {
+    return (
+      <View style={[styles.root, styles.centered, { backgroundColor: colors.background }]}>
+        <ActivityIndicator color={colors.primary} />
+      </View>
+    );
+  }
+
+  const otherId = chat.participants.find((p) => p !== user.id) ?? "";
+  const other = otherId ? getUserById(otherId) : undefined;
+
+  const send = () => {
+    if (!text.trim()) return;
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    sendMessage({
+      senderId: user.id,
+      text: text.trim(),
+      timestamp: new Date().toISOString(),
+      type: "text",
+      chatId: chat.id,
+    });
+    setText("");
+  };
+
+  const handleSendPoll = () => {
+    if (!pollQuestion.trim() || pollOptions.some((o) => !o.trim())) return;
+    sendMessage({
+      senderId: user.id,
+      text: pollQuestion,
+      timestamp: new Date().toISOString(),
+      type: "poll",
+      chatId: chat.id,
+      metadata: {
+        options: pollOptions.filter((o) => o.trim()).map((t) => ({ text: t, votes: [] })),
+      },
+    });
+    setShowPollModal(false);
+    setPollQuestion("");
+    setPollOptions(["", ""]);
+  };
 
   return (
     <KeyboardAvoidingView style={[styles.root, { backgroundColor: colors.background }]}>
