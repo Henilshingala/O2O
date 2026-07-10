@@ -94,7 +94,7 @@ export function ChatAttachMenu({
       const tempId = `temp_upload_${Date.now()}_${Math.random().toString(36).slice(2)}`;
       const fallback = asset.fileName || `upload.${type === "video" ? "mp4" : type === "audio" ? "m4a" : "jpg"}`;
 
-      console.log(`[ChatAttachMenu] STEP 1 - Showing placeholder tempId=${tempId} type=${type} file=${fallback}`);
+      console.log(`[UPLOAD_START] tempId=${tempId} type=${type} file=${fallback}`);
 
       // Show placeholder immediately
       onSendPlaceholder(tempId, {
@@ -111,14 +111,11 @@ export function ChatAttachMenu({
 
       let lastProgress: UploadProgress | null = null;
 
-      console.log(`[ChatAttachMenu] STEP 2 - Starting XHR upload for ${fallback}`);
-
       const handle = uploadFileWithProgress(
         asset,
         fallback,
         (progress) => {
           lastProgress = progress;
-          console.log(`[ChatAttachMenu] STEP 3 - Progress ${progress.percent}% (${progress.loadedStr}/${progress.totalStr})`);
           // Forward progress to placeholder (onResolvePlaceholder with no url = progress update)
           onResolvePlaceholder(tempId, { url: `__progress__${JSON.stringify(progress)}` });
         }
@@ -126,10 +123,11 @@ export function ChatAttachMenu({
 
       try {
         const url = await handle.result;
-        console.log(`[ChatAttachMenu] STEP 4 - Upload SUCCESS url=${url}`);
+        console.log(`[UPLOAD_SUCCESS] url=${url}`);
+        console.log(`[UPLOAD_RESPONSE] parsed correctly`);
         // Replace placeholder with real message
         onResolvePlaceholder(tempId, { url });
-        console.log(`[ChatAttachMenu] STEP 5 - Calling onSend to persist message via API`);
+        console.log(`[MESSAGE_CREATE_REQUEST] calling onSend`);
         onSend({
           senderId,
           text: label,
@@ -139,10 +137,9 @@ export function ChatAttachMenu({
           metadata: { url, fileName: asset.fileName || fallback, ...extraMeta },
           ...roomMeta,
         });
-        console.log(`[ChatAttachMenu] STEP 6 - onSend called successfully`);
       } catch (err: any) {
         const errMsg = err?.message ?? "Upload failed";
-        console.error(`[ChatAttachMenu] STEP 4 - Upload FAILED: ${errMsg}`);
+        console.error(`[UPLOAD_FAILED] ${errMsg}`);
         onResolvePlaceholder(tempId, { error: errMsg });
       }
     },

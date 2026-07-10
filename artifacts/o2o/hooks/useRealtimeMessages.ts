@@ -74,6 +74,7 @@ export function useRealtimeMessages({
           return { ...entity, messages: [...(entity.messages || []), msg] };
         });
       });
+      console.log(`[QUERY_INVALIDATED] Updated queryKey ${queryKey} with new message`);
     };
 
     socket.on("message:new", handleNew);

@@ -143,6 +143,7 @@ export default function ChatScreen() {
       }
 
       // Real URL → upload done, swap placeholder out
+      console.log(`[PLACEHOLDER_REMOVED] tempId=${tempId}`);
       setMessages((prev) =>
         prev.filter((m) => m.id !== tempId)
       );
@@ -163,15 +164,18 @@ export default function ChatScreen() {
         return;
       }
       try {
+        console.log(`[MESSAGE_CREATE_REQUEST] POSTing message to backend`, { chatId: chat.id, type: msg.type });
         LOG("handleAttachSend: POSTing message to backend", {
           chatId: chat.id,
           type: msg.type,
           hasUrl: !!(msg.metadata as any)?.url,
         });
         const saved = await sendChatMessage(chat.id, { ...msg, chatId: chat.id });
+        console.log(`[MESSAGE_CREATE_RESPONSE] received from backend`, { id: saved.id });
         LOG("handleAttachSend: message saved", { id: saved.id });
         // Insert the saved message into local state so sender sees it immediately
         // (socket will also deliver it, deduplication is handled by useRealtimeMessages)
+        console.log(`[MESSAGE_SAVED] inserted into local state`);
         setMessages((prev) => {
           if (prev.some((m) => m.id === saved.id)) return prev;
           return [{ ...saved, status: "sent" as const }, ...prev];

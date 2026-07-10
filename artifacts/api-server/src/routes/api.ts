@@ -524,8 +524,10 @@ router.post("/chats/:id/messages", validateBody(sendMessageSchema), async (req: 
       timestamp: timestamp ? new Date(timestamp) : new Date(),
     };
     await db.insert(schema.messages).values(newMsg);
+    console.log(`[MESSAGE_SAVED] Message ${id} saved to db`);
     await db.update(schema.chats).set({ updatedAt: new Date() }).where(eq(schema.chats.id, chatId));
     emitToChat(chatId, "message:new", newMsg);
+    console.log(`[SOCKET_EMIT] Emitted message:new to chat ${chatId}`);
     if (otherId) {
       await createNotification(otherId, "New Message", req.body.text?.slice(0, 80) || "New message", "new_message", null);
       emitToUser(otherId, "notification:new", { type: "new_message" });
