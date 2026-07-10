@@ -6,7 +6,7 @@ import { seedSuperAdmin } from "./lib/seed-admin";
 import { initSocket, emitToBid } from "./socket/index";
 import { db } from "@workspace/db";
 import { bids } from "@workspace/db/schema";
-import { eq, and, lt } from "drizzle-orm";
+import { eq, and, lt, sql } from "drizzle-orm";
 
 const rawPort = process.env["PORT"] || "3001";
 const port = Number(rawPort);
@@ -37,7 +37,28 @@ async function closeExpiredBids() {
   }
 }
 
-seedSuperAdmin().then(() => {
+async function ensureTablesExist() {
+  try {
+    await db.execute(sql`
+      CREATE TABLE IF NOT EXISTS file_uploads (
+        id text PRIMARY KEY,
+        url text NOT NULL,
+        uploader_id text NOT NULL REFERENCES users(id),
+        size integer NOT NULL,
+        type text NOT NULL,
+        timestamp timestamp without time zone DEFAULT now() NOT NULL
+      )
+    `);
+    logger.info("Database tables verified successfully");
+  } catch (err) {
+    logger.error({ err }, "Failed to verify database tables");
+  }
+}
+
+async function startup() {
+  await ensureTablesExist();
+  await seedSuperAdmin();
+  
   const httpServer = http.createServer(app);
   initSocket(httpServer);
 
@@ -56,7 +77,9 @@ seedSuperAdmin().then(() => {
     logger.info(`API: ${host}/api/`);
     logger.info(`Socket.IO: ${host}`);
   });
-}).catch((err) => {
+}
+
+startup().catch((err) => {
   logger.error({ err }, "Failed during startup");
   process.exit(1);
 });

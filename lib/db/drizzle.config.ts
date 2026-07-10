@@ -8,7 +8,7 @@ if (!process.env.DATABASE_URL) {
 const isNeon = (process.env.DATABASE_URL ?? "").includes("neon.tech");
 
 export default defineConfig({
-  schema: "./src/schema/index.ts",
+  schema: path.resolve(__dirname, "./src/schema/index.ts").replace(/\\/g, "/"),
   dialect: "postgresql",
   dbCredentials: {
     url: process.env.DATABASE_URL,
