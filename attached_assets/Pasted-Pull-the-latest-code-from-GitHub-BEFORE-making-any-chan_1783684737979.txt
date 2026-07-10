@@ -1,0 +1,500 @@
+Pull the latest code from GitHub BEFORE making any changes.
+
+Repository:
+https://github.com/Henilshingala/O2O
+
+Do NOT overwrite my latest commits.
+
+Do NOT create a new architecture.
+
+Do NOT rewrite the application.
+
+Do NOT introduce Expo.
+
+Do NOT convert to another framework.
+
+Keep React Native CLI only.
+
+Keep Android only.
+
+Do NOT add iOS code.
+
+Do NOT add Web code.
+
+Modify only the existing implementation.
+
+======================================================
+IMPORTANT
+======================================================
+
+Do NOT only inspect the project.
+
+Do NOT stop after finding the issue.
+
+You MUST FIX every issue you find.
+
+You MUST verify every fix.
+
+You MUST run the application.
+
+You MUST test the complete flow.
+
+You MUST commit every fix.
+
+You MUST push everything to GitHub.
+
+Do not finish until the app is production ready.
+
+======================================================
+CURRENT BUG
+======================================================
+
+The backend is already working correctly.
+
+Render logs prove:
+
+✓ Upload reaches backend
+
+✓ Cloudinary upload succeeds
+
+✓ POST /api/upload returns HTTP 200
+
+✓ Message is saved into PostgreSQL
+
+✓ Socket.IO emits message:new
+
+✓ Message API returns HTTP 200
+
+But the Android app still shows the uploading skeleton forever.
+
+Progress reaches 100%.
+
+Remaining time becomes 0 seconds.
+
+The image/video/document never replaces the skeleton.
+
+This is now a frontend synchronization bug.
+
+======================================================
+FIX EVERYTHING
+======================================================
+
+Completely debug and FIX the entire upload lifecycle.
+
+Trace:
+
+Select media
+
+↓
+
+Create optimistic placeholder
+
+↓
+
+Upload progress
+
+↓
+
+POST /api/upload
+
+↓
+
+Receive upload response
+
+↓
+
+Create message
+
+↓
+
+Save message
+
+↓
+
+Socket emit
+
+↓
+
+Socket receive
+
+↓
+
+React Query update
+
+↓
+
+Cache reconciliation
+
+↓
+
+Placeholder removal
+
+↓
+
+Real message insertion
+
+↓
+
+FlatList rerender
+
+↓
+
+Media render
+
+Fix every broken step.
+
+======================================================
+VERIFY
+======================================================
+
+Verify:
+
+✓ upload response parsing
+
+✓ Cloudinary URL parsing
+
+✓ mediaUrl
+
+✓ imageUrl
+
+✓ attachmentUrl
+
+✓ thumbnail
+
+✓ messageType
+
+✓ senderId
+
+✓ receiverId
+
+✓ temporary IDs
+
+✓ permanent IDs
+
+✓ optimistic updates
+
+✓ placeholder replacement
+
+✓ React Query cache
+
+✓ Socket.IO
+
+✓ duplicate filtering
+
+✓ keyExtractor
+
+✓ renderItem
+
+✓ FlatList
+
+✓ state updates
+
+✓ useEffect dependencies
+
+✓ memoization
+
+✓ message normalization
+
+✓ upload state
+
+✓ retry flow
+
+✓ cancel flow
+
+✓ progress updates
+
+======================================================
+FIX UI
+======================================================
+
+Never leave an uploading skeleton after upload succeeds.
+
+Immediately replace it with the real message.
+
+Never require manual refresh.
+
+Never require reopening the chat.
+
+Never duplicate messages.
+
+Never lose uploaded media.
+
+Show Upload Failed + Retry if upload fails.
+
+======================================================
+MEDIA SUPPORT
+======================================================
+
+Verify:
+
+✓ Images
+
+✓ Videos
+
+✓ Documents
+
+✓ Audio
+
+✓ Voice Notes
+
+✓ Camera
+
+✓ Gallery
+
+✓ Multiple image upload
+
+✓ Multiple video upload
+
+✓ Mixed media upload
+
+✓ Maximum 100 files
+
+If multiple images are sent together:
+
+Implement WhatsApp-style album layout.
+
+1 image → Full preview
+
+2 images → Side by side
+
+3 images → 1 large + 2 stacked
+
+4 images → 2×2 grid
+
+More than 4 →
+
+Show first 4
+
+Bottom-right image shows +X overlay
+
+Opening any image opens a swipeable gallery.
+
+======================================================
+PERFORMANCE
+======================================================
+
+Fix:
+
+Memory leaks
+
+Race conditions
+
+Duplicate socket listeners
+
+Duplicate uploads
+
+Infinite loading
+
+Infinite skeleton
+
+Cache corruption
+
+Stale queries
+
+Broken retries
+
+Broken optimistic updates
+
+Broken placeholders
+
+Broken media renderer
+
+Broken image loading
+
+Broken video loading
+
+======================================================
+GENERAL PROJECT AUDIT
+======================================================
+
+Fix every issue you find across the project.
+
+This includes:
+
+Runtime errors
+
+Build errors
+
+Android errors
+
+React Native errors
+
+Navigation issues
+
+Authentication issues
+
+Database issues
+
+API issues
+
+Socket.IO issues
+
+Security issues
+
+Performance issues
+
+Memory leaks
+
+Unused code
+
+Dead code
+
+Broken imports
+
+Broken types
+
+Broken UI
+
+Broken loading states
+
+Broken error handling
+
+Broken cache
+
+Broken hooks
+
+Broken reducers
+
+Broken contexts
+
+Broken queries
+
+Broken mutations
+
+Broken media rendering
+
+Broken notifications
+
+Broken chat
+
+Broken groups
+
+Broken channels
+
+Broken bids
+
+Broken orders
+
+Broken wishlist
+
+Broken profile
+
+Broken settings
+
+Everything must be production ready.
+
+======================================================
+TEST EVERYTHING
+======================================================
+
+Run the application on Android.
+
+Verify:
+
+✓ Login
+
+✓ Signup
+
+✓ Refresh token
+
+✓ Logout
+
+✓ Chat
+
+✓ Personal chat
+
+✓ Group chat
+
+✓ Channels
+
+✓ Friend requests
+
+✓ Image upload
+
+✓ Video upload
+
+✓ Document upload
+
+✓ Audio upload
+
+✓ Camera
+
+✓ Gallery
+
+✓ Multiple uploads
+
+✓ Notifications
+
+✓ Socket.IO
+
+✓ Persistent login
+
+✓ Offline recovery
+
+✓ Retry upload
+
+✓ Cancel upload
+
+✓ Message synchronization
+
+✓ Sender view
+
+✓ Receiver view
+
+Nothing should require manual refresh.
+
+======================================================
+FINAL REQUIREMENTS
+======================================================
+
+Do NOT stop after making code changes.
+
+Run the application.
+
+Verify every feature.
+
+Fix every remaining issue until the app behaves like a production messaging application similar to WhatsApp or Telegram.
+
+Only finish when:
+
+✓ No upload skeleton remains after success.
+
+✓ Media appears immediately.
+
+✓ Sender sees media.
+
+✓ Receiver sees media.
+
+✓ Socket.IO sync works.
+
+✓ React Query cache updates correctly.
+
+✓ No runtime errors.
+
+✓ No crashes.
+
+✓ No blank screens.
+
+✓ No red screens.
+
+✓ No broken UI.
+
+✓ No broken flows.
+
+======================================================
+GITHUB
+======================================================
+
+After EVERYTHING is fixed:
+
+1. Stage all changes.
+
+2. Commit with a clear commit message.
+
+3. Push ALL changes to:
+
+https://github.com/Henilshingala/O2O
+
+Verify that GitHub contains the latest code.
+
+Do not stop until the repository is fully updated and the Android application is production-ready.
