@@ -219,25 +219,24 @@ export default function ChatScreen() {
       });
 
       try {
-        console.log(`[CALLING_POST_MESSAGES] POST /api/data/chats/${currentChat.id}/messages`, {
-          type: payload.type,
-          url: (payload.metadata as any)?.url,
-        });
+        console.log(`[MESSAGE_POST_STARTED] POST /api/data/chats/${currentChat.id}/messages`);
         const saved = await sendChatMessage(currentChat.id, payload);
-        console.log(`[POST_MESSAGES_RESPONSE] Server returned message`, { id: saved.id, type: saved.type });
-        LOG("[MESSAGE_SAVED_TO_DB]", { id: saved.id });
+        console.log(`[MESSAGE_POST_SUCCESS] message saved to DB`);
+        console.log(`[SERVER_MESSAGE_RECEIVED] id=${saved.id} type=${saved.type}`);
 
         // Replace the temp placeholder with the real server message.
-        // The placeholder has tempId in its id field; filter it out and insert real message.
-        console.log(`[REPLACING_PLACEHOLDER]", { tempId, realId: saved.id }`);
+        console.log(`[STATE_UPDATED] replacing placeholder in messages array`);
         setMessages((prev) => {
-          // Remove the temp placeholder (by tempId) and the real msg if somehow already added
+          // Check if placeholder is still in the array
+          const hasPlaceholder = prev.some((m) => m.id === tempId);
+          if (hasPlaceholder) {
+            console.log(`[PLACEHOLDER_REMOVED] tempId=${tempId}`);
+          }
           const filtered = prev.filter((m) => m.id !== tempId && m.id !== saved.id);
           const realMsg = { ...saved, status: "sent" as const };
-          LOG("[FLATLIST_REAL_MESSAGE_INSERTED]", { id: realMsg.id });
+          console.log(`[REAL_MESSAGE_INSERTED] id=${realMsg.id}`);
           return [realMsg, ...filtered];
         });
-        LOG("[IMAGE_RENDERED]", { id: saved.id });
       } catch (err: any) {
         const errMsg = err?.message ?? "Send failed";
         console.error(`[POST_MESSAGES_FAILED] ${errMsg}`, err);
@@ -356,14 +355,22 @@ export default function ChatScreen() {
             <ActivityIndicator color={colors.primary} style={{ padding: 12 }} />
           ) : null
         }
-        renderItem={({ item }) => (
-          <MessageContent
-            item={item}
-            isMine={item.senderId === user.id}
-            senderName={item.senderId !== user.id ? other?.fullName : undefined}
-            onRetryUpload={handleRetryUpload}
-          />
-        )}
+        ListFooterComponent={
+          loadingMore ? (
+            <ActivityIndicator color={colors.primary} style={{ padding: 12 }} />
+          ) : null
+        }
+        renderItem={({ item }) => {
+          console.log(`[FLATLIST_RENDER] item.id=${item.id} status=${item.status} uploading=${item.metadata?.uploading}`);
+          return (
+            <MessageContent
+              item={item}
+              isMine={item.senderId === user.id}
+              senderName={item.senderId !== user.id ? other?.fullName : undefined}
+              onRetryUpload={handleRetryUpload}
+            />
+          );
+        }}
       />
 
       <View

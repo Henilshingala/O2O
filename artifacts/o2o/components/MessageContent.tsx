@@ -51,6 +51,8 @@ export function MessageContent({
 }: MessageContentProps) {
   const colors = useColors();
 
+  console.log(`[MESSAGE_RENDER] id=${item.id} type=${item.type} uploading=${item.metadata?.uploading}`);
+
   const statusFooter = (
     <View style={styles.statusRow}>
       <Text

@@ -51,34 +51,48 @@ export function useRealtimeMessages({
     socket.emit(joinEvent, roomId);
 
     const handleNew = (msg: Message) => {
-      console.log(`[SOCKET_RECEIVED_message:new] id=${(msg as any).id} type=${(msg as any).type} chatId=${(msg as any).chatId}`);
+      console.log(`[SOCKET_MESSAGE_RECEIVED] id=${(msg as any).id} type=${(msg as any).type} chatId=${(msg as any).chatId}`);
       const belongs =
         (roomType === "chat" && (msg as any).chatId === roomId) ||
         (roomType === "group" && (msg as any).groupId === roomId) ||
         (roomType === "channel" && (msg as any).channelId === roomId);
       if (!belongs) {
-        console.log(`[SOCKET_IGNORED] message belongs to different room`);
         return;
       }
 
-      console.log(`[SOCKET_UPDATING_STATE] inserting message id=${(msg as any).id}`);
+      console.log(`[STATE_UPDATED] processing socket message`);
       setMessages((prev) => {
+        // If the real message is already in our state (because POST resolved first)
         if (prev.some((m) => m.id === msg.id)) {
-          // Already in list — update status to delivered
-          console.log(`[SOCKET_DEDUP] message already exists, updating status`);
           return prev.map((m) =>
             m.id.startsWith("temp_") && pendingRef.current.get(m.id) === msg.id
               ? { ...msg, status: "delivered" as const }
               : m.id === msg.id ? { ...m, ...msg, status: "delivered" as const } : m
           );
         }
-        // New message — add it; for media messages do NOT filter by text (text may be
-        // a label like "Photo" that matches the placeholder label, causing false removal)
+
+        // Check if this socket message corresponds to a placeholder we have via clientTempId
+        const clientTempId = (msg.metadata as any)?.clientTempId;
+        const hasPlaceholder = clientTempId && prev.some((m) => m.id === clientTempId);
+
+        if (hasPlaceholder) {
+          console.log(`[PLACEHOLDER_REMOVED] matched clientTempId=${clientTempId}`);
+          console.log(`[REAL_MESSAGE_INSERTED] replacing placeholder with socket msg`);
+          // Replace the exact placeholder with the real message
+          return prev.map((m) =>
+            m.id === clientTempId ? { ...msg, status: "delivered" as const } : m
+          );
+        }
+
+        // New message (no exact placeholder match)
         const isMedia = (msg as any).type !== "text" && (msg as any).type !== "poll";
-        const filtered = isMedia
-          ? prev.filter((m) => !m.id.startsWith("temp_"))
+        // Do not arbitrarily remove ALL temp_ placeholders just because we received a media message.
+        // We only remove a text temp_ placeholder if the text matches. 
+        const filtered = isMedia 
+          ? prev 
           : prev.filter((m) => !m.id.startsWith("temp_") || m.text !== msg.text);
-        console.log(`[SOCKET_MESSAGE_INSERTED] id=${(msg as any).id} type=${(msg as any).type}`);
+
+        console.log(`[REAL_MESSAGE_INSERTED] id=${(msg as any).id}`);
         return [{ ...msg, status: "delivered" }, ...filtered];
       });
 
@@ -92,7 +106,7 @@ export function useRealtimeMessages({
           return { ...entity, messages: [...(entity.messages || []), msg] };
         });
       });
-      console.log(`[QUERY_CACHE_UPDATED] queryKey=${queryKey} with messageId=${(msg as any).id}`);
+      console.log(`[CACHE_UPDATED] queryKey=${queryKey}`);
     };
 
     socket.on("message:new", handleNew);

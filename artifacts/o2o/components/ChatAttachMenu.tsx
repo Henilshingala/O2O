@@ -137,10 +137,10 @@ export const ChatAttachMenu = forwardRef<ChatAttachMenuHandle, ChatAttachMenuPro
           timestamp: now(),
           type,
           status: "sending" as const,
-          metadata: { fileName: asset.fileName || fallback, uploading: true, ...extraMeta },
+          metadata: { fileName: asset.fileName || fallback, uploading: true, clientTempId: tempId, ...extraMeta },
           ...roomMeta,
         };
-        console.log(`[UPLOAD_PLACEHOLDER_SHOWN] tempId=${tempId}`);
+        console.log(`[PLACEHOLDER_CREATED] tempId=${tempId}`);
         onSendPlaceholder(tempId, placeholderMsg);
       }
 
@@ -150,17 +150,15 @@ export const ChatAttachMenu = forwardRef<ChatAttachMenuHandle, ChatAttachMenuPro
         asset,
         fallback,
         (progress) => {
-          console.log(`[UPLOAD_PROGRESS] tempId=${tempId} percent=${progress.percent}%`);
           // Forward progress to placeholder
           onResolvePlaceholder(tempId, { url: `__progress__${JSON.stringify(progress)}` });
         }
       );
 
       try {
-        console.log(`[UPLOAD_AWAITING_RESULT] tempId=${tempId}`);
+        console.log(`[UPLOAD_STARTED] tempId=${tempId}`);
         const url = await handle.result;
         console.log(`[UPLOAD_FINISHED] tempId=${tempId} cloudinaryUrl=${url}`);
-        console.log(`[UPLOAD_RESPONSE_RECEIVED] url=${url}`);
 
         // Notify chat screen: Cloudinary done, placeholder transitions to non-uploading state
         onResolvePlaceholder(tempId, { url });
@@ -173,11 +171,9 @@ export const ChatAttachMenu = forwardRef<ChatAttachMenuHandle, ChatAttachMenuPro
           timestamp: now(),
           type,
           status: "sent" as const,
-          metadata: { url, fileName: asset.fileName || fallback, ...extraMeta },
+          metadata: { url, fileName: asset.fileName || fallback, clientTempId: tempId, ...extraMeta },
           ...roomMeta,
         };
-        console.log(`[PREPARING_MESSAGE_PAYLOAD] type=${type} url=${url} chatId=${(roomMeta as any).chatId}`);
-        console.log(`[CALLING_onSend] tempId=${tempId}`);
 
         // Pass tempId so handleAttachSend can swap the placeholder precisely
         onSend(msgPayload, tempId);
@@ -234,14 +230,17 @@ export const ChatAttachMenu = forwardRef<ChatAttachMenuHandle, ChatAttachMenuPro
         status: "sending" as const,
         metadata: {
           uploading: true,
+          clientTempId: tempId,
           albumCount: allAssets.length,
           urls: [],
           types,
         },
         ...roomMeta,
       });
+      console.log(`[PLACEHOLDER_CREATED] tempId=${tempId}`);
 
       // Upload all concurrently (limit 3 at a time)
+      console.log(`[UPLOAD_STARTED] tempId=${tempId}`);
       let completed = 0;
       let failed = 0;
       const sem = 3;
@@ -276,6 +275,7 @@ export const ChatAttachMenu = forwardRef<ChatAttachMenuHandle, ChatAttachMenuPro
         return;
       }
 
+      console.log(`[UPLOAD_FINISHED] tempId=${tempId}`);
       onResolvePlaceholder(tempId, { url: validUrls[0] });
       onSend(
         {
@@ -284,7 +284,7 @@ export const ChatAttachMenu = forwardRef<ChatAttachMenuHandle, ChatAttachMenuPro
           timestamp: now(),
           type: "image",
           status: "sent" as const,
-          metadata: { urls, types, url: validUrls[0] },
+          metadata: { urls, types, url: validUrls[0], clientTempId: tempId },
           ...roomMeta,
         },
         tempId
