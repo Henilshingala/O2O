@@ -34,6 +34,9 @@ export default function ChatScreen() {
   const params = useLocalSearchParams<{ id: string; otherId?: string }>();
   const [text, setText] = useState("");
   const [chat, setChat] = useState<Chat | null>(null);
+  // ── CRITICAL FIX: chatRef always holds the latest chat value so callbacks
+  // that are memoized early don't close over a stale null reference.
+  const chatRef = useRef<Chat | null>(null);
   const [loading, setLoading] = useState(false);
   const [showAttachMenu, setShowAttachMenu] = useState(false);
   const [showPollModal, setShowPollModal] = useState(false);
@@ -47,6 +50,9 @@ export default function ChatScreen() {
   >(new Map());
 
   const existingChat = getChat(params.id) || chats.find((c) => c.id === params.id);
+
+  // Keep chatRef in sync with chat state on every render
+  chatRef.current = chat;
 
   useEffect(() => {
     if (existingChat) {
@@ -74,7 +80,8 @@ export default function ChatScreen() {
       initialMessages: chat?.messages ?? [],
       queryKey: ["chats"],
       onSend: (msg) => {
-        if (chat) return sendChatMessage(chat.id, { ...msg, chatId: chat.id });
+        const currentChat = chatRef.current;
+        if (currentChat) return sendChatMessage(currentChat.id, { ...msg, chatId: currentChat.id });
         return Promise.reject(new Error("No active chat"));
       },
     });
@@ -84,15 +91,17 @@ export default function ChatScreen() {
   /** Insert a "sending" placeholder into the FlatList immediately */
   const handleSendPlaceholder = useCallback(
     (tempId: string, msg: Omit<Message, "id">) => {
+      LOG("[UPLOAD_PLACEHOLDER_CREATED]", { tempId, type: msg.type });
       uploadPlaceholders.current.set(tempId, {
         progress: null,
         failed: false,
         cancelled: false,
       });
       setMessages((prev) => [
-        { ...msg, id: tempId, status: "sending" as const },
+        { ...msg, id: tempId, status: "sending" as const, metadata: { ...(msg.metadata as any), uploading: true } },
         ...prev,
       ]);
+      LOG("[FLATLIST_PLACEHOLDER_INSERTED]", { tempId });
     },
     [setMessages]
   );
@@ -100,13 +109,17 @@ export default function ChatScreen() {
   /**
    * Handle resolution events from ChatAttachMenu:
    * - Progress updates: encoded as __progress__{...json}
-   * - Success: a real URL → swap placeholder for real message
+   * - Success: a real Cloudinary URL → mark uploading=false so the bubble
+   *   transitions to "sent" state while handleAttachSend POSTs to the server.
+   *   DO NOT remove the placeholder here — handleAttachSend will swap it out
+   *   once the server responds.
    * - Error: { error: string } → mark as failed
    */
   const handleResolvePlaceholder = useCallback(
     (tempId: string, result: { url: string } | { error: string }) => {
       if ("error" in result) {
-        // Mark as failed
+        LOG("[UPLOAD_ERROR]", { tempId, error: result.error });
+        // Mark as failed — keep in list so user can retry
         setMessages((prev) =>
           prev.map((m) =>
             m.id === tempId
@@ -125,6 +138,7 @@ export default function ChatScreen() {
       if (result.url && typeof result.url === "string" && result.url.startsWith("__progress__")) {
         try {
           const progress = JSON.parse(result.url.slice("__progress__".length));
+          LOG("[UPLOAD_PROGRESS]", { tempId, percent: progress?.percent });
           setMessages((prev) =>
             prev.map((m) =>
               m.id === tempId
@@ -139,63 +153,107 @@ export default function ChatScreen() {
                 : m
             )
           );
-        } catch {/* ignore */}
+        } catch {/* ignore parse errors */}
         return;
       }
 
-      // Real URL → upload done, swap placeholder out
-      console.log(`[PLACEHOLDER_REMOVED] tempId=${tempId}`);
+      // Real Cloudinary URL received — upload to Cloudinary is done.
+      // Transition placeholder to "sending" state (no longer uploading, not yet server-confirmed).
+      // We keep it in the list so there is no visual gap.
+      // handleAttachSend will swap it out once POST /messages returns.
+      LOG("[CLOUDINARY_URL_RECEIVED]", { tempId, url: result.url });
       setMessages((prev) =>
-        prev.filter((m) => m.id !== tempId)
+        prev.map((m) =>
+          m.id === tempId
+            ? {
+                ...m,
+                status: "sending" as const,
+                metadata: {
+                  ...m.metadata,
+                  uploading: false,
+                  url: result.url,
+                },
+              }
+            : m
+        )
       );
+      LOG("[PLACEHOLDER_UPDATED_WITH_URL]", { tempId });
     },
     [setMessages]
   );
 
   /**
-   * Called by ChatAttachMenu AFTER the upload completes.
-   * We bypass the hook's sendMessage() (which would add a second optimistic entry)
-   * and call sendChatMessage directly. The socket event will deliver the real message
-   * to both participants and the useRealtimeMessages hook will render it.
+   * Called by ChatAttachMenu AFTER the Cloudinary upload completes.
+   *
+   * CRITICAL: Uses chatRef.current instead of the closed-over `chat` state.
+   * This prevents the silent drop bug where `chat` was null at memoization time
+   * but is now populated (async useEffect resolves after first render).
+   *
+   * Flow:
+   *  1. ChatAttachMenu calls onResolvePlaceholder(url) → placeholder transitions to "sending"
+   *  2. ChatAttachMenu calls onSend(msg) → this function
+   *  3. We POST to /api/data/chats/:chatId/messages
+   *  4. Server saves, emits socket:message:new, returns saved message
+   *  5. We swap the temp placeholder for the real server message in local state
+   *  6. Socket event also fires → useRealtimeMessages deduplicates it
    */
   const handleAttachSend = useCallback(
-    async (msg: Omit<Message, "id">) => {
-      if (!chat) {
-        LOG("handleAttachSend: no active chat, dropping message");
+    async (msg: Omit<Message, "id">, tempId?: string) => {
+      // ── CRITICAL: always read the ref, NOT the closed-over chat state ──
+      const currentChat = chatRef.current;
+      LOG("[handleAttachSend] invoked", { chatId: currentChat?.id ?? "NULL", type: msg.type, tempId });
+
+      if (!currentChat) {
+        // This should never happen with the ref fix, but guard anyway
+        console.error("[handleAttachSend] FATAL: no active chat — message dropped!", msg);
         return;
       }
+
+      const payload = { ...msg, chatId: currentChat.id };
+      LOG("[PREPARING_MESSAGE_PAYLOAD]", {
+        chatId: payload.chatId,
+        senderId: payload.senderId,
+        type: payload.type,
+        hasUrl: !!(payload.metadata as any)?.url,
+        metadataKeys: Object.keys((payload.metadata as any) ?? {}),
+      });
+
       try {
-        console.log(`[MESSAGE_CREATE_REQUEST] POSTing message to backend`, { chatId: chat.id, type: msg.type });
-        LOG("handleAttachSend: POSTing message to backend", {
-          chatId: chat.id,
-          type: msg.type,
-          hasUrl: !!(msg.metadata as any)?.url,
+        console.log(`[CALLING_POST_MESSAGES] POST /api/data/chats/${currentChat.id}/messages`, {
+          type: payload.type,
+          url: (payload.metadata as any)?.url,
         });
-        const saved = await sendChatMessage(chat.id, { ...msg, chatId: chat.id });
-        console.log(`[MESSAGE_CREATE_RESPONSE] received from backend`, { id: saved.id });
-        LOG("handleAttachSend: message saved", { id: saved.id });
-        // Insert the saved message into local state so sender sees it immediately
-        // (socket will also deliver it, deduplication is handled by useRealtimeMessages)
-        console.log(`[MESSAGE_SAVED] inserted into local state`);
+        const saved = await sendChatMessage(currentChat.id, payload);
+        console.log(`[POST_MESSAGES_RESPONSE] Server returned message`, { id: saved.id, type: saved.type });
+        LOG("[MESSAGE_SAVED_TO_DB]", { id: saved.id });
+
+        // Replace the temp placeholder with the real server message.
+        // The placeholder has tempId in its id field; filter it out and insert real message.
+        console.log(`[REPLACING_PLACEHOLDER]", { tempId, realId: saved.id }`);
         setMessages((prev) => {
-          if (prev.some((m) => m.id === saved.id)) return prev;
-          return [{ ...saved, status: "sent" as const }, ...prev];
+          // Remove the temp placeholder (by tempId) and the real msg if somehow already added
+          const filtered = prev.filter((m) => m.id !== tempId && m.id !== saved.id);
+          const realMsg = { ...saved, status: "sent" as const };
+          LOG("[FLATLIST_REAL_MESSAGE_INSERTED]", { id: realMsg.id });
+          return [realMsg, ...filtered];
         });
+        LOG("[IMAGE_RENDERED]", { id: saved.id });
       } catch (err: any) {
-        LOG("handleAttachSend: FAILED", err?.message);
-        // Surface error in UI briefly — the placeholder was already removed by
-        // onResolvePlaceholder, so we add a failed sentinel entry
-        const errorMsg: Message = {
-          ...msg,
-          id: `err_${Date.now()}`,
-          status: "failed" as const,
-          chatId: chat.id,
-          metadata: { ...(msg.metadata as any), uploadError: err?.message ?? "Send failed" },
-        };
-        setMessages((prev) => [errorMsg, ...prev]);
+        const errMsg = err?.message ?? "Send failed";
+        console.error(`[POST_MESSAGES_FAILED] ${errMsg}`, err);
+        LOG("[handleAttachSend FAILED]", errMsg);
+        // Mark the placeholder as failed so user can retry
+        setMessages((prev) =>
+          prev.map((m) =>
+            m.id === tempId
+              ? { ...m, status: "failed" as const, metadata: { ...m.metadata, uploading: false, uploadError: errMsg } }
+              : m
+          )
+        );
       }
     },
-    [sendChatMessage, chat, setMessages]
+    // Only depend on stable references — chatRef.current is read at call time
+    [sendChatMessage, setMessages]
   );
 
   /** Retry a failed upload — resets the placeholder and re-runs the original upload */

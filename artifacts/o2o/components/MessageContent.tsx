@@ -127,6 +127,7 @@ export function MessageContent({
 
     // Single image/video
     const url = resolveMediaUrl(String(item.metadata?.url || item.text));
+    console.log(`[IMAGE_RENDERED] id=${item.id} url=${(url || "").slice(0, 80)} type=${item.type}`);
     return (
       <View style={[styles.wrapper, isMine ? styles.mine : styles.theirs]}>
         {!isMine && senderName && (
@@ -143,7 +144,10 @@ export function MessageContent({
     );
   }
 
+  }
+
   // ── Audio ────────────────────────────────────────────────────────────────
+
   if (item.type === "audio") {
     const url = resolveMediaUrl(String(item.metadata?.url || ""));
     return (

@@ -40,28 +40,46 @@ export function useRealtimeMessages({
   useEffect(() => {
     if (!roomId) return;
     const socket = getSocket();
-    if (!socket) return;
+    if (!socket) {
+      console.warn(`[useRealtimeMessages] No socket available for room ${roomId}`);
+      return;
+    }
 
     const joinEvent = `join:${roomType}` as "join:chat" | "join:group" | "join:channel";
     const leaveEvent = `leave:${roomType}` as "leave:chat" | "leave:group" | "leave:channel";
+    console.log(`[SOCKET_JOIN] ${joinEvent} roomId=${roomId}`);
     socket.emit(joinEvent, roomId);
 
     const handleNew = (msg: Message) => {
+      console.log(`[SOCKET_RECEIVED_message:new] id=${(msg as any).id} type=${(msg as any).type} chatId=${(msg as any).chatId}`);
       const belongs =
         (roomType === "chat" && (msg as any).chatId === roomId) ||
         (roomType === "group" && (msg as any).groupId === roomId) ||
         (roomType === "channel" && (msg as any).channelId === roomId);
-      if (!belongs) return;
+      if (!belongs) {
+        console.log(`[SOCKET_IGNORED] message belongs to different room`);
+        return;
+      }
 
+      console.log(`[SOCKET_UPDATING_STATE] inserting message id=${(msg as any).id}`);
       setMessages((prev) => {
         if (prev.some((m) => m.id === msg.id)) {
+          // Already in list — update status to delivered
+          console.log(`[SOCKET_DEDUP] message already exists, updating status`);
           return prev.map((m) =>
             m.id.startsWith("temp_") && pendingRef.current.get(m.id) === msg.id
               ? { ...msg, status: "delivered" as const }
               : m.id === msg.id ? { ...m, ...msg, status: "delivered" as const } : m
           );
         }
-        return [{ ...msg, status: "delivered" }, ...prev.filter((m) => !m.id.startsWith("temp_") || m.text !== msg.text)];
+        // New message — add it; for media messages do NOT filter by text (text may be
+        // a label like "Photo" that matches the placeholder label, causing false removal)
+        const isMedia = (msg as any).type !== "text" && (msg as any).type !== "poll";
+        const filtered = isMedia
+          ? prev.filter((m) => !m.id.startsWith("temp_"))
+          : prev.filter((m) => !m.id.startsWith("temp_") || m.text !== msg.text);
+        console.log(`[SOCKET_MESSAGE_INSERTED] id=${(msg as any).id} type=${(msg as any).type}`);
+        return [{ ...msg, status: "delivered" }, ...filtered];
       });
 
       queryClient.setQueryData<any[]>(queryKey, (old) => {
@@ -74,12 +92,13 @@ export function useRealtimeMessages({
           return { ...entity, messages: [...(entity.messages || []), msg] };
         });
       });
-      console.log(`[QUERY_INVALIDATED] Updated queryKey ${queryKey} with new message`);
+      console.log(`[QUERY_CACHE_UPDATED] queryKey=${queryKey} with messageId=${(msg as any).id}`);
     };
 
     socket.on("message:new", handleNew);
     return () => {
       socket.off("message:new", handleNew);
+      console.log(`[SOCKET_LEAVE] ${leaveEvent} roomId=${roomId}`);
       socket.emit(leaveEvent, roomId);
     };
   }, [roomId, roomType, queryClient, queryKey]);

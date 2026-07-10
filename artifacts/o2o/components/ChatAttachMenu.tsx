@@ -35,8 +35,9 @@ interface ActiveUpload {
 interface ChatAttachMenuProps {
   visible: boolean;
   onClose: () => void;
-  /** Called when a media message is fully assembled and ready to send */
-  onSend: (msg: Omit<Message, "id">) => void;
+  /** Called when a media message is fully assembled and ready to send.
+   *  tempId is the ID of the placeholder that was shown during upload. */
+  onSend: (msg: Omit<Message, "id">, tempId: string) => void;
   /** Called to immediately show a "sending" placeholder in the chat */
   onSendPlaceholder: (tempId: string, msg: Omit<Message, "id">) => void;
   /** Called to replace or remove a placeholder by tempId */
@@ -105,30 +106,32 @@ export const ChatAttachMenu = forwardRef<ChatAttachMenuHandle, ChatAttachMenuPro
       extraMeta: Record<string, unknown> = {},
       existingTempId?: string
     ) => {
-      if (!asset.uri) return;
+      if (!asset.uri) {
+        console.warn("[uploadAndSend] No asset URI, aborting");
+        return;
+      }
 
       const isRetry = !!existingTempId;
       const tempId = existingTempId ?? `temp_upload_${Date.now()}_${Math.random().toString(36).slice(2)}`;
       const fallback = asset.fileName || `upload.${type === "video" ? "mp4" : type === "audio" ? "m4a" : "jpg"}`;
 
       if (isRetry) {
-        // Ignore duplicate retry taps while an attempt for this placeholder
-        // is already in flight, so we never fire two concurrent uploads
-        // (which would otherwise both succeed and create two messages).
-        if (inFlightRetries.current.has(tempId)) return;
+        if (inFlightRetries.current.has(tempId)) {
+          console.log(`[RETRY_SKIPPED] already in flight: ${tempId}`);
+          return;
+        }
         inFlightRetries.current.add(tempId);
       }
 
-      console.log(`[UPLOAD_START] tempId=${tempId} type=${type} file=${fallback} retry=${isRetry}`);
+      console.log(`[UPLOAD_STARTED] tempId=${tempId} type=${type} file=${fallback} retry=${isRetry}`);
       retryable.current.set(tempId, { asset, type, label, extraMeta });
 
       if (isRetry) {
-        // Reset the existing placeholder back to a "sending" state instead of
-        // creating a duplicate bubble.
+        // Reset the existing placeholder back to a "uploading" state
         onResolvePlaceholder(tempId, { url: `__progress__${JSON.stringify(null)}` });
       } else {
         // Show placeholder immediately
-        onSendPlaceholder(tempId, {
+        const placeholderMsg: Omit<Message, "id"> = {
           senderId,
           text: label,
           timestamp: now(),
@@ -136,32 +139,35 @@ export const ChatAttachMenu = forwardRef<ChatAttachMenuHandle, ChatAttachMenuPro
           status: "sending" as const,
           metadata: { fileName: asset.fileName || fallback, uploading: true, ...extraMeta },
           ...roomMeta,
-        });
+        };
+        console.log(`[UPLOAD_PLACEHOLDER_SHOWN] tempId=${tempId}`);
+        onSendPlaceholder(tempId, placeholderMsg);
       }
 
       if (!isRetry) onClose();
-
-      let lastProgress: UploadProgress | null = null;
 
       const handle = uploadFileWithProgress(
         asset,
         fallback,
         (progress) => {
-          lastProgress = progress;
-          // Forward progress to placeholder (onResolvePlaceholder with no url = progress update)
+          console.log(`[UPLOAD_PROGRESS] tempId=${tempId} percent=${progress.percent}%`);
+          // Forward progress to placeholder
           onResolvePlaceholder(tempId, { url: `__progress__${JSON.stringify(progress)}` });
         }
       );
 
       try {
+        console.log(`[UPLOAD_AWAITING_RESULT] tempId=${tempId}`);
         const url = await handle.result;
-        console.log(`[UPLOAD_SUCCESS] url=${url}`);
-        console.log(`[UPLOAD_RESPONSE] parsed correctly`);
-        // Replace placeholder with real message
+        console.log(`[UPLOAD_FINISHED] tempId=${tempId} cloudinaryUrl=${url}`);
+        console.log(`[UPLOAD_RESPONSE_RECEIVED] url=${url}`);
+
+        // Notify chat screen: Cloudinary done, placeholder transitions to non-uploading state
         onResolvePlaceholder(tempId, { url });
         retryable.current.delete(tempId);
-        console.log(`[MESSAGE_CREATE_REQUEST] calling onSend`);
-        onSend({
+
+        // Build the full message payload
+        const msgPayload: Omit<Message, "id"> = {
           senderId,
           text: label,
           timestamp: now(),
@@ -169,10 +175,16 @@ export const ChatAttachMenu = forwardRef<ChatAttachMenuHandle, ChatAttachMenuPro
           status: "sent" as const,
           metadata: { url, fileName: asset.fileName || fallback, ...extraMeta },
           ...roomMeta,
-        });
+        };
+        console.log(`[PREPARING_MESSAGE_PAYLOAD] type=${type} url=${url} chatId=${(roomMeta as any).chatId}`);
+        console.log(`[CALLING_onSend] tempId=${tempId}`);
+
+        // Pass tempId so handleAttachSend can swap the placeholder precisely
+        onSend(msgPayload, tempId);
+        console.log(`[onSend_CALLED] tempId=${tempId}`);
       } catch (err: any) {
         const errMsg = err?.message ?? "Upload failed";
-        console.error(`[UPLOAD_FAILED] ${errMsg}`);
+        console.error(`[UPLOAD_FAILED] tempId=${tempId} error=${errMsg}`);
         onResolvePlaceholder(tempId, { error: errMsg });
       } finally {
         if (isRetry) inFlightRetries.current.delete(tempId);
@@ -265,15 +277,18 @@ export const ChatAttachMenu = forwardRef<ChatAttachMenuHandle, ChatAttachMenuPro
       }
 
       onResolvePlaceholder(tempId, { url: validUrls[0] });
-      onSend({
-        senderId,
-        text: allAssets.length === 1 ? "Photo" : `${allAssets.length} photos/videos`,
-        timestamp: now(),
-        type: "image",
-        status: "sent" as const,
-        metadata: { urls, types, url: validUrls[0] },
-        ...roomMeta,
-      });
+      onSend(
+        {
+          senderId,
+          text: allAssets.length === 1 ? "Photo" : `${allAssets.length} photos/videos`,
+          timestamp: now(),
+          type: "image",
+          status: "sent" as const,
+          metadata: { urls, types, url: validUrls[0] },
+          ...roomMeta,
+        },
+        tempId
+      );
     }
   };
 
