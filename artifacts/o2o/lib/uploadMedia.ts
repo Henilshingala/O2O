@@ -45,10 +45,11 @@ export interface UploadHandle {
 }
 
 /**
- * Global emitter to bypass React Native HTTP bugs. 
+ * Global emitter to bypass React Native HTTP bugs.
  * The server emits `upload:complete` via WebSockets, and we resolve it here.
+ * Stored on `global` to survive Metro module re-evaluation.
  */
-export const UploadEmitter = {
+export const UploadEmitter = (global as any).UploadEmitter || {
   listeners: new Map<string, (url: string) => void>(),
   resolve: (uploadId: string, url: string) => {
     const cb = UploadEmitter.listeners.get(uploadId);
@@ -57,11 +58,12 @@ export const UploadEmitter = {
       cb(url);
       UploadEmitter.listeners.delete(uploadId);
     }
-  }
+  },
 };
 
-// Expose globally to prevent any dual-instance module resolution issues
-(global as any).UploadEmitter = UploadEmitter;
+if (!(global as any).UploadEmitter) {
+  (global as any).UploadEmitter = UploadEmitter;
+}
 
 function formatBytes(bytes: number): string {
   if (bytes < 1024) return `${bytes} B`;
@@ -76,7 +78,15 @@ function normalizeUri(uri: string): string {
 }
 
 /**
- * Upload a single file using fetch to bypass the RN 0.68 XHR bug.
+ * Upload a single file using XHR — the only transport that reliably delivers
+ * an onload callback on Android with React Native 0.68 + FormData.
+ *
+ * The promise resolves via DUAL-PATH (whichever fires first):
+ *   1. XHR onload  → parse HTTP 200 JSON and resolve
+ *   2. WebSocket   → UploadEmitter.resolve() called from socket.ts
+ *
+ * This eliminates the "stuck at 95%" bug caused by fetch() silently dropping
+ * the response body on Android's okhttp bridge.
  */
 export function uploadFileWithProgress(
   asset: UploadAsset,
@@ -87,18 +97,30 @@ export function uploadFileWithProgress(
   let state: UploadState = "idle";
   let resolve!: (url: string) => void;
   let reject!: (err: Error) => void;
-  let abortController = new AbortController();
+  let xhr: XMLHttpRequest | null = null;
+  let settled = false;
 
-  if (signal) {
-    signal.addEventListener("abort", () => {
-      abortController.abort();
-    });
-  }
+  // Guard: only the first call to settle() wins — prevents double-resolve.
+  const settle = (fn: () => void) => {
+    if (settled) return;
+    settled = true;
+    fn();
+  };
 
   const result = new Promise<string>((res, rej) => {
     resolve = res;
     reject = rej;
   });
+
+  if (signal) {
+    signal.addEventListener("abort", () => {
+      if (state === "uploading" || state === "idle") {
+        state = "cancelled";
+        xhr?.abort();
+        settle(() => reject(new Error("Upload cancelled")));
+      }
+    });
+  }
 
   const startUpload = async () => {
     state = "uploading";
@@ -109,10 +131,10 @@ export function uploadFileWithProgress(
 
       const formData = new FormData();
       const uploadId = `up_${Date.now()}_${Math.random().toString(36).slice(2)}`;
-      
+
       formData.append("uploadId", uploadId);
-      
-      // React Native 0.68 FormData bug: spaces or special chars in filename corrupts the boundary
+
+      // RN 0.68 FormData bug: spaces/special chars in filename corrupt the boundary.
       const safeExt = asset.type?.includes("video") ? ".mp4" : ".jpg";
       const safeFileName = `upload_${Date.now()}${safeExt}`;
 
@@ -122,92 +144,134 @@ export function uploadFileWithProgress(
         name: safeFileName,
       } as any);
 
+      // ── WebSocket path (path #2) ──────────────────────────────────────────
+      // If the socket event fires first, resolve and abort the pending XHR.
       UploadEmitter.listeners.set(uploadId, (completedUrl: string) => {
         if (state === "uploading") {
-          if (interval) clearInterval(interval);
+          state = "done";
           if (onProgress) {
             onProgress({
               loaded: 100, total: 100, percent: 100,
               loadedStr: "100%", totalStr: "100%", remainingStr: "Done", etaSeconds: 0,
             });
           }
-          state = "done";
-          resolve(completedUrl);
+          xhr?.abort(); // cancel pending XHR — the socket already gave us the URL
+          settle(() => resolve(completedUrl));
         }
       });
 
-      console.log(`[UPLOAD_BEGIN] url=${url} uploadId=${uploadId} fileName=${asset.fileName || fallbackName}`);
+      // 90-second hard timeout — abort both paths if neither resolves.
+      const timeout = setTimeout(() => {
+        if (state === "uploading") {
+          console.error(`[UPLOAD_TIMEOUT] No response after 90s for ${uploadId}`);
+          UploadEmitter.listeners.delete(uploadId);
+          xhr?.abort();
+          state = "failed";
+          settle(() => reject(new Error("Upload timed out after 90 seconds")));
+        }
+      }, 90000);
 
-      let progress = 0;
-      let interval: ReturnType<typeof setInterval> | null = null;
-      if (onProgress) {
-        interval = setInterval(() => {
-          progress += Math.floor(Math.random() * 10) + 5; // Fake progress
-          if (progress > 95) progress = 95;
+      console.log(`[UPLOAD_BEGIN] url=${url} uploadId=${uploadId} fileName=${safeFileName}`);
+
+      // ── XHR path (path #1) ────────────────────────────────────────────────
+      xhr = new XMLHttpRequest();
+      xhr.open("POST", url);
+
+      if (token) xhr.setRequestHeader("Authorization", `Bearer ${token}`);
+      xhr.setRequestHeader("Accept", "application/json");
+
+      // Real XHR upload progress events — no fake interval needed.
+      if (onProgress && xhr.upload) {
+        const startTime = Date.now();
+        xhr.upload.onprogress = (event) => {
+          if (!event.lengthComputable) return;
+          // Cap at 95% — the final 5% closes when onload fires
+          const percent = Math.min(95, Math.round((event.loaded / event.total) * 100));
+          const elapsed = (Date.now() - startTime) / 1000;
+          const speed = event.loaded / (elapsed || 1);
+          const remaining = (event.total - event.loaded) / (speed || 1);
           onProgress({
-            loaded: progress,
-            total: 100,
-            percent: progress,
-            loadedStr: `${progress}%`,
-            totalStr: "100%",
-            remainingStr: "...",
-            etaSeconds: NaN,
+            loaded: event.loaded,
+            total: event.total,
+            percent,
+            loadedStr: formatBytes(event.loaded),
+            totalStr: formatBytes(event.total),
+            remainingStr: formatBytes(event.total - event.loaded),
+            etaSeconds: remaining,
           });
-        }, 500);
+        };
       }
 
-      const headers: Record<string, string> = {
-        Accept: "application/json",
-        Connection: "close",
+      xhr.onload = () => {
+        clearTimeout(timeout);
+        UploadEmitter.listeners.delete(uploadId);
+        if (state !== "uploading") return; // already resolved via socket path
+
+        if (xhr!.status >= 200 && xhr!.status < 300) {
+          try {
+            const data = JSON.parse(xhr!.responseText);
+            const resolvedUrl: string = data.url;
+            console.log(`[UPLOAD_SUCCESS] XHR path url=${resolvedUrl}`);
+            if (onProgress) {
+              onProgress({
+                loaded: 100, total: 100, percent: 100,
+                loadedStr: "100%", totalStr: "100%", remainingStr: "Done", etaSeconds: 0,
+              });
+            }
+            state = "done";
+            settle(() => resolve(resolvedUrl));
+          } catch (e) {
+            console.error("[UPLOAD_FAILED] Could not parse XHR response JSON", xhr!.responseText);
+            state = "failed";
+            settle(() => reject(new Error("Upload failed: invalid JSON response")));
+          }
+        } else {
+          let errMsg = `Upload failed: HTTP ${xhr!.status}`;
+          try {
+            const d = JSON.parse(xhr!.responseText);
+            if (d.error) errMsg = `Upload failed: ${d.error}`;
+          } catch {}
+          console.error(`[UPLOAD_FAILED] XHR path: ${errMsg}`);
+          state = "failed";
+          settle(() => reject(new Error(errMsg)));
+        }
       };
-      if (token) headers["Authorization"] = `Bearer ${token}`;
 
-      const res = await fetch(url, {
-        method: "POST",
-        body: formData,
-        headers,
-        signal: abortController.signal,
-      });
+      xhr.onerror = () => {
+        clearTimeout(timeout);
+        UploadEmitter.listeners.delete(uploadId);
+        if (state === "uploading") {
+          console.error("[UPLOAD_FAILED] XHR network error");
+          state = "failed";
+          settle(() => reject(new Error("Upload failed: network error")));
+        }
+      };
 
-      if (interval) clearInterval(interval);
+      xhr.ontimeout = () => {
+        clearTimeout(timeout);
+        UploadEmitter.listeners.delete(uploadId);
+        if (state === "uploading") {
+          console.error("[UPLOAD_FAILED] XHR request timed out");
+          state = "failed";
+          settle(() => reject(new Error("Upload failed: request timed out")));
+        }
+      };
 
-      if (!res.ok) {
-        let errMsg = `Upload failed: HTTP ${res.status}`;
-        try {
-          const d = await res.json();
-          if (d.error) errMsg = `Upload failed: ${d.error}`;
-        } catch {}
-        throw new Error(errMsg);
-      }
+      xhr.onabort = () => {
+        clearTimeout(timeout);
+        // onabort fires when XHR is aborted by the socket-path winner (state = "done"),
+        // or by an explicit cancel (state = "cancelled").
+        // Only reject if the promise is not yet settled (cancel case).
+        if (!settled && state === "cancelled") {
+          settle(() => reject(new Error("Upload cancelled")));
+        }
+      };
 
-      const data = await res.json();
-      console.log(`[UPLOAD_SUCCESS] parsed url=${data.url}`);
-
-      if (onProgress) {
-        onProgress({
-          loaded: 100,
-          total: 100,
-          percent: 100,
-          loadedStr: "100%",
-          totalStr: "100%",
-          remainingStr: "Done",
-          etaSeconds: 0,
-        });
-      }
-
-      state = "done";
-      resolve(data.url);
+      xhr.send(formData);
     } catch (err: any) {
-      if (interval) clearInterval(interval);
-      if (err.name === "AbortError") {
-        console.log("[UPLOAD_ABORTED]");
-        state = "cancelled";
-        reject(new Error("Upload cancelled"));
-      } else {
-        console.error(`[UPLOAD_FAILED_FETCH]`, err);
-        state = "failed";
-        reject(err);
-      }
+      console.error(`[UPLOAD_FAILED_SETUP]`, err);
+      state = "failed";
+      settle(() => reject(err));
     }
   };
 
@@ -218,8 +282,8 @@ export function uploadFileWithProgress(
     pause: () => {
       if (state === "uploading") {
         state = "paused";
-        abortController.abort();
-        reject(new Error("Upload paused"));
+        xhr?.abort();
+        settle(() => reject(new Error("Upload paused")));
       }
     },
     resume: () => {
@@ -231,8 +295,8 @@ export function uploadFileWithProgress(
     cancel: () => {
       if (state === "uploading" || state === "paused" || state === "idle") {
         state = "cancelled";
-        abortController.abort();
-        reject(new Error("Upload cancelled"));
+        xhr?.abort();
+        settle(() => reject(new Error("Upload cancelled")));
       }
     },
     getState: () => state,
@@ -272,7 +336,9 @@ export async function uploadFiles(
     while (idx < assets.length) {
       const i = idx++;
       const asset = assets[i];
-      const fallback = asset.fileName || `upload_${i}.${asset.type?.includes("video") ? "mp4" : "jpg"}`;
+      const fallback =
+        asset.fileName ||
+        `upload_${i}.${asset.type?.includes("video") ? "mp4" : "jpg"}`;
       results[i] = await uploadFile(
         asset,
         fallback,

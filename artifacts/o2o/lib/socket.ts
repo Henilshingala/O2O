@@ -7,7 +7,7 @@ const TOKEN_KEY = "@o2o_token";
 let socket: Socket | null = null;
 
 export async function connectSocket(baseUrl: string): Promise<Socket> {
-  if (socket?.connected) return socket;
+  if (socket) return socket;
 
   // Safely read the auth token — if AsyncStorage isn't ready or fails,
   // continue without a token rather than crashing the socket connection.

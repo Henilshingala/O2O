@@ -1,5 +1,5 @@
 import { router, useLocalSearchParams } from "@/compat/router";
-import React, { useCallback, useEffect, useRef, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   ActivityIndicator,
   FlatList,
@@ -73,12 +73,13 @@ export default function ChatScreen() {
     }
   }, [existingChat?.messages.length, existingChat?.id]);
 
+  const queryKey = useMemo(() => ["chats"], []);
   const { displayMessages, sendMessage, loadOlderMessages, loadingMore, setMessages } =
     useRealtimeMessages({
       roomType: "chat",
       roomId: chat?.id,
       initialMessages: chat?.messages ?? [],
-      queryKey: ["chats"],
+      queryKey,
       onSend: (msg) => {
         const currentChat = chatRef.current;
         if (currentChat) return sendChatMessage(currentChat.id, { ...msg, chatId: currentChat.id });
