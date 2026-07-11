@@ -117,6 +117,7 @@ export function uploadFileWithProgress(
 
       const headers: Record<string, string> = {
         Accept: "application/json",
+        Connection: "close",
       };
       if (token) headers["Authorization"] = `Bearer ${token}`;
 
@@ -156,6 +157,7 @@ export function uploadFileWithProgress(
       state = "done";
       resolve(data.url);
     } catch (err: any) {
+      if (interval) clearInterval(interval);
       if (err.name === "AbortError") {
         console.log("[UPLOAD_ABORTED]");
         state = "cancelled";
