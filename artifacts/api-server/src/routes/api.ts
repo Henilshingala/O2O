@@ -591,6 +591,176 @@ router.delete("/chats/:chatId/messages/:messageId", async (req: AuthRequest, res
   } catch (error) { return res.status(500).json({ error: "Server error" }); }
 });
 
+// ── Poll vote (chat) ────────────────────────────────────────────────────────
+router.post("/chats/:chatId/messages/:messageId/vote", async (req: AuthRequest, res) => {
+  try {
+    const { chatId, messageId } = req.params;
+    const { optionIndex } = req.body;
+    const userId = req.user!.userId;
+    if (typeof optionIndex !== "number") return res.status(400).json({ error: "optionIndex required" });
+    const [msg] = await db.select().from(schema.messages).where(eq(schema.messages.id, messageId as string)).limit(1);
+    if (!msg) return res.status(404).json({ error: "Message not found" });
+    const meta: any = msg.metadata || {};
+    const options: { text: string; votes: string[] }[] = meta.options || [];
+    if (optionIndex < 0 || optionIndex >= options.length) return res.status(400).json({ error: "Invalid option" });
+    const opt = options[optionIndex];
+    if (opt.votes.includes(userId)) return res.json({ metadata: meta }); // already voted
+    options[optionIndex] = { ...opt, votes: [...opt.votes, userId] };
+    const newMeta = { ...meta, options };
+    await db.update(schema.messages).set({ metadata: newMeta }).where(eq(schema.messages.id, messageId as string));
+    emitToChat(chatId as string, "message:vote", { id: messageId, metadata: newMeta });
+    return res.json({ metadata: newMeta });
+  } catch (error) { return res.status(500).json({ error: "Server error" }); }
+});
+
+// ── Delete for me (chat) ────────────────────────────────────────────────────
+router.post("/chats/:chatId/messages/:messageId/delete-for-me", async (req: AuthRequest, res) => {
+  try {
+    const { messageId } = req.params;
+    const userId = req.user!.userId;
+    const [msg] = await db.select().from(schema.messages).where(eq(schema.messages.id, messageId as string)).limit(1);
+    if (!msg) return res.status(404).json({ error: "Message not found" });
+    const meta: any = msg.metadata || {};
+    const deletedFor: string[] = meta.deletedFor || [];
+    if (!deletedFor.includes(userId)) {
+      await db.update(schema.messages).set({ metadata: { ...meta, deletedFor: [...deletedFor, userId] } })
+        .where(eq(schema.messages.id, messageId as string));
+    }
+    return res.json({ success: true });
+  } catch (error) { return res.status(500).json({ error: "Server error" }); }
+});
+
+// ── Mark chat as read ───────────────────────────────────────────────────────
+router.post("/chats/:chatId/read", async (req: AuthRequest, res) => {
+  try {
+    const chatId = req.params.chatId as string;
+    const userId = req.user!.userId;
+    const seenAt = new Date().toISOString();
+    const msgs = await db.select({ id: schema.messages.id, metadata: schema.messages.metadata })
+      .from(schema.messages)
+      .where(and(eq(schema.messages.chatId, chatId), isNull(schema.messages.deletedAt)));
+    const messageIds: string[] = [];
+    for (const m of msgs) {
+      if ((m as any).senderId === userId) continue; // don't mark own messages as read
+      const meta: any = m.metadata || {};
+      const readBy: string[] = meta.readBy || [];
+      if (!readBy.includes(userId)) {
+        await db.update(schema.messages)
+          .set({ metadata: { ...meta, readBy: [...readBy, userId], seenAt } })
+          .where(eq(schema.messages.id, m.id));
+        messageIds.push(m.id);
+      }
+    }
+    if (messageIds.length > 0) {
+      emitToChat(chatId, "message:read", { messageIds, userId, seenAt });
+    }
+    return res.json({ success: true, messageIds });
+  } catch (error) { return res.status(500).json({ error: "Server error" }); }
+});
+
+// ── Delete for me (group) ────────────────────────────────────────────────────
+router.post("/groups/:id/messages/:messageId/delete-for-me", async (req: AuthRequest, res) => {
+  try {
+    const { messageId } = req.params;
+    const userId = req.user!.userId;
+    const [msg] = await db.select().from(schema.messages).where(eq(schema.messages.id, messageId as string)).limit(1);
+    if (!msg) return res.status(404).json({ error: "Message not found" });
+    const meta: any = msg.metadata || {};
+    const deletedFor: string[] = meta.deletedFor || [];
+    if (!deletedFor.includes(userId)) {
+      await db.update(schema.messages).set({ metadata: { ...meta, deletedFor: [...deletedFor, userId] } })
+        .where(eq(schema.messages.id, messageId as string));
+    }
+    return res.json({ success: true });
+  } catch (error) { return res.status(500).json({ error: "Server error" }); }
+});
+
+// ── Poll vote (group) ────────────────────────────────────────────────────────
+router.post("/groups/:id/messages/:messageId/vote", async (req: AuthRequest, res) => {
+  try {
+    const groupId = req.params.id as string;
+    const { messageId } = req.params;
+    const { optionIndex } = req.body;
+    const userId = req.user!.userId;
+    if (typeof optionIndex !== "number") return res.status(400).json({ error: "optionIndex required" });
+    const [msg] = await db.select().from(schema.messages).where(eq(schema.messages.id, messageId as string)).limit(1);
+    if (!msg) return res.status(404).json({ error: "Message not found" });
+    const meta: any = msg.metadata || {};
+    const options: { text: string; votes: string[] }[] = meta.options || [];
+    if (optionIndex < 0 || optionIndex >= options.length) return res.status(400).json({ error: "Invalid option" });
+    const opt = options[optionIndex];
+    if (opt.votes.includes(userId)) return res.json({ metadata: meta });
+    options[optionIndex] = { ...opt, votes: [...opt.votes, userId] };
+    const newMeta = { ...meta, options };
+    await db.update(schema.messages).set({ metadata: newMeta }).where(eq(schema.messages.id, messageId as string));
+    emitToGroup(groupId, "message:vote", { id: messageId, metadata: newMeta });
+    return res.json({ metadata: newMeta });
+  } catch (error) { return res.status(500).json({ error: "Server error" }); }
+});
+
+// ── Mark group as read ───────────────────────────────────────────────────────
+router.post("/groups/:id/read", async (req: AuthRequest, res) => {
+  try {
+    const groupId = req.params.id as string;
+    const userId = req.user!.userId;
+    const seenAt = new Date().toISOString();
+    const msgs = await db.select({ id: schema.messages.id, senderId: schema.messages.senderId, metadata: schema.messages.metadata })
+      .from(schema.messages)
+      .where(and(eq(schema.messages.groupId, groupId), isNull(schema.messages.deletedAt)));
+    const messageIds: string[] = [];
+    for (const m of msgs) {
+      if (m.senderId === userId) continue;
+      const meta: any = m.metadata || {};
+      const readBy: string[] = meta.readBy || [];
+      if (!readBy.includes(userId)) {
+        await db.update(schema.messages)
+          .set({ metadata: { ...meta, readBy: [...readBy, userId], seenAt } })
+          .where(eq(schema.messages.id, m.id));
+        messageIds.push(m.id);
+      }
+    }
+    if (messageIds.length > 0) {
+      emitToGroup(groupId, "message:read", { messageIds, userId, seenAt });
+    }
+    return res.json({ success: true, messageIds });
+  } catch (error) { return res.status(500).json({ error: "Server error" }); }
+});
+
+// ── Delete group message for everyone ─────────────────────────────────────────
+router.delete("/groups/:id/messages/:messageId", async (req: AuthRequest, res) => {
+  try {
+    const { id: groupId, messageId } = req.params;
+    const [msg] = await db.select().from(schema.messages).where(eq(schema.messages.id, messageId as string)).limit(1);
+    if (!msg || msg.senderId !== req.user!.userId) return res.status(403).json({ error: "Forbidden" });
+    await db.update(schema.messages).set({ deletedAt: new Date(), text: "Message deleted" }).where(eq(schema.messages.id, messageId as string));
+    emitToGroup(groupId as string, "message:delete", { id: messageId });
+    return res.json({ success: true });
+  } catch (error) { return res.status(500).json({ error: "Server error" }); }
+});
+
+// ── Poll vote (channel) ──────────────────────────────────────────────────────
+router.post("/channels/:id/messages/:messageId/vote", async (req: AuthRequest, res) => {
+  try {
+    const channelId = req.params.id as string;
+    const { messageId } = req.params;
+    const { optionIndex } = req.body;
+    const userId = req.user!.userId;
+    if (typeof optionIndex !== "number") return res.status(400).json({ error: "optionIndex required" });
+    const [msg] = await db.select().from(schema.messages).where(eq(schema.messages.id, messageId as string)).limit(1);
+    if (!msg) return res.status(404).json({ error: "Message not found" });
+    const meta: any = msg.metadata || {};
+    const options: { text: string; votes: string[] }[] = meta.options || [];
+    if (optionIndex < 0 || optionIndex >= options.length) return res.status(400).json({ error: "Invalid option" });
+    const opt = options[optionIndex];
+    if (opt.votes.includes(userId)) return res.json({ metadata: meta });
+    options[optionIndex] = { ...opt, votes: [...opt.votes, userId] };
+    const newMeta = { ...meta, options };
+    await db.update(schema.messages).set({ metadata: newMeta }).where(eq(schema.messages.id, messageId as string));
+    emitToChannel(channelId, "message:vote", { id: messageId, metadata: newMeta });
+    return res.json({ metadata: newMeta });
+  } catch (error) { return res.status(500).json({ error: "Server error" }); }
+});
+
 router.get("/groups", async (req: AuthRequest, res) => {
   try {
     const userId = req.user!.userId;

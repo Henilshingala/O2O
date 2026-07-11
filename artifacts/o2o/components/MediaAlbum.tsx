@@ -1,9 +1,18 @@
+/**
+ * MediaAlbum — WhatsApp-style media grid bubble
+ *
+ * Layouts:
+ *  1  → full square preview
+ *  2  → side by side
+ *  3  → 1 large left + 2 stacked right
+ *  4+ → 2×2 grid; bottom-right tile shows "+N" overlay for remainder
+ *
+ * Tapping any tile opens MediaViewer (full-screen, swipeable, zoom, drag-to-close).
+ */
 import React, { useState } from "react";
 import {
   Dimensions,
   Image,
-  Modal,
-  ScrollView,
   StyleSheet,
   Text,
   TouchableOpacity,
@@ -12,6 +21,7 @@ import {
 import { Feather } from "@/compat/vector-icons";
 import { useColors } from "@/hooks/useColors";
 import { resolveMediaUrl } from "@/lib/mediaUrl";
+import { MediaViewer } from "@/components/MediaViewer";
 
 const { width: SCREEN_W } = Dimensions.get("window");
 const ALBUM_W = Math.min(SCREEN_W * 0.75, 280);
@@ -37,7 +47,6 @@ function MediaCell({
   onPress: () => void;
   overlay?: React.ReactNode;
 }) {
-  const resolvedUrl = resolveMediaUrl(url);
   return (
     <TouchableOpacity
       activeOpacity={0.85}
@@ -45,7 +54,7 @@ function MediaCell({
       style={{ width, height, position: "relative", overflow: "hidden" }}
     >
       <Image
-        source={{ uri: resolvedUrl }}
+        source={{ uri: resolveMediaUrl(url) }}
         style={{ width, height }}
         resizeMode="cover"
       />
@@ -61,10 +70,9 @@ function MediaCell({
 
 export function MediaAlbum({ urls, types }: MediaAlbumProps) {
   const colors = useColors();
-  const [lightboxIdx, setLightboxIdx] = useState<number | null>(null);
+  const [viewerIdx, setViewerIdx] = useState<number | null>(null);
   const count = urls.length;
 
-  // Layout computation
   let cells: React.ReactNode;
 
   if (count === 1) {
@@ -74,7 +82,7 @@ export function MediaAlbum({ urls, types }: MediaAlbumProps) {
         type={types[0]}
         width={ALBUM_W}
         height={ALBUM_W}
-        onPress={() => setLightboxIdx(0)}
+        onPress={() => setViewerIdx(0)}
       />
     );
   } else if (count === 2) {
@@ -88,7 +96,7 @@ export function MediaAlbum({ urls, types }: MediaAlbumProps) {
             type={types[i]}
             width={w}
             height={ALBUM_W * 0.75}
-            onPress={() => setLightboxIdx(i)}
+            onPress={() => setViewerIdx(i)}
           />
         ))}
       </View>
@@ -99,13 +107,7 @@ export function MediaAlbum({ urls, types }: MediaAlbumProps) {
     const h = ALBUM_W * 0.75;
     cells = (
       <View style={{ flexDirection: "row", gap: GAP }}>
-        <MediaCell
-          url={urls[0]}
-          type={types[0]}
-          width={leftW}
-          height={h}
-          onPress={() => setLightboxIdx(0)}
-        />
+        <MediaCell url={urls[0]} type={types[0]} width={leftW} height={h} onPress={() => setViewerIdx(0)} />
         <View style={{ flexDirection: "column", gap: GAP }}>
           {[1, 2].map((i) => (
             <MediaCell
@@ -114,29 +116,22 @@ export function MediaAlbum({ urls, types }: MediaAlbumProps) {
               type={types[i]}
               width={rightW}
               height={(h - GAP) / 2}
-              onPress={() => setLightboxIdx(i)}
+              onPress={() => setViewerIdx(i)}
             />
           ))}
         </View>
       </View>
     );
   } else {
-    // 4 or more — show first 4 in 2×2, +X overlay on 4th
+    // 4+ — show first 4 in 2×2, +X on 4th tile
     const cellW = (ALBUM_W - GAP) / 2;
     const cellH = cellW;
-    const showCount = count > 4 ? count - 4 : 0;
+    const remainder = count - 4;
     cells = (
       <View>
         <View style={{ flexDirection: "row", gap: GAP, marginBottom: GAP }}>
           {[0, 1].map((i) => (
-            <MediaCell
-              key={i}
-              url={urls[i]}
-              type={types[i]}
-              width={cellW}
-              height={cellH}
-              onPress={() => setLightboxIdx(i)}
-            />
+            <MediaCell key={i} url={urls[i]} type={types[i]} width={cellW} height={cellH} onPress={() => setViewerIdx(i)} />
           ))}
         </View>
         <View style={{ flexDirection: "row", gap: GAP }}>
@@ -147,11 +142,11 @@ export function MediaAlbum({ urls, types }: MediaAlbumProps) {
               type={types[i]}
               width={cellW}
               height={cellH}
-              onPress={() => setLightboxIdx(i)}
+              onPress={() => setViewerIdx(i)}
               overlay={
-                i === 3 && showCount > 0 ? (
+                i === 3 && remainder > 0 ? (
                   <View style={styles.moreOverlay}>
-                    <Text style={styles.moreText}>+{showCount}</Text>
+                    <Text style={styles.moreText}>+{remainder}</Text>
                   </View>
                 ) : undefined
               }
@@ -164,59 +159,17 @@ export function MediaAlbum({ urls, types }: MediaAlbumProps) {
 
   return (
     <>
-      <View
-        style={[
-          styles.container,
-          { borderRadius: 14, overflow: "hidden", borderColor: colors.border, borderWidth: 1 },
-        ]}
-      >
+      <View style={[styles.container, { borderRadius: 14, overflow: "hidden", borderColor: colors.border, borderWidth: 1 }]}>
         {cells}
       </View>
 
-      {/* Lightbox */}
-      <Modal
-        visible={lightboxIdx !== null}
-        animationType="fade"
-        transparent
-        onRequestClose={() => setLightboxIdx(null)}
-      >
-        <View style={styles.lightboxBg}>
-          <TouchableOpacity
-            style={styles.lightboxClose}
-            onPress={() => setLightboxIdx(null)}
-          >
-            <Feather name="x" size={24} color="#fff" />
-          </TouchableOpacity>
-
-          <ScrollView
-            horizontal
-            pagingEnabled
-            showsHorizontalScrollIndicator={false}
-            contentOffset={{ x: (lightboxIdx ?? 0) * SCREEN_W, y: 0 }}
-          >
-            {urls.map((url, i) => (
-              <View key={i} style={styles.lightboxPage}>
-                <Image
-                  source={{ uri: resolveMediaUrl(url) }}
-                  style={styles.lightboxImg}
-                  resizeMode="contain"
-                />
-                {types[i] === "video" && (
-                  <View style={styles.lightboxVideoOverlay}>
-                    <Feather name="play-circle" size={56} color="rgba(255,255,255,0.9)" />
-                  </View>
-                )}
-              </View>
-            ))}
-          </ScrollView>
-
-          <View style={styles.lightboxCounter}>
-            <Text style={styles.counterText}>
-              {(lightboxIdx ?? 0) + 1} / {urls.length}
-            </Text>
-          </View>
-        </View>
-      </Modal>
+      <MediaViewer
+        visible={viewerIdx !== null}
+        urls={urls}
+        types={types}
+        initialIndex={viewerIdx ?? 0}
+        onClose={() => setViewerIdx(null)}
+      />
     </>
   );
 }
@@ -235,51 +188,5 @@ const styles = StyleSheet.create({
     alignItems: "center",
     backgroundColor: "rgba(0,0,0,0.55)",
   },
-  moreText: {
-    color: "#fff",
-    fontSize: 22,
-    fontWeight: "800",
-  },
-  lightboxBg: {
-    flex: 1,
-    backgroundColor: "rgba(0,0,0,0.96)",
-  },
-  lightboxClose: {
-    position: "absolute",
-    top: 48,
-    right: 20,
-    zIndex: 10,
-    padding: 8,
-  },
-  lightboxPage: {
-    width: SCREEN_W,
-    height: "100%",
-    justifyContent: "center",
-    alignItems: "center",
-  },
-  lightboxImg: {
-    width: SCREEN_W,
-    height: SCREEN_W,
-  },
-  lightboxVideoOverlay: {
-    ...StyleSheet.absoluteFillObject,
-    justifyContent: "center",
-    alignItems: "center",
-  },
-  lightboxCounter: {
-    position: "absolute",
-    bottom: 48,
-    left: 0,
-    right: 0,
-    alignItems: "center",
-  },
-  counterText: {
-    color: "#fff",
-    fontSize: 14,
-    fontWeight: "600",
-    backgroundColor: "rgba(0,0,0,0.5)",
-    paddingHorizontal: 12,
-    paddingVertical: 4,
-    borderRadius: 20,
-  },
+  moreText: { color: "#fff", fontSize: 22, fontWeight: "800" },
 });

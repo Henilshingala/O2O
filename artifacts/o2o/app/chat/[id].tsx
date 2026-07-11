@@ -2,9 +2,11 @@ import { router, useLocalSearchParams } from "@/compat/router";
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   ActivityIndicator,
+  Alert,
   FlatList,
   KeyboardAvoidingView,
   Modal,
+  Share,
   StyleSheet,
   Text,
   TextInput,
@@ -17,41 +19,48 @@ import * as Haptics from "@/compat/haptics";
 import { Avatar } from "@/components/ui/Avatar";
 import { ChatAttachMenu, type ChatAttachMenuHandle } from "@/components/ChatAttachMenu";
 import { MessageContent } from "@/components/MessageContent";
+import { SelectionToolbar } from "@/components/SelectionToolbar";
+import { ForwardModal } from "@/components/ForwardModal";
+import { MessageInfoModal } from "@/components/MessageInfoModal";
 import { useAuth } from "@/context/AuthContext";
 import { useData } from "@/context/DataContext";
 import { useRealtimeMessages } from "@/hooks/useRealtimeMessages";
 import { useColors } from "@/hooks/useColors";
 import type { Chat, Message } from "@/types";
 
-const LOG = (step: string, data?: any) =>
-  console.log(`[ChatScreen] ${step}`, data !== undefined ? JSON.stringify(data) : "");
-
 export default function ChatScreen() {
   const colors = useColors();
   const insets = useSafeAreaInsets();
   const { user, getUserById } = useAuth();
-  const { getChat, sendChatMessage, createChat, chats } = useData();
+  const { getChat, sendChatMessage, createChat, chats, deleteMessage, voteOnPoll, markRoomRead } = useData();
   const params = useLocalSearchParams<{ id: string; otherId?: string }>();
+
   const [text, setText] = useState("");
   const [chat, setChat] = useState<Chat | null>(null);
-  // ── CRITICAL FIX: chatRef always holds the latest chat value so callbacks
-  // that are memoized early don't close over a stale null reference.
   const chatRef = useRef<Chat | null>(null);
   const [loading, setLoading] = useState(false);
+
+  // Attach menu / poll
   const [showAttachMenu, setShowAttachMenu] = useState(false);
   const [showPollModal, setShowPollModal] = useState(false);
   const [pollQuestion, setPollQuestion] = useState("");
   const [pollOptions, setPollOptions] = useState(["", ""]);
   const attachMenuRef = useRef<ChatAttachMenuHandle>(null);
 
-  // Track upload placeholders: tempId → local progress/state so we can update them
+  // Selection mode
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const selectionMode = selectedIds.size > 0;
+
+  // Modals
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [showForwardModal, setShowForwardModal] = useState(false);
+  const [infoMessage, setInfoMessage] = useState<Message | null>(null);
+
   const uploadPlaceholders = useRef<
     Map<string, { progress: any; failed: boolean; cancelled: boolean }>
   >(new Map());
 
   const existingChat = getChat(params.id) || chats.find((c) => c.id === params.id);
-
-  // Keep chatRef in sync with chat state on every render
   chatRef.current = chat;
 
   useEffect(() => {
@@ -81,168 +90,80 @@ export default function ChatScreen() {
       initialMessages: chat?.messages ?? [],
       queryKey,
       onSend: (msg) => {
-        const currentChat = chatRef.current;
-        if (currentChat) return sendChatMessage(currentChat.id, { ...msg, chatId: currentChat.id });
+        const c = chatRef.current;
+        if (c) return sendChatMessage(c.id, { ...msg, chatId: c.id });
         return Promise.reject(new Error("No active chat"));
       },
     });
 
-  // ── ChatAttachMenu callbacks ──────────────────────────────────────────────
+  // Mark as read when chat opens / when messages arrive
+  useEffect(() => {
+    if (chat?.id) {
+      markRoomRead("chat", chat.id);
+    }
+  }, [chat?.id, displayMessages.length]);
 
-  /** Insert a "sending" placeholder into the FlatList immediately */
+  // ── Placeholder callbacks ─────────────────────────────────────────────────
   const handleSendPlaceholder = useCallback(
     (tempId: string, msg: Omit<Message, "id">) => {
-      LOG("[UPLOAD_PLACEHOLDER_CREATED]", { tempId, type: msg.type });
-      uploadPlaceholders.current.set(tempId, {
-        progress: null,
-        failed: false,
-        cancelled: false,
-      });
+      uploadPlaceholders.current.set(tempId, { progress: null, failed: false, cancelled: false });
       setMessages((prev) => [
         { ...msg, id: tempId, status: "sending" as const, metadata: { ...(msg.metadata as any), uploading: true } },
         ...prev,
       ]);
-      LOG("[FLATLIST_PLACEHOLDER_INSERTED]", { tempId });
     },
     [setMessages]
   );
 
-  /**
-   * Handle resolution events from ChatAttachMenu:
-   * - Progress updates: encoded as __progress__{...json}
-   * - Success: a real Cloudinary URL → mark uploading=false so the bubble
-   *   transitions to "sent" state while handleAttachSend POSTs to the server.
-   *   DO NOT remove the placeholder here — handleAttachSend will swap it out
-   *   once the server responds.
-   * - Error: { error: string } → mark as failed
-   */
   const handleResolvePlaceholder = useCallback(
     (tempId: string, result: { url: string } | { error: string }) => {
       if ("error" in result) {
-        LOG("[UPLOAD_ERROR]", { tempId, error: result.error });
-        // Mark as failed — keep in list so user can retry
         setMessages((prev) =>
           prev.map((m) =>
             m.id === tempId
-              ? {
-                  ...m,
-                  status: "failed" as const,
-                  metadata: { ...m.metadata, uploading: false, uploadError: result.error },
-                }
+              ? { ...m, status: "failed" as const, metadata: { ...m.metadata, uploading: false, uploadError: result.error } }
               : m
           )
         );
         return;
       }
-
-      // Progress update
-      if (result.url && typeof result.url === "string" && result.url.startsWith("__progress__")) {
+      if (result.url?.startsWith("__progress__")) {
         try {
           const progress = JSON.parse(result.url.slice("__progress__".length));
-          LOG("[UPLOAD_PROGRESS]", { tempId, percent: progress?.percent });
           setMessages((prev) =>
             prev.map((m) =>
               m.id === tempId
-                ? {
-                    ...m,
-                    metadata: {
-                      ...m.metadata,
-                      uploading: true,
-                      url: `__progress__${JSON.stringify(progress)}`,
-                    },
-                  }
+                ? { ...m, metadata: { ...m.metadata, uploading: true, url: `__progress__${JSON.stringify(progress)}` } }
                 : m
             )
           );
-        } catch {/* ignore parse errors */}
+        } catch {}
         return;
       }
-
-      // Real Cloudinary URL received — upload to Cloudinary is done.
-      // Transition placeholder to "sending" state (no longer uploading, not yet server-confirmed).
-      // We keep it in the list so there is no visual gap.
-      // handleAttachSend will swap it out once POST /messages returns.
-      LOG("[CLOUDINARY_URL_RECEIVED]", { tempId, url: result.url });
       setMessages((prev) =>
         prev.map((m) =>
           m.id === tempId
-            ? {
-                ...m,
-                status: "sending" as const,
-                metadata: {
-                  ...m.metadata,
-                  uploading: false,
-                  url: result.url,
-                },
-              }
+            ? { ...m, status: "sending" as const, metadata: { ...m.metadata, uploading: false, url: result.url } }
             : m
         )
       );
-      LOG("[PLACEHOLDER_UPDATED_WITH_URL]", { tempId });
     },
     [setMessages]
   );
 
-  /**
-   * Called by ChatAttachMenu AFTER the Cloudinary upload completes.
-   *
-   * CRITICAL: Uses chatRef.current instead of the closed-over `chat` state.
-   * This prevents the silent drop bug where `chat` was null at memoization time
-   * but is now populated (async useEffect resolves after first render).
-   *
-   * Flow:
-   *  1. ChatAttachMenu calls onResolvePlaceholder(url) → placeholder transitions to "sending"
-   *  2. ChatAttachMenu calls onSend(msg) → this function
-   *  3. We POST to /api/data/chats/:chatId/messages
-   *  4. Server saves, emits socket:message:new, returns saved message
-   *  5. We swap the temp placeholder for the real server message in local state
-   *  6. Socket event also fires → useRealtimeMessages deduplicates it
-   */
   const handleAttachSend = useCallback(
     async (msg: Omit<Message, "id">, tempId?: string) => {
-      // ── CRITICAL: always read the ref, NOT the closed-over chat state ──
       const currentChat = chatRef.current;
-      LOG("[handleAttachSend] invoked", { chatId: currentChat?.id ?? "NULL", type: msg.type, tempId });
-
-      if (!currentChat) {
-        // This should never happen with the ref fix, but guard anyway
-        console.error("[handleAttachSend] FATAL: no active chat — message dropped!", msg);
-        return;
-      }
-
+      if (!currentChat) return;
       const payload = { ...msg, chatId: currentChat.id };
-      LOG("[PREPARING_MESSAGE_PAYLOAD]", {
-        chatId: payload.chatId,
-        senderId: payload.senderId,
-        type: payload.type,
-        hasUrl: !!(payload.metadata as any)?.url,
-        metadataKeys: Object.keys((payload.metadata as any) ?? {}),
-      });
-
       try {
-        console.log(`[MESSAGE_POST_STARTED] POST /api/data/chats/${currentChat.id}/messages`);
         const saved = await sendChatMessage(currentChat.id, payload);
-        console.log(`[MESSAGE_POST_SUCCESS] message saved to DB`);
-        console.log(`[SERVER_MESSAGE_RECEIVED] id=${saved.id} type=${saved.type}`);
-
-        // Replace the temp placeholder with the real server message.
-        console.log(`[STATE_UPDATED] replacing placeholder in messages array`);
         setMessages((prev) => {
-          // Check if placeholder is still in the array
-          const hasPlaceholder = prev.some((m) => m.id === tempId);
-          if (hasPlaceholder) {
-            console.log(`[PLACEHOLDER_REMOVED] tempId=${tempId}`);
-          }
           const filtered = prev.filter((m) => m.id !== tempId && m.id !== saved.id);
-          const realMsg = { ...saved, status: "sent" as const };
-          console.log(`[REAL_MESSAGE_INSERTED] id=${realMsg.id}`);
-          return [realMsg, ...filtered];
+          return [{ ...saved, status: "sent" as const }, ...filtered];
         });
       } catch (err: any) {
         const errMsg = err?.message ?? "Send failed";
-        console.error(`[POST_MESSAGES_FAILED] ${errMsg}`, err);
-        LOG("[handleAttachSend FAILED]", errMsg);
-        // Mark the placeholder as failed so user can retry
         setMessages((prev) =>
           prev.map((m) =>
             m.id === tempId
@@ -252,31 +173,140 @@ export default function ChatScreen() {
         );
       }
     },
-    // Only depend on stable references — chatRef.current is read at call time
     [sendChatMessage, setMessages]
   );
 
-  /** Retry a failed upload — resets the placeholder and re-runs the original upload */
   const handleRetryUpload = useCallback(
     (failedId: string) => {
-      // Only flip the UI back to "sending" if a retry attempt actually starts
-      // (attachMenuRef won't have anything to retry, or may already have one
-      // in flight, in which case we leave the failed state as-is).
       const started = attachMenuRef.current?.retry(failedId) ?? false;
       if (!started) return;
       setMessages((prev) =>
         prev.map((m) =>
           m.id === failedId
-            ? {
-                ...m,
-                status: "sending" as const,
-                metadata: { ...m.metadata, uploading: true, uploadError: undefined },
-              }
+            ? { ...m, status: "sending" as const, metadata: { ...m.metadata, uploading: true, uploadError: undefined } }
             : m
         )
       );
     },
     [setMessages]
+  );
+
+  // ── Selection handlers ────────────────────────────────────────────────────
+  const handleLongPress = useCallback((id: string) => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    setSelectedIds((prev) => {
+      const next = new Set(prev);
+      next.add(id);
+      return next;
+    });
+  }, []);
+
+  const handleToggleSelect = useCallback((id: string) => {
+    setSelectedIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id); else next.add(id);
+      return next;
+    });
+  }, []);
+
+  const handleCancelSelection = useCallback(() => setSelectedIds(new Set()), []);
+
+  // ── Action handlers ───────────────────────────────────────────────────────
+  const selectedMessages = useMemo(
+    () => displayMessages.filter((m) => selectedIds.has(m.id)),
+    [displayMessages, selectedIds]
+  );
+
+  const handleDelete = useCallback(() => setShowDeleteModal(true), []);
+
+  const confirmDelete = useCallback(async (forEveryone: boolean) => {
+    if (!chat) return;
+    setShowDeleteModal(false);
+    const ids = [...selectedIds];
+    handleCancelSelection();
+    for (const id of ids) {
+      if (forEveryone) {
+        // Optimistic: mark as deleted locally
+        setMessages((prev) =>
+          prev.map((m) =>
+            m.id === id ? { ...m, text: "Message deleted", type: "text" as const, metadata: {}, deletedAt: new Date().toISOString() } : m
+          )
+        );
+      } else {
+        // Delete for me: hide locally
+        setMessages((prev) =>
+          prev.map((m) =>
+            m.id === id ? { ...m, metadata: { ...m.metadata, deletedForMe: true } } : m
+          )
+        );
+      }
+      try {
+        await deleteMessage(id, "chat", chat.id, forEveryone);
+      } catch (e) {
+        console.error("Delete failed:", e);
+      }
+    }
+  }, [chat, selectedIds, deleteMessage, setMessages, handleCancelSelection]);
+
+  const handleForward = useCallback(() => setShowForwardModal(true), []);
+
+  const handleShare = useCallback(async () => {
+    const urls = selectedMessages
+      .flatMap((m) => {
+        const url = m.metadata?.url as string | undefined;
+        if (url) return [url];
+        const urls = m.metadata?.urls as string[] | undefined;
+        return urls ?? [];
+      })
+      .filter(Boolean);
+    if (urls.length === 0) return;
+    try {
+      await Share.share({ message: urls.join("\n") });
+    } catch {}
+    handleCancelSelection();
+  }, [selectedMessages, handleCancelSelection]);
+
+  const handleCopy = useCallback(async () => {
+    const text = selectedMessages
+      .filter((m) => !m.type || m.type === "text")
+      .sort((a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime())
+      .map((m) => m.text)
+      .join("\n");
+    try {
+      await Share.share({ message: text });
+    } catch {}
+    handleCancelSelection();
+  }, [selectedMessages, handleCancelSelection]);
+
+  const handleInfo = useCallback(() => {
+    if (selectedMessages.length === 1) {
+      setInfoMessage(selectedMessages[0]);
+      handleCancelSelection();
+    }
+  }, [selectedMessages, handleCancelSelection]);
+
+  const handlePollVote = useCallback(
+    async (messageId: string, optionIndex: number) => {
+      if (!chat || !user) return;
+      // Optimistic update
+      setMessages((prev) =>
+        prev.map((m) => {
+          if (m.id !== messageId) return m;
+          const meta: any = { ...m.metadata };
+          const options = [...(meta.options || [])] as { text: string; votes: string[] }[];
+          const opt = options[optionIndex];
+          if (!opt || opt.votes.includes(user.id)) return m;
+          options[optionIndex] = { ...opt, votes: [...opt.votes, user.id] };
+          return { ...m, metadata: { ...meta, options } };
+        })
+      );
+      try {
+        await voteOnPoll(messageId, "chat", chat.id, optionIndex);
+      } catch (e) {
+        console.error("Poll vote failed:", e);
+      }
+    },
+    [chat, user, voteOnPoll, setMessages]
   );
 
   if (!user) return null;
@@ -323,26 +353,39 @@ export default function ChatScreen() {
 
   return (
     <KeyboardAvoidingView style={[styles.root, { backgroundColor: colors.background }]}>
-      <View
-        style={[
-          styles.header,
-          {
-            backgroundColor: colors.card,
-            borderBottomColor: colors.border,
-            paddingTop: insets.top + 8,
-          },
-        ]}
-      >
-        <TouchableOpacity onPress={() => router.back()} style={styles.backBtn}>
-          <Feather name="arrow-left" size={22} color={colors.foreground} />
-        </TouchableOpacity>
-        <Avatar name={other?.fullName ?? "?"} size={36} />
-        <View style={styles.headerInfo}>
-          <Text style={[styles.headerName, { color: colors.foreground }]}>
-            {other?.fullName ?? "Unknown"}
-          </Text>
+      {/* Header — changes to SelectionToolbar in selection mode */}
+      {selectionMode ? (
+        <SelectionToolbar
+          selected={selectedMessages}
+          onCancel={handleCancelSelection}
+          onDelete={handleDelete}
+          onForward={handleForward}
+          onShare={handleShare}
+          onCopy={handleCopy}
+          onInfo={handleInfo}
+        />
+      ) : (
+        <View
+          style={[
+            styles.header,
+            {
+              backgroundColor: colors.card,
+              borderBottomColor: colors.border,
+              paddingTop: insets.top + 8,
+            },
+          ]}
+        >
+          <TouchableOpacity onPress={() => router.back()} style={styles.backBtn}>
+            <Feather name="arrow-left" size={22} color={colors.foreground} />
+          </TouchableOpacity>
+          <Avatar name={other?.fullName ?? "?"} size={36} />
+          <View style={styles.headerInfo}>
+            <Text style={[styles.headerName, { color: colors.foreground }]}>
+              {other?.fullName ?? "Unknown"}
+            </Text>
+          </View>
         </View>
-      </View>
+      )}
 
       <FlatList
         data={displayMessages}
@@ -356,58 +399,59 @@ export default function ChatScreen() {
             <ActivityIndicator color={colors.primary} style={{ padding: 12 }} />
           ) : null
         }
-        ListFooterComponent={
-          loadingMore ? (
-            <ActivityIndicator color={colors.primary} style={{ padding: 12 }} />
-          ) : null
-        }
         renderItem={({ item }) => {
-          console.log(`[FLATLIST_RENDER] item.id=${item.id} status=${item.status} uploading=${item.metadata?.uploading}`);
+          // Hide "delete for me" messages
+          if (item.metadata?.deletedForMe === true) return null;
           return (
             <MessageContent
               item={item}
               isMine={item.senderId === user.id}
               senderName={item.senderId !== user.id ? other?.fullName : undefined}
               onRetryUpload={handleRetryUpload}
+              onPollVote={handlePollVote}
+              onLongPress={() => handleLongPress(item.id)}
+              onPress={() => handleToggleSelect(item.id)}
+              selected={selectedIds.has(item.id)}
+              selectionMode={selectionMode}
             />
           );
         }}
       />
 
-      <View
-        style={[
-          styles.inputBar,
-          {
-            backgroundColor: colors.card,
-            borderTopColor: colors.border,
-            paddingBottom: insets.bottom + 8,
-          },
-        ]}
-      >
-        <TouchableOpacity
-          onPress={() => setShowAttachMenu(!showAttachMenu)}
-          style={styles.attachBtn}
-        >
-          <Feather name="plus" size={24} color={colors.primary} />
-        </TouchableOpacity>
-        <TextInput
+      {/* Input bar — hidden in selection mode */}
+      {!selectionMode && (
+        <View
           style={[
-            styles.input,
-            { color: colors.foreground, backgroundColor: colors.muted },
+            styles.inputBar,
+            {
+              backgroundColor: colors.card,
+              borderTopColor: colors.border,
+              paddingBottom: insets.bottom + 8,
+            },
           ]}
-          value={text}
-          onChangeText={setText}
-          placeholder="Message..."
-          placeholderTextColor={colors.mutedForeground}
-          multiline
-        />
-        <TouchableOpacity
-          onPress={send}
-          style={[styles.sendBtn, { backgroundColor: colors.primary }]}
         >
-          <Feather name="send" size={18} color="#fff" />
-        </TouchableOpacity>
-      </View>
+          <TouchableOpacity
+            onPress={() => setShowAttachMenu(!showAttachMenu)}
+            style={styles.attachBtn}
+          >
+            <Feather name="plus" size={24} color={colors.primary} />
+          </TouchableOpacity>
+          <TextInput
+            style={[styles.input, { color: colors.foreground, backgroundColor: colors.muted }]}
+            value={text}
+            onChangeText={setText}
+            placeholder="Message..."
+            placeholderTextColor={colors.mutedForeground}
+            multiline
+          />
+          <TouchableOpacity
+            onPress={send}
+            style={[styles.sendBtn, { backgroundColor: colors.primary }]}
+          >
+            <Feather name="send" size={18} color="#fff" />
+          </TouchableOpacity>
+        </View>
+      )}
 
       <ChatAttachMenu
         ref={attachMenuRef}
@@ -422,17 +466,13 @@ export default function ChatScreen() {
         onResolvePlaceholder={handleResolvePlaceholder}
       />
 
+      {/* Poll creation modal */}
       <Modal visible={showPollModal} animationType="slide" transparent>
         <View style={styles.modalOverlay}>
           <View style={[styles.modalContent, { backgroundColor: colors.card }]}>
-            <Text style={[styles.modalTitle, { color: colors.foreground }]}>
-              Create Poll
-            </Text>
+            <Text style={[styles.modalTitle, { color: colors.foreground }]}>Create Poll</Text>
             <TextInput
-              style={[
-                styles.pollInput,
-                { color: colors.foreground, backgroundColor: colors.muted },
-              ]}
+              style={[styles.pollInput, { color: colors.foreground, backgroundColor: colors.muted }]}
               placeholder="Ask a question..."
               placeholderTextColor={colors.mutedForeground}
               value={pollQuestion}
@@ -441,14 +481,7 @@ export default function ChatScreen() {
             {pollOptions.map((opt, idx) => (
               <TextInput
                 key={idx}
-                style={[
-                  styles.pollInput,
-                  {
-                    color: colors.foreground,
-                    backgroundColor: colors.muted,
-                    marginTop: 8,
-                  },
-                ]}
+                style={[styles.pollInput, { color: colors.foreground, backgroundColor: colors.muted, marginTop: 8 }]}
                 placeholder={`Option ${idx + 1}`}
                 placeholderTextColor={colors.mutedForeground}
                 value={opt}
@@ -460,9 +493,7 @@ export default function ChatScreen() {
               />
             ))}
             <TouchableOpacity onPress={() => setPollOptions([...pollOptions, ""])}>
-              <Text style={{ color: colors.primary, marginTop: 12, fontWeight: "600" }}>
-                + Add Option
-              </Text>
+              <Text style={{ color: colors.primary, marginTop: 12, fontWeight: "600" }}>+ Add Option</Text>
             </TouchableOpacity>
             <View style={styles.modalActions}>
               <TouchableOpacity
@@ -481,6 +512,62 @@ export default function ChatScreen() {
           </View>
         </View>
       </Modal>
+
+      {/* Delete confirmation modal */}
+      <Modal visible={showDeleteModal} animationType="fade" transparent>
+        <View style={styles.modalOverlay}>
+          <View style={[styles.modalContent, { backgroundColor: colors.card }]}>
+            <Text style={[styles.modalTitle, { color: colors.foreground }]}>
+              Delete {selectedIds.size} message{selectedIds.size !== 1 ? "s" : ""}?
+            </Text>
+            <TouchableOpacity
+              style={[styles.deleteOption, { borderBottomColor: colors.border }]}
+              onPress={() => confirmDelete(false)}
+            >
+              <Feather name="eye-off" size={18} color={colors.foreground} />
+              <Text style={{ color: colors.foreground, fontSize: 15 }}>Delete for me</Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={styles.deleteOption}
+              onPress={() => confirmDelete(true)}
+            >
+              <Feather name="trash-2" size={18} color="#EF4444" />
+              <Text style={{ color: "#EF4444", fontSize: 15 }}>Delete for everyone</Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={[styles.modalBtn, { backgroundColor: colors.muted, marginTop: 12, alignSelf: "flex-end" }]}
+              onPress={() => setShowDeleteModal(false)}
+            >
+              <Text style={{ color: colors.foreground }}>Cancel</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
+
+      {/* Forward modal */}
+      <ForwardModal
+        visible={showForwardModal}
+        messages={selectedMessages}
+        onClose={() => setShowForwardModal(false)}
+        onDone={() => {
+          setShowForwardModal(false);
+          handleCancelSelection();
+        }}
+      />
+
+      {/* Message info modal */}
+      <MessageInfoModal
+        visible={!!infoMessage}
+        message={infoMessage}
+        senderName={
+          infoMessage?.senderId === user.id
+            ? "You"
+            : infoMessage?.senderId
+              ? (getUserById(infoMessage.senderId)?.fullName ?? "Unknown")
+              : undefined
+        }
+        onClose={() => setInfoMessage(null)}
+      />
     </KeyboardAvoidingView>
   );
 }
@@ -541,4 +628,11 @@ const styles = StyleSheet.create({
     marginTop: 24,
   },
   modalBtn: { paddingHorizontal: 16, paddingVertical: 10, borderRadius: 8 },
+  deleteOption: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 12,
+    paddingVertical: 16,
+    borderBottomWidth: StyleSheet.hairlineWidth,
+  },
 });

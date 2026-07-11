@@ -1,0 +1,578 @@
+IMPORTANT: READ THIS ENTIRE PROMPT BEFORE MAKING ANY CHANGES.
+
+FIRST ACTION (MANDATORY)
+------------------------
+
+1. Pull the latest code from GitHub FIRST.
+2. Sync your local workspace with the latest commit.
+3. Do NOT overwrite existing working functionality.
+4. Work only on the latest version of the project.
+
+Repository:
+https://github.com/Henilshingala/O2O
+
+------------------------------------------------------------
+
+PROJECT INFORMATION
+
+This is an Android-only React Native application.
+
+DO NOT write or modify:
+- iOS code
+- Expo code
+- Web code
+- React Native Web
+- Desktop code
+
+Focus ONLY on Android React Native CLI.
+
+Current Tech Stack
+
+Frontend
+- React Native CLI
+- TypeScript
+- React Navigation
+- React Query
+- Socket.IO
+- React Native Reanimated
+- AsyncStorage
+
+Backend
+- Node.js
+- Express.js
+- TypeScript
+- JWT
+- Zod
+- Pino
+
+Database
+- Neon PostgreSQL
+- Drizzle ORM
+
+Media
+- Multer
+- Cloudinary
+
+Deployment
+- Backend hosted on Render
+- Database hosted on Neon
+
+Package Manager
+- pnpm Workspaces
+
+Build
+- ESBuild
+
+Version Control
+- Git + GitHub
+
+------------------------------------------------------------
+
+IMPORTANT BACKEND RULES
+
+DO NOT use
+
+localhost
+127.0.0.1
+10.0.2.2
+192.168.x.x
+or any local server.
+
+ONLY use the production backend already configured.
+
+Backend is hosted on Render.
+
+Database is Neon PostgreSQL.
+
+Modify backend ONLY if required for these features.
+
+Keep everything compatible with the existing backend.
+
+------------------------------------------------------------
+
+VERY IMPORTANT
+
+Do NOT rewrite the existing architecture.
+
+Do NOT replace libraries.
+
+Do NOT break any working feature.
+
+Preserve:
+
+- Authentication
+- Login
+- Signup
+- Session
+- JWT
+- Socket.IO
+- Chat
+- Upload system
+- Cloudinary
+- Notifications
+- Existing APIs
+
+Only extend the existing implementation.
+
+------------------------------------------------------------
+
+FEATURE 1
+
+WhatsApp Style Multiple Image Messages
+
+Implement WhatsApp-style grouped media.
+
+2 images
+
+Side by side.
+
+3 images
+
+WhatsApp layout.
+
+4 images
+
+2×2 grid.
+
+More than 4
+
+Show first 4.
+
+Bottom-right image shows
+
++X
+
+Example
+
++7
+
+When clicked
+
+Open media viewer.
+
+------------------------------------------------------------
+
+FEATURE 2
+
+Media Viewer
+
+Implement full-screen viewer.
+
+Support
+
+- swipe left
+- swipe right
+- smooth animation
+- pinch zoom
+- double tap zoom
+- drag down to close
+- return to same chat position
+
+Show correct numbering.
+
+Example
+
+5 / 18
+
+Fix incorrect numbering.
+
+------------------------------------------------------------
+
+FEATURE 3
+
+Long Press Selection
+
+Allow long press on
+
+- text
+- image
+- video
+- audio
+- document
+- poll
+
+Enter selection mode.
+
+Show circular selection indicator.
+
+------------------------------------------------------------
+
+FEATURE 4
+
+Selection Toolbar
+
+Top bar should show
+
+Delete
+
+Forward
+
+Share
+
+Copy
+
+Info
+
+Only show actions when appropriate.
+
+Copy
+
+Only for text.
+
+Share
+
+Only for media.
+
+------------------------------------------------------------
+
+FEATURE 5
+
+Delete Messages
+
+Support
+
+Delete for Me
+
+Delete for Everyone
+
+Synchronize
+
+Database
+
+Socket.IO
+
+Sender
+
+Receiver
+
+------------------------------------------------------------
+
+FEATURE 6
+
+Forward
+
+Forward selected messages.
+
+Open friends list.
+
+Allow multiple recipients.
+
+Buttons
+
+Send
+
+Cancel
+
+Forward messages in chronological order.
+
+Oldest
+
+↓
+
+Newest
+
+NOT selection order.
+
+------------------------------------------------------------
+
+FEATURE 7
+
+Share
+
+Share selected
+
+Images
+
+Videos
+
+Audio
+
+Documents
+
+Use Android native Share Sheet.
+
+Support apps like
+
+WhatsApp
+
+Telegram
+
+Instagram
+
+Facebook
+
+Gmail
+
+Drive
+
+------------------------------------------------------------
+
+FEATURE 8
+
+Copy
+
+When only text messages are selected
+
+Copy them to clipboard.
+
+Chronological order.
+
+Separate messages with
+
+newline
+
+Example
+
+Hello
+
+How are you?
+
+See you
+
+------------------------------------------------------------
+
+FEATURE 9
+
+Read Receipts
+
+Implement
+
+Sent
+
+Delivered
+
+Seen
+
+Support
+
+Private chat
+
+Group chat
+
+------------------------------------------------------------
+
+FEATURE 10
+
+Message Info
+
+Single message selection
+
+Info button
+
+Show
+
+Sent time
+
+Delivered time
+
+Seen time
+
+Sender
+
+Status
+
+Message ID
+
+------------------------------------------------------------
+
+FEATURE 11
+
+Attachment Limit
+
+Maximum
+
+50
+
+combined
+
+Images
+
+Videos
+
+Audio
+
+Documents
+
+Reject 51+
+
+Show proper error.
+
+------------------------------------------------------------
+
+FEATURE 12
+
+Built-in Viewers
+
+Do NOT open Cloudinary.
+
+Images
+
+Open inside app.
+
+Videos
+
+Play inside app.
+
+Audio
+
+Built-in audio player.
+
+PDF
+
+Built-in PDF viewer.
+
+Only location should open Google Maps.
+
+------------------------------------------------------------
+
+FEATURE 13
+
+Polls
+
+Poll sending works.
+
+Voting currently does NOT.
+
+Fix
+
+Voting
+
+Real-time updates
+
+Socket sync
+
+Database
+
+Prevent duplicate voting.
+
+Persist after restart.
+
+------------------------------------------------------------
+
+QUALITY REQUIREMENTS
+
+No placeholder code.
+
+No TODOs.
+
+No FIXME.
+
+No mock data.
+
+No duplicated code.
+
+No memory leaks.
+
+No duplicate Socket listeners.
+
+No unnecessary rerenders.
+
+Keep FlatList optimized.
+
+Keep React Query cache consistent.
+
+Keep Socket.IO synchronized.
+
+Maintain TypeScript typing.
+
+------------------------------------------------------------
+
+TEST EVERYTHING
+
+Verify
+
+✓ Login
+
+✓ Signup
+
+✓ Chat
+
+✓ Images
+
+✓ Videos
+
+✓ Audio
+
+✓ Documents
+
+✓ Polls
+
+✓ Delete
+
+✓ Forward
+
+✓ Share
+
+✓ Copy
+
+✓ Read receipts
+
+✓ Message info
+
+✓ Carousel
+
+✓ Swipe
+
+✓ Drag to close
+
+✓ Media numbering
+
+✓ 50 attachment limit
+
+✓ Android build
+
+✓ No crashes
+
+✓ No regressions
+
+------------------------------------------------------------
+
+IMPORTANT
+
+If backend changes are required,
+
+modify the Express backend,
+
+Drizzle schema,
+
+or Socket.IO events as needed.
+
+Keep compatibility with
+
+Render
+
+Neon PostgreSQL
+
+Cloudinary
+
+Android React Native CLI.
+
+------------------------------------------------------------
+
+FINAL STEPS
+
+1. Run lint.
+
+2. Run TypeScript.
+
+3. Fix every error.
+
+4. Run Android app on a physical device.
+
+5. Verify every feature works.
+
+6. Commit all changes with meaningful commit messages.
+
+7. Push everything to GitHub.
+
+Repository
+
+https://github.com/Henilshingala/O2O
+
+Do NOT stop after implementing.
+
+Do NOT only inspect.
+
+Do NOT leave partially working features.
+
+Only finish after every feature is implemented, tested, working correctly on Android, and pushed to GitHub.

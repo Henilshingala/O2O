@@ -198,12 +198,12 @@ export const ChatAttachMenu = forwardRef<ChatAttachMenuHandle, ChatAttachMenuPro
     },
   }));
 
-  // ── Gallery (multi-select up to 100) ──────────────────────────────────────
+  // ── Gallery (multi-select up to 50) ──────────────────────────────────────
   const handlePickMedia = async () => {
     const response = await launchImageLibrary({
       mediaType: "mixed",
       quality: 0.85,
-      selectionLimit: 100, // multi-select
+      selectionLimit: 50, // multi-select (Feature 11)
     });
 
     if (!response.assets?.length) return;

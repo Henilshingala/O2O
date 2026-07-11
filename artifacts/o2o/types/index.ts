@@ -11,7 +11,8 @@ export interface User {
   createdAt: string;
 }
 
-export type MessageStatus = "sending" | "sent" | "delivered" | "failed";
+/** sending → sent → delivered → seen */
+export type MessageStatus = "sending" | "sent" | "delivered" | "seen" | "failed";
 
 export interface Message {
   id: string;

@@ -29,8 +29,8 @@ export function useRealtimeMessages({
   const [loadingMore, setLoadingMore] = useState(false);
   const pendingRef = useRef<Map<string, string>>(new Map());
 
+  // Reset when switching rooms
   useEffect(() => {
-    // Reset message state when switching rooms
     setMessages(initialMessages);
     setOlderMessages([]);
     setNextCursor(null);
@@ -48,77 +48,114 @@ export function useRealtimeMessages({
 
     const joinEvent = `join:${roomType}` as "join:chat" | "join:group" | "join:channel";
     const leaveEvent = `leave:${roomType}` as "leave:chat" | "leave:group" | "leave:channel";
-    console.log(`[SOCKET_JOIN] ${joinEvent} roomId=${roomId}`);
     socket.emit(joinEvent, roomId);
 
+    // ── message:new ──────────────────────────────────────────────────────────
     const handleNew = (msg: Message) => {
-      console.log(`[SOCKET_MESSAGE_RECEIVED] id=${(msg as any).id} type=${(msg as any).type} chatId=${(msg as any).chatId}`);
       const belongs =
         (roomType === "chat" && (msg as any).chatId === roomId) ||
         (roomType === "group" && (msg as any).groupId === roomId) ||
         (roomType === "channel" && (msg as any).channelId === roomId);
-      if (!belongs) {
-        return;
-      }
+      if (!belongs) return;
 
-      console.log(`[STATE_UPDATED] processing socket message`);
       setMessages((prev) => {
-        // If the real message is already in our state (because POST resolved first)
         if (prev.some((m) => m.id === msg.id)) {
           return prev.map((m) =>
-            m.id.startsWith("temp_") && pendingRef.current.get(m.id) === msg.id
-              ? { ...msg, status: "delivered" as const }
-              : m.id === msg.id ? { ...m, ...msg, status: "delivered" as const } : m
+            m.id === msg.id
+              ? { ...m, ...msg, status: "delivered" as const }
+              : m
           );
         }
 
-        // Check if this socket message corresponds to a placeholder we have via clientTempId
         const clientTempId = (msg.metadata as any)?.clientTempId;
         const hasPlaceholder = clientTempId && prev.some((m) => m.id === clientTempId);
-
         if (hasPlaceholder) {
-          console.log(`[PLACEHOLDER_REMOVED] matched clientTempId=${clientTempId}`);
-          console.log(`[REAL_MESSAGE_INSERTED] replacing placeholder with socket msg`);
-          // Replace the exact placeholder with the real message
           return prev.map((m) =>
             m.id === clientTempId ? { ...msg, status: "delivered" as const } : m
           );
         }
 
-        // New message (no exact placeholder match)
         const isMedia = (msg as any).type !== "text" && (msg as any).type !== "poll";
-        // Do not arbitrarily remove ALL temp_ placeholders just because we received a media message.
-        // We only remove a text temp_ placeholder if the text matches. 
-        const filtered = isMedia 
-          ? prev 
+        const filtered = isMedia
+          ? prev
           : prev.filter((m) => !m.id.startsWith("temp_") || m.text !== msg.text);
-
-        console.log(`[REAL_MESSAGE_INSERTED] id=${(msg as any).id}`);
         return [{ ...msg, status: "delivered" }, ...filtered];
       });
 
       queryClient.setQueryData<any[]>(queryKey, (old) => {
         if (!old) return old;
         return old.map((entity) => {
-          const idField = roomType === "chat" ? entity.id === roomId : entity.id === roomId;
-          if (!idField) return entity;
+          if (entity.id !== roomId) return entity;
           const exists = entity.messages?.some((m: Message) => m.id === msg.id);
           if (exists) return entity;
           return { ...entity, messages: [...(entity.messages || []), msg] };
         });
       });
-      console.log(`[CACHE_UPDATED] queryKey=${queryKey}`);
+    };
+
+    // ── message:delete ────────────────────────────────────────────────────────
+    const handleDelete = (payload: { id: string }) => {
+      setMessages((prev) =>
+        prev.map((m) =>
+          m.id === payload.id
+            ? {
+                ...m,
+                text: "Message deleted",
+                type: "text" as const,
+                metadata: {},
+                deletedAt: new Date().toISOString(),
+              }
+            : m
+        )
+      );
+    };
+
+    // ── message:vote (poll vote update) ───────────────────────────────────────
+    const handleVote = (payload: { id: string; metadata: Record<string, unknown> }) => {
+      setMessages((prev) =>
+        prev.map((m) =>
+          m.id === payload.id ? { ...m, metadata: payload.metadata } : m
+        )
+      );
+    };
+
+    // ── message:read (read receipts) ──────────────────────────────────────────
+    const handleRead = (payload: { messageIds: string[]; userId: string; seenAt: string }) => {
+      setMessages((prev) =>
+        prev.map((m) => {
+          if (!payload.messageIds.includes(m.id)) return m;
+          // Only update status to "seen" if current sender (isMine context not available here,
+          // so we update all matching messages — screens filter display by senderId)
+          const readBy = (m.metadata?.readBy as string[] | undefined) ?? [];
+          if (readBy.includes(payload.userId)) return m;
+          return {
+            ...m,
+            status: "seen" as const,
+            metadata: {
+              ...m.metadata,
+              readBy: [...readBy, payload.userId],
+              seenAt: payload.seenAt,
+            },
+          };
+        })
+      );
     };
 
     socket.on("message:new", handleNew);
-    
+    socket.on("message:delete", handleDelete);
+    socket.on("message:vote", handleVote);
+    socket.on("message:read", handleRead);
+
     return () => {
       socket.off("message:new", handleNew);
-      console.log(`[SOCKET_LEAVE] ${leaveEvent} roomId=${roomId}`);
+      socket.off("message:delete", handleDelete);
+      socket.off("message:vote", handleVote);
+      socket.off("message:read", handleRead);
       socket.emit(leaveEvent, roomId);
     };
   }, [roomId, roomType, queryClient, queryKey]);
 
+  // Cursor initialisation for pagination
   useEffect(() => {
     if (!roomId) {
       setNextCursor(null);
@@ -142,8 +179,8 @@ export function useRealtimeMessages({
         roomType === "chat"
           ? `/api/data/chats/${roomId}/messages?limit=50&cursor=${nextCursor}`
           : roomType === "group"
-            ? `/api/data/groups/${roomId}/messages?limit=50&cursor=${nextCursor}`
-            : `/api/data/channels/${roomId}/messages?limit=50&cursor=${nextCursor}`;
+          ? `/api/data/groups/${roomId}/messages?limit=50&cursor=${nextCursor}`
+          : `/api/data/channels/${roomId}/messages?limit=50&cursor=${nextCursor}`;
       const data = await customFetch<{ messages: Message[]; nextCursor: string | null }>(endpoint);
       setOlderMessages((prev) => {
         const combined = [...data.messages, ...prev];
@@ -165,7 +202,10 @@ export function useRealtimeMessages({
 
       try {
         const saved = await onSend(msg);
-        const realId = (saved && typeof saved === "object" && "id" in saved ? (saved as any).id : (typeof saved === "string" ? saved : tempId));
+        const realId =
+          saved && typeof saved === "object" && "id" in saved
+            ? (saved as any).id
+            : tempId;
         pendingRef.current.set(tempId, realId);
         setMessages((prev) =>
           prev.map((m) => (m.id === tempId ? { ...m, id: realId, status: "sent" as const } : m))

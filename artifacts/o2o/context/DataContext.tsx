@@ -82,6 +82,13 @@ interface DataContextType {
   getSellerReviews: (sellerId: string) => Review[];
   canReview: (orderId: string, buyerId: string) => boolean;
   submitReview: (review: Omit<Review, "id" | "createdAt">) => void;
+
+  /** Delete a message for everyone (uses DELETE endpoint + socket) or just for the current user. */
+  deleteMessage: (messageId: string, roomType: "chat" | "group", roomId: string, forEveryone: boolean) => Promise<void>;
+  /** Vote on a poll option */
+  voteOnPoll: (messageId: string, roomType: "chat" | "group" | "channel", roomId: string, optionIndex: number) => Promise<void>;
+  /** Mark all messages in a chat/group as read for the current user */
+  markRoomRead: (roomType: "chat" | "group", roomId: string) => Promise<void>;
 }
 
 const DataContext = createContext<DataContextType | null>(null);
@@ -159,13 +166,10 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
   const sendChatMessage = useCallback(async (chatId: string, msg: Omit<Message, "id">): Promise<Message> => {
     console.log(`[SEND_CHAT_MESSAGE_ENTER] chatId=${chatId}`);
     try {
-      console.log(`[POST_MESSAGES_BEGIN] /api/data/chats/${chatId}/messages`);
       const newMsg = await customFetch<Message>(`/api/data/chats/${chatId}/messages`, {
         method: "POST",
         body: JSON.stringify(msg),
       });
-      console.log(`[POST_MESSAGES_SUCCESS] received id=${newMsg?.id}`);
-
       queryClient.setQueryData<Chat[]>(["chats"], (old) =>
         old?.map((c) =>
           c.id === chatId
@@ -411,6 +415,59 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
       .then(() => invalidate.reviews());
   }, []);
 
+  // ── New: delete message ────────────────────────────────────────────────────
+  const deleteMessage = useCallback(async (
+    messageId: string,
+    roomType: "chat" | "group",
+    roomId: string,
+    forEveryone: boolean
+  ): Promise<void> => {
+    if (forEveryone) {
+      if (roomType === "chat") {
+        await customFetch(`/api/data/chats/${roomId}/messages/${messageId}`, { method: "DELETE" });
+      } else {
+        await customFetch(`/api/data/groups/${roomId}/messages/${messageId}`, { method: "DELETE" });
+      }
+    } else {
+      // "Delete for me" — flag via backend so it persists across sessions
+      const endpoint = roomType === "chat"
+        ? `/api/data/chats/${roomId}/messages/${messageId}/delete-for-me`
+        : `/api/data/groups/${roomId}/messages/${messageId}/delete-for-me`;
+      await customFetch(endpoint, { method: "POST" }).catch(() => {
+        // If backend not yet deployed, silently succeed; frontend still removes
+      });
+    }
+  }, []);
+
+  // ── New: vote on poll ──────────────────────────────────────────────────────
+  const voteOnPoll = useCallback(async (
+    messageId: string,
+    roomType: "chat" | "group" | "channel",
+    roomId: string,
+    optionIndex: number
+  ): Promise<void> => {
+    const endpointMap = {
+      chat: `/api/data/chats/${roomId}/messages/${messageId}/vote`,
+      group: `/api/data/groups/${roomId}/messages/${messageId}/vote`,
+      channel: `/api/data/channels/${roomId}/messages/${messageId}/vote`,
+    };
+    await customFetch(endpointMap[roomType], {
+      method: "POST",
+      body: JSON.stringify({ optionIndex }),
+    });
+  }, []);
+
+  // ── New: mark all messages in a room as read ───────────────────────────────
+  const markRoomRead = useCallback(async (
+    roomType: "chat" | "group",
+    roomId: string
+  ): Promise<void> => {
+    const endpoint = roomType === "chat"
+      ? `/api/data/chats/${roomId}/read`
+      : `/api/data/groups/${roomId}/read`;
+    await customFetch(endpoint, { method: "POST" }).catch(() => {});
+  }, []);
+
   return (
     <DataContext.Provider
       value={{
@@ -418,7 +475,7 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
         getChat, getChatWithUser, createChat, sendChatMessage,
         getGroup, getMyGroups, createGroup, sendGroupMessage, updateGroup,
         addGroupMember, removeGroupMember, deleteGroup, transferGroupOwnership,
-            getChannel, getMyChannels, getFollowedChannels, createChannel, followChannel,
+        getChannel, getMyChannels, getFollowedChannels, createChannel, followChannel,
         updateChannel, deleteChannel, transferChannelOwnership, removeChannelFollower,
         sendChannelMessage, createProduct, repostProduct, toggleWishlist, isWishlisted, getWishlist,
         markBidSeen, markBidRead, markOfferSeen, markOfferRead,
@@ -426,6 +483,7 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
         getOrder, getMyOrders, createOrder, sendOrderMessage, updateOrderStatus,
         getReviews, getSellerReviews, canReview, submitReview,
         counts,
+        deleteMessage, voteOnPoll, markRoomRead,
       }}
     >
       {children}
