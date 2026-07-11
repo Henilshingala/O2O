@@ -133,11 +133,11 @@ export default function RootLayout() {
   }
 
   return (
-    <SafeAreaProvider>
-      <ErrorBoundary>
-        <QueryClientProvider client={queryClient}>
-          <SafeKeyboardProvider statusBarTranslucent>
-            <GestureHandlerRootView style={{ flex: 1 }}>
+    <GestureHandlerRootView style={{ flex: 1 }}>
+      <SafeAreaProvider>
+        <ErrorBoundary>
+          <QueryClientProvider client={queryClient}>
+            <SafeKeyboardProvider statusBarTranslucent>
               <AuthProvider>
                 <SocketProvider>
                   <DataProvider>
@@ -149,10 +149,10 @@ export default function RootLayout() {
                   </DataProvider>
                 </SocketProvider>
               </AuthProvider>
-            </GestureHandlerRootView>
-          </SafeKeyboardProvider>
-        </QueryClientProvider>
-      </ErrorBoundary>
-    </SafeAreaProvider>
+            </SafeKeyboardProvider>
+          </QueryClientProvider>
+        </ErrorBoundary>
+      </SafeAreaProvider>
+    </GestureHandlerRootView>
   );
 }

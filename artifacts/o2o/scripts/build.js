@@ -22,6 +22,19 @@ function buildAndroid() {
   console.log("  Building Android (Release APK)");
   console.log("========================================");
 
+  // 1. Manually bundle JS (since Gradle tasks for this are disabled in build.gradle)
+  console.log("\n[1/2] Bundling JS & Assets...");
+  
+  // Ensure assets dir exists
+  const assetsDir = path.join(projectRoot, "android", "app", "src", "main", "assets");
+  if (!fs.existsSync(assetsDir)) {
+    fs.mkdirSync(assetsDir, { recursive: true });
+  }
+
+  run(`npx react-native bundle --platform android --dev false --entry-file index.js --bundle-output android/app/src/main/assets/index.android.bundle --assets-dest android/app/src/main/res/ --reset-cache`);
+
+  // 2. Build Release APK
+  console.log("\n[2/2] Running Gradle assembleRelease...");
   const gradlew =
     process.platform === "win32"
       ? path.join(projectRoot, "android", "gradlew.bat")
@@ -44,6 +57,15 @@ function buildAndroid() {
 
   if (fs.existsSync(apkPath)) {
     console.log(`\n✅ Android APK built: ${apkPath}`);
+    // Copy the APK to the artifacts directory and rename it to o2o.apk
+    const artifactsDir = path.resolve(projectRoot, "..");
+    const destApkPath = path.join(artifactsDir, "o2o.apk");
+    try {
+      fs.copyFileSync(apkPath, destApkPath);
+      console.log(`✅ Success! Renamed and copied to: ${destApkPath}`);
+    } catch (err) {
+      console.error(`⚠️ Failed to copy/rename APK: ${err.message}`);
+    }
   } else {
     console.log("\n⚠️  Build completed but APK not found at expected path.");
   }

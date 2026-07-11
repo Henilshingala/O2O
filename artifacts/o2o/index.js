@@ -1,6 +1,5 @@
-// react-native-reanimated MUST be the very first import for proper native init.
-import "react-native-reanimated";
 import "react-native-gesture-handler";
+import "react-native-reanimated";
 import { AppRegistry, LogBox } from 'react-native';
 import RootLayout from "./app/_layout";
 
