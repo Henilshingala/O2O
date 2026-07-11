@@ -1,2 +1,3 @@
 - [O2O dev port setup](o2o-dev-ports.md) — API server on 3001, Vite admin panel on 5000; PORT=3001 in shared env to avoid Vite conflict
 - [O2O DB migrations](o2o-db-migrations.md) — Run `pnpm run push` in lib/db to push Drizzle schema; no migration files, schema-push only
+- [13-feature implementation](features-13-implementation.md) — All 13 features implemented; key constraints: no clipboard pkg, no video player pkg, no schema change (metadata jsonb used for readBy/deletedFor/votes)
