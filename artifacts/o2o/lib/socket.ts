@@ -30,7 +30,11 @@ export async function connectSocket(baseUrl: string): Promise<Socket> {
   socket.on("upload:complete", (data: { uploadId: string; url: string }) => {
     console.log(`[SOCKET_GLOBAL] Event=upload:complete uploadId=${data?.uploadId}`);
     if (data?.uploadId && data?.url) {
-      UploadEmitter.resolve(data.uploadId, data.url);
+      if ((global as any).UploadEmitter) {
+        (global as any).UploadEmitter.resolve(data.uploadId, data.url);
+      } else {
+        UploadEmitter.resolve(data.uploadId, data.url);
+      }
     }
   });
 

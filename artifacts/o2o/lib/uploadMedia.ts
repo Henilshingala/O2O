@@ -60,6 +60,9 @@ export const UploadEmitter = {
   }
 };
 
+// Expose globally to prevent any dual-instance module resolution issues
+(global as any).UploadEmitter = UploadEmitter;
+
 function formatBytes(bytes: number): string {
   if (bytes < 1024) return `${bytes} B`;
   if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
@@ -108,10 +111,15 @@ export function uploadFileWithProgress(
       const uploadId = `up_${Date.now()}_${Math.random().toString(36).slice(2)}`;
       
       formData.append("uploadId", uploadId);
+      
+      // React Native 0.68 FormData bug: spaces or special chars in filename corrupts the boundary
+      const safeExt = asset.type?.includes("video") ? ".mp4" : ".jpg";
+      const safeFileName = `upload_${Date.now()}${safeExt}`;
+
       formData.append("file", {
         uri: normalizeUri(asset.uri!),
         type: asset.type || "application/octet-stream",
-        name: asset.fileName || fallbackName,
+        name: safeFileName,
       } as any);
 
       UploadEmitter.listeners.set(uploadId, (completedUrl: string) => {
