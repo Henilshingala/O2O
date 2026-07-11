@@ -44,6 +44,22 @@ export interface UploadHandle {
   getState: () => UploadState;
 }
 
+/**
+ * Global emitter to bypass React Native HTTP bugs. 
+ * The server emits `upload:complete` via WebSockets, and we resolve it here.
+ */
+export const UploadEmitter = {
+  listeners: new Map<string, (url: string) => void>(),
+  resolve: (uploadId: string, url: string) => {
+    const cb = UploadEmitter.listeners.get(uploadId);
+    if (cb) {
+      console.log(`[UPLOAD_EMITTER] Socket resolved upload ${uploadId} -> ${url}`);
+      cb(url);
+      UploadEmitter.listeners.delete(uploadId);
+    }
+  }
+};
+
 function formatBytes(bytes: number): string {
   if (bytes < 1024) return `${bytes} B`;
   if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
@@ -89,13 +105,30 @@ export function uploadFileWithProgress(
       const url = `${base}/api/upload`;
 
       const formData = new FormData();
+      const uploadId = `up_${Date.now()}_${Math.random().toString(36).slice(2)}`;
+      
+      formData.append("uploadId", uploadId);
       formData.append("file", {
         uri: normalizeUri(asset.uri!),
         type: asset.type || "application/octet-stream",
         name: asset.fileName || fallbackName,
       } as any);
 
-      console.log(`[UPLOAD_BEGIN] url=${url} fileName=${asset.fileName || fallbackName}`);
+      UploadEmitter.listeners.set(uploadId, (completedUrl: string) => {
+        if (state === "uploading") {
+          if (interval) clearInterval(interval);
+          if (onProgress) {
+            onProgress({
+              loaded: 100, total: 100, percent: 100,
+              loadedStr: "100%", totalStr: "100%", remainingStr: "Done", etaSeconds: 0,
+            });
+          }
+          state = "done";
+          resolve(completedUrl);
+        }
+      });
+
+      console.log(`[UPLOAD_BEGIN] url=${url} uploadId=${uploadId} fileName=${asset.fileName || fallbackName}`);
 
       let progress = 0;
       let interval: ReturnType<typeof setInterval> | null = null;

@@ -2,6 +2,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { customFetch } from "@workspace/api-client-react";
 import { getSocket } from "@/lib/socket";
+import { UploadEmitter } from "../lib/uploadMedia";
 import type { Message } from "@/types";
 
 type RoomType = "chat" | "group" | "channel";
@@ -110,8 +111,18 @@ export function useRealtimeMessages({
     };
 
     socket.on("message:new", handleNew);
+    
+    const handleUploadComplete = (data: { uploadId: string; url: string }) => {
+      console.log(`[SOCKET_RECEIVE] Event=upload:complete uploadId=${data?.uploadId}`);
+      if (data?.uploadId && data?.url) {
+        UploadEmitter.resolve(data.uploadId, data.url);
+      }
+    };
+    socket.on("upload:complete", handleUploadComplete);
+
     return () => {
       socket.off("message:new", handleNew);
+      socket.off("upload:complete", handleUploadComplete);
       console.log(`[SOCKET_LEAVE] ${leaveEvent} roomId=${roomId}`);
       socket.emit(leaveEvent, roomId);
     };

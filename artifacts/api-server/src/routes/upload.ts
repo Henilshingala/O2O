@@ -9,6 +9,7 @@ import { requireAuth, type AuthRequest } from "../middlewares/auth";
 import { db } from "@workspace/db";
 import { fileUploads } from "@workspace/db/schema";
 import { v2 as cloudinary } from "cloudinary";
+import { emitToUser } from "../socket/index.js";
 
 const currentDir = path.dirname(fileURLToPath(import.meta.url));
 const localUploadsDir = path.resolve(currentDir, "..", "..", "uploads");
@@ -188,6 +189,17 @@ router.post("/", upload.single("file"), async (req: AuthRequest, res) => {
       size: req.file.size,
       type: mime,
     });
+
+    if (req.body.uploadId) {
+      console.log(`[upload] Emitting upload:complete to user ${req.user!.userId} for uploadId ${req.body.uploadId}`);
+      emitToUser(req.user!.userId, "upload:complete", {
+        uploadId: req.body.uploadId,
+        url,
+        id: fileId,
+        mimeType: mime,
+        fileName: req.file.originalname,
+      });
+    }
 
     return res.json({ url, id: fileId, mimeType: mime, fileName: req.file.originalname });
   } catch (error: any) {
