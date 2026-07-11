@@ -1,5 +1,6 @@
 import { io, type Socket } from "socket.io-client";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import { UploadEmitter } from "./uploadMedia";
 
 const TOKEN_KEY = "@o2o_token";
 
@@ -25,6 +26,14 @@ export async function connectSocket(baseUrl: string): Promise<Socket> {
     reconnectionDelay: 1000,
     reconnectionDelayMax: 10000,
   });
+
+  socket.on("upload:complete", (data: { uploadId: string; url: string }) => {
+    console.log(`[SOCKET_GLOBAL] Event=upload:complete uploadId=${data?.uploadId}`);
+    if (data?.uploadId && data?.url) {
+      UploadEmitter.resolve(data.uploadId, data.url);
+    }
+  });
+
   return socket;
 }
 

@@ -112,17 +112,8 @@ export function useRealtimeMessages({
 
     socket.on("message:new", handleNew);
     
-    const handleUploadComplete = (data: { uploadId: string; url: string }) => {
-      console.log(`[SOCKET_RECEIVE] Event=upload:complete uploadId=${data?.uploadId}`);
-      if (data?.uploadId && data?.url) {
-        UploadEmitter.resolve(data.uploadId, data.url);
-      }
-    };
-    socket.on("upload:complete", handleUploadComplete);
-
     return () => {
       socket.off("message:new", handleNew);
-      socket.off("upload:complete", handleUploadComplete);
       console.log(`[SOCKET_LEAVE] ${leaveEvent} roomId=${roomId}`);
       socket.emit(leaveEvent, roomId);
     };
