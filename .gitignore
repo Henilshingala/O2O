@@ -6,3 +6,9 @@ coverage/
 tsconfig.tsbuildinfo
 *.bundle
 *.png
+.env
+.env.*
+*.env
+.env*.local
+google-services.json
+*firebase-adminsdk*.json
