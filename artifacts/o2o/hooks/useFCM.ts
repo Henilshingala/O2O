@@ -69,7 +69,7 @@ async function ensureNotificationPermission(): Promise<boolean> {
   // First time — show the system dialog
   try {
     const result = await PermissionsAndroid.request(
-      PermissionsAndroid.PERMISSIONS.POST_NOTIFICATIONS,
+      PermissionsAndroid.PERMISSIONS.POST_NOTIFICATIONS ?? ("android.permission.POST_NOTIFICATIONS" as any),
     );
     const granted = result === PermissionsAndroid.RESULTS.GRANTED;
     await AsyncStorage.setItem(NOTIF_PERMISSION_ASKED, granted ? "granted" : "denied");
