@@ -1,7 +1,7 @@
 import { Router } from "express";
 import { db } from "@workspace/db";
 import { notifications, fcmTokens, users } from "@workspace/db/schema";
-import { eq, desc, and, lt, count, inArray, ne } from "drizzle-orm";
+import { eq, desc, and, lt, count, ne } from "drizzle-orm";
 import { randomUUID } from "crypto";
 import { requireAuth, type AuthRequest } from "../middlewares/auth";
 import { parseCursorPagination, sendListResponse, buildOffsetMeta, parseOffsetPagination } from "../lib/pagination";
@@ -15,24 +15,21 @@ const genId = (prefix: string) => `${prefix}_${randomUUID()}`;
 // ─── FCM token helpers ────────────────────────────────────────────────────────
 
 /**
- * Fetch all FCM tokens for a recipient, excluding any tokens belonging to the
- * sender (so the sender never receives their own message notification).
+ * Fetch all FCM tokens for a recipient.
+ * The sender exclusion is implicit: we only query the RECIPIENT's tokens.
+ * The recipient and sender are always different users, so no additional filter
+ * is needed. The senderId is kept in the signature for future audit logging.
  */
 async function getFcmTokensForRecipient(
   recipientId: string,
-  excludeSenderId?: string,
+  _excludeSenderId?: string,  // reserved — recipient ≠ sender by design
 ): Promise<string[]> {
   try {
     const rows = await db
       .select({ token: fcmTokens.token })
       .from(fcmTokens)
-      .where(
-        excludeSenderId
-          ? and(eq(fcmTokens.userId, recipientId), ne(fcmTokens.userId, excludeSenderId))
-          : eq(fcmTokens.userId, recipientId),
-      );
-    // De-duplicate at query level (unique constraint handles DB, but belt-and-suspenders)
-    return [...new Set(rows.map((r) => r.token))];
+      .where(eq(fcmTokens.userId, recipientId));
+    return [...new Set(rows.map((r) => r.token).filter(Boolean))];
   } catch {
     return [];
   }
@@ -69,7 +66,8 @@ export interface NotificationOptions {
   channelId?: string;
   /**
    * ID of the user who triggered this action.
-   * Devices belonging to the sender are excluded from push delivery.
+   * Used for logging/audit; sender's devices are already excluded because we
+   * query the RECIPIENT's tokens only.
    */
   senderId?: string;
   /** Unique message/entity ID — included in FCM data for deep-link */
@@ -78,6 +76,16 @@ export interface NotificationOptions {
   chatId?: string;
   /** Group ID — included in FCM data for deep-link */
   groupId?: string;
+  /**
+   * Collapse key for FCM — notifications with the same key replace each other
+   * in the tray (prevents flooding). Use the chatId, groupId, bidId etc.
+   */
+  collapseKey?: string;
+  /**
+   * Time-to-live in seconds. Use lower values for time-sensitive events.
+   * Defaults to 28 days if omitted.
+   */
+  ttlSeconds?: number;
 }
 
 /**
@@ -131,13 +139,15 @@ export async function createNotification(
     const fcmPayload: FcmPayload = {
       title,
       body,
-      channelId: options?.channelId ?? "o2o_default",
+      channelId:  options?.channelId ?? "o2o_default",
       data,
+      collapseKey: options?.collapseKey ?? options?.chatId ?? options?.groupId ?? undefined,
+      ttlSeconds:  options?.ttlSeconds,
       ...(imageUrl ? { imageUrl } : {}),
     };
 
     // Fire-and-forget — never block the API response
-    sendFcmToMany(tokens, fcmPayload).catch(() => { /* already logged inside fcm.ts */ });
+    sendFcmToMany(tokens, fcmPayload).catch(() => { /* logged inside fcm.ts */ });
   }
 
   return row;

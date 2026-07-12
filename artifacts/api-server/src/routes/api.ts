@@ -550,12 +550,14 @@ router.post("/chats/:id/messages", validateBody(sendMessageSchema), async (req: 
         "new_message",
         null,
         {
-          screen:    "chat/[id]",
-          channelId: "o2o_chat",
-          senderId:  req.user!.userId,
+          screen:      "chat/[id]",
+          channelId:   "o2o_chat",
+          senderId:    req.user!.userId,
           chatId,
-          messageId: id,
-          params:    { id: chatId },
+          messageId:   id,
+          collapseKey: chatId,        // chat messages collapse per conversation
+          ttlSeconds:  86400,          // 24 h — old chat previews aren’t useful
+          params:      { id: chatId },
         },
       );
       emitToUser(otherId, "notification:new", { type: "new_message" });
@@ -887,12 +889,14 @@ router.post("/groups/:id/messages", validateBody(sendMessageSchema), async (req:
         "new_group_message",
         null,
         {
-          screen:    "group/[id]",
-          channelId: "o2o_chat",
+          screen:      "group/[id]",
+          channelId:   "o2o_chat",
           senderId,
           groupId,
-          messageId: id,
-          params:    { id: groupId },
+          messageId:   id,
+          collapseKey: groupId,       // group messages collapse per group
+          ttlSeconds:  86400,
+          params:      { id: groupId },
         },
       ).catch(() => {});
     }
@@ -1092,10 +1096,12 @@ router.post("/bids", validateBody(createBidSchema), async (req: AuthRequest, res
           "bid",
           null,
           {
-            screen:    "bid/live/[id]",
-            channelId: "o2o_bids",
-            senderId:  req.user!.userId,
-            params:    { id: newBid.id, bidId: newBid.id },
+            screen:      "bid/live/[id]",
+            channelId:   "o2o_bids",
+            senderId:    req.user!.userId,
+            collapseKey: `bid_${newBid.id}`,
+            ttlSeconds:  3600,              // bids are time-sensitive
+            params:      { id: newBid.id, bidId: newBid.id },
           },
         );
         emitToUser(ownerId, "notification:new", { type: "bid" });
@@ -1152,10 +1158,12 @@ router.post("/bids/:id/offers", async (req: AuthRequest, res) => {
       "bid_offer",
       null,
       {
-        screen:    "bid/live/[id]",
-        channelId: "o2o_bids",
-        senderId:  sellerId,
-        params:    { id: bidId, bidId },
+        screen:      "bid/live/[id]",
+        channelId:   "o2o_bids",
+        senderId:    sellerId,
+        collapseKey: `bid_${bidId}`,
+        ttlSeconds:  3600,
+        params:      { id: bidId, bidId },
       },
     );
     emitToUser(bid[0].buyerId, "notification:new", { type: "bid_offer" });
@@ -1249,10 +1257,12 @@ router.post("/bids/:id/winner", validateBody(winnerSchema), async (req: AuthRequ
       "bid_won",
       null,
       {
-        screen:    "bid/winner/[id]",
-        channelId: "o2o_bids",
-        senderId:  req.user!.userId,
-        params:    { id: bidId, bidId },
+        screen:      "bid/winner/[id]",
+        channelId:   "o2o_bids",
+        senderId:    req.user!.userId,
+        collapseKey: `bid_won_${bidId}`,
+        ttlSeconds:  7200,
+        params:      { id: bidId, bidId },
       },
     );
     emitToUser(winnerId, "notification:new", { type: "bid_won", bidId });
@@ -1328,10 +1338,12 @@ router.post("/bids/:id/accept", async (req: AuthRequest, res) => {
       "order_created",
       null,
       {
-        screen:    "order/[id]",
-        channelId: "o2o_orders",
-        senderId:  sellerId,
-        params:    { id: orderId, orderId },
+        screen:      "order/[id]",
+        channelId:   "o2o_orders",
+        senderId:    sellerId,
+        collapseKey: `order_${orderId}`,
+        ttlSeconds:  604800,            // orders stay relevant for 7 days
+        params:      { id: orderId, orderId },
       },
     );
     emitToUser(bid.buyerId, "notification:new", { type: "order_created", orderId });
