@@ -23,7 +23,15 @@
 import { useEffect, useCallback, useRef } from "react";
 import { Platform, PermissionsAndroid } from "react-native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import messaging, { FirebaseMessagingTypes } from "@react-native-firebase/messaging";
+import {
+  getMessaging,
+  getToken,
+  onTokenRefresh,
+  onMessage,
+  onNotificationOpenedApp,
+  getInitialNotification
+} from "@react-native-firebase/messaging";
+import type { FirebaseMessagingTypes } from "@react-native-firebase/messaging";
 import { customFetch } from "@workspace/api-client-react";
 
 const DEVICE_ID_KEY          = "@o2o_device_id";
@@ -190,11 +198,12 @@ export function useFCM({
         if (!allowed || !mounted) return;
 
         // 2. Get and register the current FCM token
-        const token = await messaging().getToken();
+        const messagingInst = getMessaging();
+        const token = await getToken(messagingInst);
         if (mounted) await registerToken(token);
 
         // 3. Token refresh listener — re-register automatically
-        const unsubRefresh = messaging().onTokenRefresh(async (newToken) => {
+        const unsubRefresh = onTokenRefresh(messagingInst, async (newToken) => {
           console.log("[FCM] Token refreshed by Firebase");
           if (mounted) await registerToken(newToken);
         });
@@ -205,7 +214,8 @@ export function useFCM({
         //    - Notification block present → visible message → onForegroundMessage (in-app banner)
         //    NOTE: Socket.IO already delivers the real-time update when the app is foreground.
         //          The FCM foreground handler should show a banner only; do not duplicate data.
-        const unsubForeground = messaging().onMessage(
+        const unsubForeground = onMessage(
+          messagingInst,
           async (msg: FirebaseMessagingTypes.RemoteMessage) => {
             if (!mounted) return;
 
@@ -228,14 +238,14 @@ export function useFCM({
         unsubscribers.current.push(unsubForeground);
 
         // 5. Background tap — app was backgrounded, user tapped the notification
-        const unsubBgTap = messaging().onNotificationOpenedApp((msg) => {
+        const unsubBgTap = onNotificationOpenedApp(messagingInst, (msg) => {
           if (mounted) handleNavigation(msg.data as Record<string, string> | undefined);
         });
         unsubscribers.current.push(unsubBgTap);
 
         // 6. Quit-state tap — app was fully closed, user tapped the notification
         //    getInitialNotification() returns the notification that launched the app.
-        const initial = await messaging().getInitialNotification();
+        const initial = await getInitialNotification(messagingInst);
         if (initial && mounted) {
           // Delay ensures React Navigation is mounted and ready before navigating
           setTimeout(

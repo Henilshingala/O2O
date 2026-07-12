@@ -12,7 +12,7 @@
 import "react-native-gesture-handler";
 import "react-native-reanimated";
 import { AppRegistry, LogBox } from "react-native";
-import messaging from "@react-native-firebase/messaging";
+import { getMessaging, setBackgroundMessageHandler } from "@react-native-firebase/messaging";
 import RootLayout from "./app/_layout";
 
 // ─── Firebase background / headless-JS message handler ───────────────────────
@@ -30,7 +30,7 @@ import RootLayout from "./app/_layout";
 //
 // This handler must complete quickly and never throw — a crash here will cause
 // Firebase to log a delivery failure even though the token is valid.
-messaging().setBackgroundMessageHandler(async (remoteMessage) => {
+setBackgroundMessageHandler(getMessaging(), async (remoteMessage) => {
   try {
     if (!remoteMessage.notification && remoteMessage.data) {
       // Silent data-only push: edit, delete, reaction, typing, read-receipt.
