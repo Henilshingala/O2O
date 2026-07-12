@@ -482,3 +482,17 @@ export const postComments = pgTable("post_comments", {
   text: text("text").notNull(),
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
+
+// FCM push tokens — one row per (userId, deviceId) pair.
+// Allows a single user to receive notifications on multiple devices.
+export const fcmTokens = pgTable("fcm_tokens", {
+  id: text("id").primaryKey(),
+  userId: text("user_id").references(() => users.id).notNull(),
+  token: text("token").notNull(),
+  deviceId: text("device_id").notNull(), // unique per physical device
+  platform: text("platform").default("android").notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+}, (t) => ({
+  userIdx: index("idx_fcm_tokens_user_id").on(t.userId),
+  deviceIdx: index("idx_fcm_tokens_device_id").on(t.deviceId),
+}));

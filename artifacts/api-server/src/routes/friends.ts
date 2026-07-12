@@ -147,10 +147,11 @@ router.post("/request", requestLimiter, validateBody(friendRequestSchema), async
     if (requester[0]) {
       await createNotification(
         contactId,
-        "Friend Request",
+        "🤝 Friend Request",
         `${requester[0].fullName} sent you a friend request`,
         "friend_request",
-        getIo()
+        getIo(),
+        { screen: "notifications", channelId: "o2o_social" },
       );
     }
 
@@ -191,10 +192,11 @@ router.post("/accept", validateBody(friendActionSchema), async (req: AuthRequest
     if (accepter[0]) {
       await createNotification(
         requesterId,
-        "Friend Accepted",
+        "Friend Request Accepted",
         `${accepter[0].fullName} accepted your friend request`,
         "friend_accepted",
-        getIo()
+        getIo(),
+        { screen: "notifications", channelId: "o2o_social" },
       );
     }
 

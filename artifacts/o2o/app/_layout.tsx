@@ -7,18 +7,20 @@ import {
 } from "@/compat/fonts";
 import { Stack, navigationRef } from "@/compat/router";
 import { NavigationContainer } from "@react-navigation/native";
-import React from "react";
+import React, { useState, useCallback } from "react";
 import { ActivityIndicator, View } from "react-native";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 
 import { ErrorBoundary } from "@/components/ErrorBoundary";
-import { AuthProvider } from "@/context/AuthContext";
+import { InAppNotificationBanner, type InAppBannerData } from "@/components/InAppNotificationBanner";
+import { AuthProvider, useAuth } from "@/context/AuthContext";
 import { DataProvider } from "@/context/DataContext";
 import { FriendsProvider } from "@/context/FriendsContext";
 import { SocketProvider } from "@/context/SocketContext";
 import { SafeKeyboardProvider } from "@/compat/keyboard-controller";
 import { setBaseUrl } from "@workspace/api-client-react";
+import { useFCM } from "@/hooks/useFCM";
 
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 
@@ -115,6 +117,57 @@ function RootLayoutNav() {
   );
 }
 
+/**
+ * FCMProvider — sits inside AuthProvider so it knows if the user is logged in.
+ * Handles in-app banner display and notification deep-linking.
+ */
+function FCMProvider({ children }: { children: React.ReactNode }) {
+  const { user } = useAuth();
+  const [banner, setBanner] = useState<InAppBannerData | null>(null);
+
+  const handleNavigate = useCallback((screen: string, params?: Record<string, string>) => {
+    if (!navigationRef.isReady()) return;
+    // Map screen path to navigation call
+    try {
+      if (screen.startsWith("chat/")) {
+        navigationRef.navigate("chat/[id]" as never, { id: params?.id } as never);
+      } else if (screen.startsWith("group/")) {
+        navigationRef.navigate("group/[id]" as never, { id: params?.id } as never);
+      } else if (screen.startsWith("bid/live/")) {
+        navigationRef.navigate("bid/live/[id]" as never, { id: params?.id } as never);
+      } else if (screen.startsWith("bid/winner/")) {
+        navigationRef.navigate("bid/winner/[id]" as never, { id: params?.id } as never);
+      } else if (screen.startsWith("order/")) {
+        navigationRef.navigate("order/[id]" as never, { id: params?.id } as never);
+      } else if (screen === "notifications") {
+        navigationRef.navigate("notifications" as never);
+      }
+    } catch (err) {
+      console.warn("[FCM] Navigation failed:", err);
+    }
+  }, []);
+
+  useFCM({
+    enabled: !!user,
+    onForegroundMessage: (msg) => setBanner(msg),
+    navigate: handleNavigate,
+  });
+
+  return (
+    <>
+      {children}
+      <InAppNotificationBanner
+        notification={banner}
+        onDismiss={() => setBanner(null)}
+        onPress={(data) => {
+          setBanner(null);
+          if (data?.screen) handleNavigate(data.screen, data);
+        }}
+      />
+    </>
+  );
+}
+
 export default function RootLayout() {
   const [fontsLoaded, fontError] = useFonts({
     Inter_400Regular,
@@ -139,15 +192,17 @@ export default function RootLayout() {
           <QueryClientProvider client={queryClient}>
             <SafeKeyboardProvider statusBarTranslucent>
               <AuthProvider>
-                <SocketProvider>
-                  <DataProvider>
-                    <FriendsProvider>
-                      <NavigationContainer ref={navigationRef}>
-                        <RootLayoutNav />
-                      </NavigationContainer>
-                    </FriendsProvider>
-                  </DataProvider>
-                </SocketProvider>
+                <FCMProvider>
+                  <SocketProvider>
+                    <DataProvider>
+                      <FriendsProvider>
+                        <NavigationContainer ref={navigationRef}>
+                          <RootLayoutNav />
+                        </NavigationContainer>
+                      </FriendsProvider>
+                    </DataProvider>
+                  </SocketProvider>
+                </FCMProvider>
               </AuthProvider>
             </SafeKeyboardProvider>
           </QueryClientProvider>

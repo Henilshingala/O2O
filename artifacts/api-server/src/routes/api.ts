@@ -529,7 +529,23 @@ router.post("/chats/:id/messages", validateBody(sendMessageSchema), async (req: 
     emitToChat(chatId, "message:new", newMsg);
     console.log(`[SOCKET_EMIT] Emitted message:new to chat ${chatId}`);
     if (otherId) {
-      await createNotification(otherId, "New Message", req.body.text?.slice(0, 80) || "New message", "new_message", null);
+      // Build a human-friendly preview for media messages
+      const msgType = req.body.type || "text";
+      const senderName = req.body.senderName || "Someone";
+      let preview = req.body.text?.slice(0, 80) || "New message";
+      if (msgType === "image") preview = `📷 ${senderName} sent a photo`;
+      else if (msgType === "video") preview = `🎥 ${senderName} sent a video`;
+      else if (msgType === "audio") preview = `🎤 ${senderName} sent a voice message`;
+      else if (msgType === "file") preview = `📄 ${senderName} sent a document`;
+      else if (msgType === "poll") preview = `📊 ${senderName} created a poll`;
+      await createNotification(
+        otherId,
+        "New Message",
+        preview,
+        "new_message",
+        null,
+        { screen: "chat/[id]", params: { id: chatId }, channelId: "o2o_chat" },
+      );
       emitToUser(otherId, "notification:new", { type: "new_message" });
     }
     return res.json(newMsg);
@@ -1020,7 +1036,14 @@ router.post("/bids", validateBody(createBidSchema), async (req: AuthRequest, res
       const owners = [...new Set(channels.map(c => c.ownerId))];
       for (const ownerId of owners) {
         emitToUser(ownerId, "bid_received", newBid);
-        await createNotification(ownerId, "New Bid Request", `New bid for ${newBid.productName}`, "bid", null);
+        await createNotification(
+          ownerId,
+          "New Bid Request",
+          `New bid for ${newBid.productName}`,
+          "bid",
+          null,
+          { screen: "bid/live/[id]", params: { id: newBid.id }, channelId: "o2o_bids" },
+        );
         emitToUser(ownerId, "notification:new", { type: "bid" });
       }
     }
@@ -1068,7 +1091,14 @@ router.post("/bids/:id/offers", async (req: AuthRequest, res) => {
 
     emitToBid(bidId, "bid:offer", newOffer);
     emitToUser(bid[0].buyerId, "bid_updated", { bidId, newOffer });
-    await createNotification(bid[0].buyerId, "New Bid Offer", `Updated offer on ${bid[0].productName}`, "bid_offer", null);
+    await createNotification(
+      bid[0].buyerId,
+      "New Bid Offer",
+      `Updated offer on ${bid[0].productName}`,
+      "bid_offer",
+      null,
+      { screen: "bid/live/[id]", params: { id: bidId }, channelId: "o2o_bids" },
+    );
     emitToUser(bid[0].buyerId, "notification:new", { type: "bid_offer" });
     return res.json(newOffer);
   } catch (error) { return res.status(500).json({ error: "Server error" }); }
@@ -1158,7 +1188,8 @@ router.post("/bids/:id/winner", validateBody(winnerSchema), async (req: AuthRequ
       "Bid Won!",
       `You won the bid for ${bid.productName}. Accept to confirm the order.`,
       "bid_won",
-      null
+      null,
+      { screen: "bid/winner/[id]", params: { id: bidId }, channelId: "o2o_bids" },
     );
     emitToUser(winnerId, "notification:new", { type: "bid_won", bidId });
 
@@ -1169,7 +1200,8 @@ router.post("/bids/:id/winner", validateBody(winnerSchema), async (req: AuthRequ
           "Bid Not Selected",
           `Your offer for ${bid.productName} was not selected.`,
           "bid_rejected",
-          null
+          null,
+          { screen: "bid/live/[id]", params: { id: bidId }, channelId: "o2o_bids" },
         );
         emitToUser(offer.sellerId, "notification:new", { type: "bid_rejected", bidId });
       }
@@ -1220,7 +1252,14 @@ router.post("/bids/:id/accept", async (req: AuthRequest, res) => {
     await db.insert(schema.orders).values(orderRow);
     const order = { ...orderRow, sellerName, messages: [] };
 
-    await createNotification(bid.buyerId, "Order Created", `${sellerName} accepted your bid for ${bid.productName}`, "order_created", null);
+    await createNotification(
+      bid.buyerId,
+      "Order Created",
+      `${sellerName} accepted your bid for ${bid.productName}`,
+      "order_created",
+      null,
+      { screen: "order/[id]", params: { id: orderId }, channelId: "o2o_orders" },
+    );
     emitToUser(bid.buyerId, "notification:new", { type: "order_created", orderId });
 
     emitToBid(bidId, "bid:accepted", { bidId, order });

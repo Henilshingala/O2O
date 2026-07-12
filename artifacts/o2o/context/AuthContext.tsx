@@ -5,6 +5,8 @@ import { customFetch, setAuthTokenGetter, setTokenRefreshHandler } from "@worksp
 
 const TOKEN_KEY = "@o2o_token";
 const REFRESH_KEY = "@o2o_refresh_token";
+const FCM_TOKEN_KEY = "@o2o_fcm_token";
+const DEVICE_ID_KEY = "@o2o_device_id";
 
 async function clearStoredTokens() {
   await AsyncStorage.removeItem(TOKEN_KEY);
@@ -149,6 +151,19 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, [cacheUser]);
 
   const logout = useCallback(async () => {
+    // Remove FCM token from backend so no more push notifications land on this device
+    try {
+      const fcmToken = await AsyncStorage.getItem(FCM_TOKEN_KEY);
+      const deviceId = await AsyncStorage.getItem(DEVICE_ID_KEY);
+      if (fcmToken) {
+        await customFetch("/api/notifications/fcm-token", {
+          method: "DELETE",
+          body: JSON.stringify({ token: fcmToken, deviceId: deviceId ?? undefined }),
+        }).catch(() => { /* ignore if already gone */ });
+      }
+      await AsyncStorage.removeItem(FCM_TOKEN_KEY);
+    } catch { /* never block logout */ }
+
     try {
       const refreshToken = await AsyncStorage.getItem(REFRESH_KEY);
       await customFetch("/api/auth/logout", {

@@ -191,7 +191,7 @@ All screens where `participants.find()`, `messages[last]`, or similar could retu
 ### Files Modified Previous Session
 | File | Change |
 |------|--------|
-| `android/app/src/main/java/com/anonymous/o2o/SimpleFetchModule.java` | Rewrote JSON with `JSONObject` |
+| `android/app/src/main/java/com/o2o/app/SimpleFetchModule.java` | Rewrote JSON with `JSONObject` |
 | `android/app/build.gradle` | Replaced `fonts.gradle` with direct Gradle copy task |
 | `android/app/src/main/assets/fonts/Feather.ttf` | Committed font file |
 | `android/app/src/main/assets/fonts/Ionicons.ttf` | Committed font file |

@@ -1,5 +1,6 @@
 apply plugin: "com.android.application"
 apply plugin: "org.jetbrains.kotlin.android"
+apply plugin: "com.google.gms.google-services"
 
 def projectRoot = rootDir.getAbsoluteFile().getParentFile().getAbsolutePath()
 
@@ -30,9 +31,9 @@ android {
         }
     }
 
-    namespace 'com.anonymous.o2o'
+    namespace 'com.o2o.app'
     defaultConfig {
-        applicationId 'com.anonymous.o2o'
+        applicationId 'com.o2o.app'
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
         versionCode 1
@@ -107,6 +108,8 @@ android {
 }
 
 dependencies {
+    implementation platform('com.google.firebase:firebase-bom:34.16.0')
+    implementation 'com.google.firebase:firebase-analytics'
     implementation "androidx.swiperefreshlayout:swiperefreshlayout:1.0.0"
     implementation "androidx.appcompat:appcompat:1.6.1"
     implementation "com.facebook.react:react-native:0.68.7"
