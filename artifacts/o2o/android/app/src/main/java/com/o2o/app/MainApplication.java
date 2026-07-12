@@ -87,7 +87,7 @@ public class MainApplication extends Application implements ReactApplication {
     chatCh.setVibrationPattern(new long[]{0, 100, 80, 100});
     chatCh.enableLights(true);
     chatCh.setLightColor(0xFF3B82F6);           // brand blue
-    chatCh.setAudioAttributes(messageAudio);
+    chatCh.setSound(android.provider.Settings.System.DEFAULT_NOTIFICATION_URI, messageAudio);
     nm.createNotificationChannel(chatCh);
 
     // ── o2o_bids — Bids & Offers (IMPORTANCE_HIGH) ───────────────────────────
@@ -101,7 +101,7 @@ public class MainApplication extends Application implements ReactApplication {
     bidCh.setVibrationPattern(new long[]{0, 300, 150, 300, 150, 300});
     bidCh.enableLights(true);
     bidCh.setLightColor(0xFFF59E0B);            // amber
-    bidCh.setAudioAttributes(alertAudio);
+    bidCh.setSound(android.provider.Settings.System.DEFAULT_NOTIFICATION_URI, alertAudio);
     nm.createNotificationChannel(bidCh);
 
     // ── o2o_orders — Orders (IMPORTANCE_HIGH) ────────────────────────────────
@@ -115,7 +115,7 @@ public class MainApplication extends Application implements ReactApplication {
     orderCh.setVibrationPattern(new long[]{0, 250, 100, 250});
     orderCh.enableLights(true);
     orderCh.setLightColor(0xFF10B981);          // emerald
-    orderCh.setAudioAttributes(alertAudio);
+    orderCh.setSound(android.provider.Settings.System.DEFAULT_NOTIFICATION_URI, alertAudio);
     nm.createNotificationChannel(orderCh);
 
     // ── o2o_social — Friend requests, mentions (IMPORTANCE_DEFAULT) ───────────
@@ -142,7 +142,7 @@ public class MainApplication extends Application implements ReactApplication {
     callsCh.setVibrationPattern(new long[]{0, 1000, 500, 1000, 500, 1000});
     callsCh.enableLights(true);
     callsCh.setLightColor(0xFF22C55E);          // green
-    callsCh.setAudioAttributes(alertAudio);
+    callsCh.setSound(android.provider.Settings.System.DEFAULT_NOTIFICATION_URI, alertAudio);
     nm.createNotificationChannel(callsCh);
 
     // ── o2o_default — Fallback channel (IMPORTANCE_DEFAULT) ──────────────────
