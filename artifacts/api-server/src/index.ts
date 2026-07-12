@@ -61,6 +61,11 @@ async function ensureTablesExist() {
       )
     `);
 
+    // Unique constraint on token prevents duplicate rows across users/devices
+    await db.execute(sql`
+      CREATE UNIQUE INDEX IF NOT EXISTS idx_fcm_tokens_token ON fcm_tokens(token)
+    `);
+
     await db.execute(sql`
       CREATE INDEX IF NOT EXISTS idx_fcm_tokens_user_id ON fcm_tokens(user_id)
     `);
@@ -70,6 +75,16 @@ async function ensureTablesExist() {
     `);
 
     logger.info("Database tables verified successfully");
+
+    // Warn early if FCM is unconfigured so the operator knows before first notification attempt
+    if (!process.env["FIREBASE_SERVICE_ACCOUNT"]) {
+      logger.warn(
+        "FIREBASE_SERVICE_ACCOUNT is not set — push notifications are disabled. " +
+        "Set this env var on Render to enable FCM."
+      );
+    } else {
+      logger.info("FIREBASE_SERVICE_ACCOUNT detected — FCM push notifications are enabled");
+    }
   } catch (err) {
     logger.error({ err }, "Failed to verify database tables");
   }

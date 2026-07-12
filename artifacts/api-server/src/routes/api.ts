@@ -3,7 +3,7 @@ import { db } from "@workspace/db";
 import { eq, or, and, inArray, desc, asc, isNull, lt, not, count, sql } from "drizzle-orm";
 import * as schema from "@workspace/db";
 import { requireAuth, type AuthRequest } from "../middlewares/auth";
-import { createNotification } from "./notifications";
+import { createNotification, sendSilentPush } from "./notifications";
 import { emitToChat, emitToBid, emitToUser, emitToGroup, emitToChannel, getIo } from "../socket/index";
 import { parseOffsetPagination, parseCursorPagination, buildOffsetMeta, sendListResponse } from "../lib/pagination";
 import {
@@ -523,14 +523,18 @@ router.post("/chats/:id/messages", validateBody(sendMessageSchema), async (req: 
       metadata: req.body.metadata || {},
       timestamp: timestamp ? new Date(timestamp) : new Date(),
     };
+    // ── 1. Persist to DB (must succeed before any IO) ──────────────────────
     await db.insert(schema.messages).values(newMsg);
-    console.log(`[MESSAGE_SAVED] Message ${id} saved to db`);
     await db.update(schema.chats).set({ updatedAt: new Date() }).where(eq(schema.chats.id, chatId));
+    console.log(`[MESSAGE_SAVED] Message ${id} saved to db`);
+
+    // ── 2. Socket.IO — real-time to all online participants ─────────────────
     emitToChat(chatId, "message:new", newMsg);
     console.log(`[SOCKET_EMIT] Emitted message:new to chat ${chatId}`);
+
+    // ── 3. Firebase push — to the recipient (never the sender) ──────────────
     if (otherId) {
-      // Build a human-friendly preview for media messages
-      const msgType = req.body.type || "text";
+      const msgType    = req.body.type || "text";
       const senderName = req.body.senderName || "Someone";
       let preview = req.body.text?.slice(0, 80) || "New message";
       if (msgType === "image") preview = `📷 ${senderName} sent a photo`;
@@ -538,13 +542,21 @@ router.post("/chats/:id/messages", validateBody(sendMessageSchema), async (req: 
       else if (msgType === "audio") preview = `🎤 ${senderName} sent a voice message`;
       else if (msgType === "file") preview = `📄 ${senderName} sent a document`;
       else if (msgType === "poll") preview = `📊 ${senderName} created a poll`;
+
       await createNotification(
         otherId,
-        "New Message",
+        senderName,
         preview,
         "new_message",
         null,
-        { screen: "chat/[id]", params: { id: chatId }, channelId: "o2o_chat" },
+        {
+          screen:    "chat/[id]",
+          channelId: "o2o_chat",
+          senderId:  req.user!.userId,
+          chatId,
+          messageId: id,
+          params:    { id: chatId },
+        },
       );
       emitToUser(otherId, "notification:new", { type: "new_message" });
     }
@@ -846,8 +858,45 @@ router.post("/groups/:id/messages", validateBody(sendMessageSchema), async (req:
       metadata: req.body.metadata || {},
       timestamp: timestamp ? new Date(timestamp) : new Date(),
     };
+    // ── 1. Persist to DB ────────────────────────────────────────────────────
     await db.insert(schema.messages).values(newMsg);
+
+    // ── 2. Socket.IO ────────────────────────────────────────────────────────
     emitToGroup(groupId, "message:new", newMsg);
+
+    // ── 3. Firebase push to all members except sender ───────────────────────
+    const allMembers = await db
+      .select({ userId: schema.groupMembers.userId })
+      .from(schema.groupMembers)
+      .where(eq(schema.groupMembers.groupId, groupId));
+    const senderId = req.user!.userId;
+    const msgType  = req.body.type || "text";
+    const senderName = req.body.senderName || "Someone";
+    let preview = req.body.text?.slice(0, 80) || "New message";
+    if (msgType === "image") preview = `📷 ${senderName} sent a photo`;
+    else if (msgType === "video") preview = `🎥 ${senderName} sent a video`;
+    else if (msgType === "audio") preview = `🎤 ${senderName} sent a voice message`;
+    else if (msgType === "file") preview = `📄 ${senderName} sent a document`;
+    else if (msgType === "poll") preview = `📊 ${senderName} created a poll`;
+    for (const member of allMembers) {
+      if (member.userId === senderId) continue; // never notify sender
+      createNotification(
+        member.userId,
+        senderName,
+        preview,
+        "new_group_message",
+        null,
+        {
+          screen:    "group/[id]",
+          channelId: "o2o_chat",
+          senderId,
+          groupId,
+          messageId: id,
+          params:    { id: groupId },
+        },
+      ).catch(() => {});
+    }
+
     return res.json(newMsg);
   } catch (error) { return res.status(500).json({ error: "Server error" }); }
 });
@@ -1038,11 +1087,16 @@ router.post("/bids", validateBody(createBidSchema), async (req: AuthRequest, res
         emitToUser(ownerId, "bid_received", newBid);
         await createNotification(
           ownerId,
-          "New Bid Request",
+          "New Bid Request 🔔",
           `New bid for ${newBid.productName}`,
           "bid",
           null,
-          { screen: "bid/live/[id]", params: { id: newBid.id }, channelId: "o2o_bids" },
+          {
+            screen:    "bid/live/[id]",
+            channelId: "o2o_bids",
+            senderId:  req.user!.userId,
+            params:    { id: newBid.id, bidId: newBid.id },
+          },
         );
         emitToUser(ownerId, "notification:new", { type: "bid" });
       }
@@ -1093,11 +1147,16 @@ router.post("/bids/:id/offers", async (req: AuthRequest, res) => {
     emitToUser(bid[0].buyerId, "bid_updated", { bidId, newOffer });
     await createNotification(
       bid[0].buyerId,
-      "New Bid Offer",
+      "New Bid Offer 💰",
       `Updated offer on ${bid[0].productName}`,
       "bid_offer",
       null,
-      { screen: "bid/live/[id]", params: { id: bidId }, channelId: "o2o_bids" },
+      {
+        screen:    "bid/live/[id]",
+        channelId: "o2o_bids",
+        senderId:  sellerId,
+        params:    { id: bidId, bidId },
+      },
     );
     emitToUser(bid[0].buyerId, "notification:new", { type: "bid_offer" });
     return res.json(newOffer);
@@ -1185,11 +1244,16 @@ router.post("/bids/:id/winner", validateBody(winnerSchema), async (req: AuthRequ
 
     await createNotification(
       winnerId,
-      "Bid Won!",
+      "🏆 You Won the Bid!",
       `You won the bid for ${bid.productName}. Accept to confirm the order.`,
       "bid_won",
       null,
-      { screen: "bid/winner/[id]", params: { id: bidId }, channelId: "o2o_bids" },
+      {
+        screen:    "bid/winner/[id]",
+        channelId: "o2o_bids",
+        senderId:  req.user!.userId,
+        params:    { id: bidId, bidId },
+      },
     );
     emitToUser(winnerId, "notification:new", { type: "bid_won", bidId });
 
@@ -1197,11 +1261,16 @@ router.post("/bids/:id/winner", validateBody(winnerSchema), async (req: AuthRequ
       if (offer.sellerId !== winnerId) {
         await createNotification(
           offer.sellerId,
-          "Bid Not Selected",
+          "Bid Result",
           `Your offer for ${bid.productName} was not selected.`,
           "bid_rejected",
           null,
-          { screen: "bid/live/[id]", params: { id: bidId }, channelId: "o2o_bids" },
+          {
+            screen:    "bid/live/[id]",
+            channelId: "o2o_bids",
+            senderId:  req.user!.userId,
+            params:    { id: bidId, bidId },
+          },
         );
         emitToUser(offer.sellerId, "notification:new", { type: "bid_rejected", bidId });
       }
@@ -1254,11 +1323,16 @@ router.post("/bids/:id/accept", async (req: AuthRequest, res) => {
 
     await createNotification(
       bid.buyerId,
-      "Order Created",
+      "🛒 Order Confirmed!",
       `${sellerName} accepted your bid for ${bid.productName}`,
       "order_created",
       null,
-      { screen: "order/[id]", params: { id: orderId }, channelId: "o2o_orders" },
+      {
+        screen:    "order/[id]",
+        channelId: "o2o_orders",
+        senderId:  sellerId,
+        params:    { id: orderId, orderId },
+      },
     );
     emitToUser(bid.buyerId, "notification:new", { type: "order_created", orderId });
 

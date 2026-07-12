@@ -1,38 +1,59 @@
 import { Router } from "express";
 import { db } from "@workspace/db";
-import { notifications, fcmTokens } from "@workspace/db/schema";
-import { eq, desc, and, lt, count, inArray } from "drizzle-orm";
+import { notifications, fcmTokens, users } from "@workspace/db/schema";
+import { eq, desc, and, lt, count, inArray, ne } from "drizzle-orm";
 import { randomUUID } from "crypto";
 import { requireAuth, type AuthRequest } from "../middlewares/auth";
 import { parseCursorPagination, sendListResponse, buildOffsetMeta, parseOffsetPagination } from "../lib/pagination";
-import { sendFcmToMany, type FcmPayload } from "../lib/fcm";
+import { sendFcmToMany, sendFcmDataOnly, type FcmPayload } from "../lib/fcm";
 
 const router = Router();
 router.use(requireAuth);
 
-// Use UUID to eliminate timestamp-collision risk for concurrent inserts
 const genId = (prefix: string) => `${prefix}_${randomUUID()}`;
 
-// ─── helpers ─────────────────────────────────────────────────────────────────
+// ─── FCM token helpers ────────────────────────────────────────────────────────
 
-/** Get all FCM tokens for a user (multiple devices) */
-async function getFcmTokensForUser(userId: string): Promise<string[]> {
+/**
+ * Fetch all FCM tokens for a recipient, excluding any tokens belonging to the
+ * sender (so the sender never receives their own message notification).
+ */
+async function getFcmTokensForRecipient(
+  recipientId: string,
+  excludeSenderId?: string,
+): Promise<string[]> {
   try {
     const rows = await db
       .select({ token: fcmTokens.token })
       .from(fcmTokens)
-      .where(eq(fcmTokens.userId, userId));
-    return rows.map((r) => r.token);
+      .where(
+        excludeSenderId
+          ? and(eq(fcmTokens.userId, recipientId), ne(fcmTokens.userId, excludeSenderId))
+          : eq(fcmTokens.userId, recipientId),
+      );
+    // De-duplicate at query level (unique constraint handles DB, but belt-and-suspenders)
+    return [...new Set(rows.map((r) => r.token))];
   } catch {
     return [];
   }
 }
 
-/** Remove stale/invalid FCM tokens */
-async function removeFcmToken(token: string): Promise<void> {
+/**
+ * Fetch the sender's avatar URL for rich notification large-icon.
+ * Returns undefined if not found (graceful degradation).
+ */
+async function getSenderAvatar(senderId?: string): Promise<string | undefined> {
+  if (!senderId) return undefined;
   try {
-    await db.delete(fcmTokens).where(eq(fcmTokens.token, token));
-  } catch { /* ignore */ }
+    const rows = await db
+      .select({ avatar: users.avatar })
+      .from(users)
+      .where(eq(users.id, senderId))
+      .limit(1);
+    return rows[0]?.avatar ?? undefined;
+  } catch {
+    return undefined;
+  }
 }
 
 // ─── Core notification creator ────────────────────────────────────────────────
@@ -40,14 +61,34 @@ async function removeFcmToken(token: string): Promise<void> {
 export interface NotificationOptions {
   /** Deep-link screen name, e.g. "chat/[id]" */
   screen?: string;
-  /** Additional params for the deep-link */
+  /** Additional deep-link params merged into the FCM data payload */
   params?: Record<string, string>;
-  /** Large icon URL (sender avatar) */
+  /** Sender's avatar URL — shown as rich notification large icon */
   imageUrl?: string;
-  /** FCM notification channel id */
+  /** FCM notification channel id — must match a channel in MainApplication.java */
   channelId?: string;
+  /**
+   * ID of the user who triggered this action.
+   * Devices belonging to the sender are excluded from push delivery.
+   */
+  senderId?: string;
+  /** Unique message/entity ID — included in FCM data for deep-link */
+  messageId?: string;
+  /** Chat ID — included in FCM data for deep-link */
+  chatId?: string;
+  /** Group ID — included in FCM data for deep-link */
+  groupId?: string;
 }
 
+/**
+ * Canonical notification creation flow:
+ *   1. INSERT notification row (PostgreSQL)  ← commit happens here
+ *   2. Emit Socket.IO event to online clients
+ *   3. Send Firebase push to offline/background devices
+ *
+ * Push is never sent before the DB write succeeds.
+ * The sender's own devices are excluded from push.
+ */
 export async function createNotification(
   userId: string,
   title: string,
@@ -56,45 +97,77 @@ export async function createNotification(
   io?: { to: (room: string) => { emit: (event: string, data: unknown) => void } } | null,
   options?: NotificationOptions,
 ) {
+  // ── 1. Persist to PostgreSQL (must succeed before anything else) ──────────
   const id = genId("notif");
   const row = { id, userId, title, body, type, isRead: false };
   await db.insert(notifications).values(row);
+
+  // ── 2. Socket.IO — real-time delivery to online clients ───────────────────
   if (io) {
     io.to(`user:${userId}`).emit("notification:new", row);
   }
 
-  // ── Firebase push notification ─────────────────────────────────────────────
-  // Only push when the user might be offline/background.
-  // The app shows an in-app banner when the socket fires "notification:new".
-  const tokens = await getFcmTokensForUser(userId);
+  // ── 3. Firebase push — for offline / background devices ───────────────────
+  // Fetch recipient tokens, excluding sender's own devices
+  const tokens = await getFcmTokensForRecipient(userId, options?.senderId);
   if (tokens.length > 0) {
+    // Resolve sender avatar for rich notification (if not already provided)
+    const imageUrl = options?.imageUrl ?? (await getSenderAvatar(options?.senderId));
+
+    // Build complete data payload covering all deep-link requirements
     const data: Record<string, string> = {
-      type,
       notificationId: id,
-      ...(options?.screen ? { screen: options.screen } : {}),
+      type,
+      receiverId:     userId,
+      ...(options?.senderId   ? { senderId:  options.senderId }   : {}),
+      ...(options?.screen     ? { screen:    options.screen }     : {}),
+      ...(options?.chatId     ? { chatId:    options.chatId }     : {}),
+      ...(options?.messageId  ? { messageId: options.messageId }  : {}),
+      ...(options?.groupId    ? { groupId:   options.groupId }    : {}),
+      // Any extra params (e.g. bidId, orderId)
       ...(options?.params ?? {}),
     };
 
-    const payload: FcmPayload = {
+    const fcmPayload: FcmPayload = {
       title,
       body,
       channelId: options?.channelId ?? "o2o_default",
       data,
-      ...(options?.imageUrl ? { imageUrl: options.imageUrl } : {}),
+      ...(imageUrl ? { imageUrl } : {}),
     };
 
-    // Fire-and-forget — don't block the API response
-    sendFcmToMany(tokens, payload).catch(() => { /* already logged inside */ });
+    // Fire-and-forget — never block the API response
+    sendFcmToMany(tokens, fcmPayload).catch(() => { /* already logged inside fcm.ts */ });
   }
 
   return row;
+}
+
+/**
+ * Send a silent data-only FCM push to one user's devices.
+ * Use for: message edits, deletes, reactions, typing, read-receipts.
+ * These must NOT appear as visible notifications.
+ */
+export async function sendSilentPush(
+  recipientId: string,
+  senderId: string,
+  data: Record<string, string>,
+): Promise<void> {
+  const tokens = await getFcmTokensForRecipient(recipientId, senderId);
+  if (tokens.length === 0) return;
+  sendFcmDataOnly(tokens, data).catch(() => {});
 }
 
 // ─── FCM token management routes ──────────────────────────────────────────────
 
 /**
  * POST /api/notifications/fcm-token
- * Register or refresh the FCM token for the authenticated user on a device.
+ *
+ * Register or refresh the FCM token for the authenticated user on a specific device.
+ *
+ * Uniqueness strategy (prevents duplicates):
+ *   • Upsert on (userId, deviceId) — updates the token when the device refreshes it.
+ *   • If a different user had the same token (device re-used), remove the old row first.
  */
 router.post("/fcm-token", async (req: AuthRequest, res) => {
   try {
@@ -104,7 +177,13 @@ router.post("/fcm-token", async (req: AuthRequest, res) => {
       return res.status(400).json({ error: "token and deviceId required" });
     }
 
-    // Upsert: update existing row for (userId, deviceId) or insert a new one.
+    // 1. Remove any stale row that has this exact token but a different user
+    //    (handles factory-reset / account-switch scenarios)
+    await db
+      .delete(fcmTokens)
+      .where(and(eq(fcmTokens.token, token), ne(fcmTokens.userId, userId)));
+
+    // 2. Upsert: update token for this (userId, deviceId) or insert fresh row
     const existing = await db
       .select({ id: fcmTokens.id })
       .from(fcmTokens)
@@ -118,7 +197,7 @@ router.post("/fcm-token", async (req: AuthRequest, res) => {
         .where(eq(fcmTokens.id, existing[0].id));
     } else {
       await db.insert(fcmTokens).values({
-        id: genId("fcm"),
+        id:       genId("fcm"),
         userId,
         token,
         deviceId,
@@ -135,7 +214,7 @@ router.post("/fcm-token", async (req: AuthRequest, res) => {
 
 /**
  * DELETE /api/notifications/fcm-token
- * Remove the FCM token for the current device on logout.
+ * Remove the device token on logout so no more pushes land on this device.
  */
 router.delete("/fcm-token", async (req: AuthRequest, res) => {
   try {
@@ -151,7 +230,7 @@ router.delete("/fcm-token", async (req: AuthRequest, res) => {
         .delete(fcmTokens)
         .where(and(eq(fcmTokens.userId, userId), eq(fcmTokens.deviceId, deviceId)));
     } else {
-      // Remove ALL tokens for user (full logout)
+      // No specifics provided → remove ALL tokens for this user (full logout)
       await db.delete(fcmTokens).where(eq(fcmTokens.userId, userId));
     }
 
@@ -161,7 +240,7 @@ router.delete("/fcm-token", async (req: AuthRequest, res) => {
   }
 });
 
-// ─── Notification CRUD routes ─────────────────────────────────────────────────
+// ─── Notification CRUD ────────────────────────────────────────────────────────
 
 router.get("/", async (req: AuthRequest, res) => {
   try {
@@ -179,8 +258,8 @@ router.get("/", async (req: AuthRequest, res) => {
         .where(whereClause)
         .orderBy(desc(notifications.createdAt))
         .limit(limit + 1);
-      const hasMore = rows.length > limit;
-      const page = hasMore ? rows.slice(0, limit) : rows;
+      const hasMore   = rows.length > limit;
+      const page      = hasMore ? rows.slice(0, limit) : rows;
       const nextCursor = hasMore ? page[page.length - 1]?.id ?? null : null;
       return res.json({ data: page, pagination: { limit, nextCursor, hasMore } });
     }
@@ -188,7 +267,7 @@ router.get("/", async (req: AuthRequest, res) => {
     const { page, limit, offset } = parseOffsetPagination(req.query as Record<string, unknown>, { limit: 50, maxLimit: 100 });
     const countResult = await db.select({ count: count() }).from(notifications).where(eq(notifications.userId, userId));
     const total = countResult[0]?.count ?? 0;
-    const rows = await db
+    const rows  = await db
       .select()
       .from(notifications)
       .where(eq(notifications.userId, userId))

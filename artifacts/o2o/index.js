@@ -1,25 +1,33 @@
 import "react-native-gesture-handler";
 import "react-native-reanimated";
 import { AppRegistry, LogBox } from 'react-native';
+import messaging from "@react-native-firebase/messaging";
 import RootLayout from "./app/_layout";
 
-// Suppress only specific noisy-but-harmless warnings.
-// Do NOT silence all logs — real errors and crashes must surface.
+// ─── FCM background / quit-state handler ─────────────────────────────────────
+// Must be registered before AppRegistry.registerComponent().
+// This runs inside a headless JS task when the app is fully closed or backgrounded
+// and a push arrives. For silent data-only messages (edits, deletes, typing etc.)
+// we simply return — no notification is shown.
+messaging().setBackgroundMessageHandler(async (remoteMessage) => {
+  // Visible notifications are displayed automatically by the Firebase SDK.
+  // Only data-only messages need explicit handling here if we want to e.g.
+  // write to local cache. For now, acknowledge receipt and return.
+  if (!remoteMessage.notification && remoteMessage.data) {
+    const type = remoteMessage.data['type'] as string | undefined;
+    // Silent updates — no action needed in headless mode
+    console.log('[FCM] Background data-only message:', type);
+  }
+});
+
+// ─── Log suppression ─────────────────────────────────────────────────────────
 LogBox.ignoreLogs([
-  // React Navigation internal animation event — not a bug
   'Sending `onAnimatedValueUpdate`',
-  // Reanimated worklet source-map noise
   "[Reanimated]",
-  // Socket.IO reconnection info noise
   "socket.io-client",
-  // VirtualizedLists inside ScrollViews — acceptable in our layout
   'VirtualizedLists should never be nested',
-  // Known RN 0.68 internal circular dependency (whatwg-fetch polyfill ↔ RN fetch).
-  // The path prefix varies: "../../node_modules/…" on Mac/Linux,
-  // "..\..\..\node_modules\…" on Windows. Match both by checking just the
-  // leading ".." portion that appears in ALL require-cycle warnings from node_modules.
-  'Require cycle: ../',   // Unix / Mac paths (../../node_modules/...)
-  'Require cycle: ..\\',  // Windows paths  (..\..\..\node_modules\...)
+  'Require cycle: ../',
+  'Require cycle: ..\\',
 ]);
 
 // Component name "main" must match MainActivity.java → getMainComponentName().
