@@ -177,18 +177,18 @@ function buildMulticastMessage(
     // ── Android-specific overrides ────────────────────────────────────────────
     android: {
       priority:    "high",
-      ttl:         `${ttl}s`,
+      ttl:         ttl * 1000,
       ...(payload.collapseKey ? { collapseKey: payload.collapseKey } : {}),
       notification: {
         channelId:            payload.channelId ?? "o2o_default",
         sound:                "default",
-        // Firebase Admin SDK field: vibrateTimingsMillis (NOT vibrationTimingsMillis)
+        // Firebase Admin SDK field: vibrateTimingsMiccllis (NOT vibrationTimingsMillis)
         // Both names exist in older docs — vibrateTimingsMillis is the correct v1 API name.
         vibrateTimingsMillis: [0, 250, 250, 250],
         // notificationPriority: HIGH makes the notification a heads-up banner
-        notificationPriority: "PRIORITY_HIGH",
+        priority: "high",
         // visibility: PUBLIC shows the notification on the lock screen
-        visibility:           "PUBLIC",
+        visibility:           "public",
         // color: accent colour for the notification icon (overrides channel default)
         color:                "#3B82F6",
         // NOTE: Do NOT set clickAction here — it breaks React Native notification handling.
@@ -197,7 +197,7 @@ function buildMulticastMessage(
         //       to fail resolving the activity intent, silently dropping notifications.
         // NOTE: Do NOT combine defaultSound/defaultVibrateTimings with explicit values —
         //       they conflict and produce undefined SDK behaviour.
-        ...(payload.imageUrl ? { imageUrl: payload.imageUrl } : {}),
+        ...(payload.imageUrl ? { image: payload.imageUrl } : {}),
       },
     },
 
@@ -222,7 +222,7 @@ function buildDataOnlyMulticastMessage(
     // No `notification` block → silent; never appears in notification tray
     android: {
       priority: "high",
-      ttl:      "60s", // data-only messages are short-lived (typing, read receipts)
+      ttl:      60000, // data-only messages are short-lived (typing, read receipts)
       ...(collapseKey ? { collapseKey } : {}),
     },
     data,
@@ -241,7 +241,14 @@ async function sendBatch(
   const title     = message.notification?.title ?? "";
 
   logger.info(
-    { tokenCount: batchTokens.length, channelId, title },
+    {
+      payload: message,
+      tokenCount: batchTokens.length,
+      notificationType: message.notification ? "visible" : "data-only",
+      channelId,
+      collapseKey: message.android?.collapseKey,
+      ttl: message.android?.ttl,
+    },
     "[FCM] Sending",
   );
 
@@ -253,8 +260,11 @@ async function sendBatch(
     logger.error(
       {
         err,
-        code:        err?.errorInfo?.code ?? err?.code ?? "unknown",
+        code:        err?.errorInfo?.code ?? err?.code ?? err?.name ?? "unknown",
         errMessage:  err?.message,
+        stack:       err?.stack,
+        validationErrors: err?.errorInfo ?? err?.details ?? "none",
+        invalidFields: message,
         channelId,
         title,
         tokenCount:  batchTokens.length,
@@ -263,12 +273,12 @@ async function sendBatch(
       },
       "[FCM] Firebase Error — sendEachForMulticast threw",
     );
-    return 0;
+    throw err;
   }
 
   const stale: string[] = [];
 
-  response.responses.forEach((r, i) => {
+  response.responses.forEach((r: any, i: number) => {
     const tokenSuffix = batchTokens[i]?.slice(-8) ?? "?";
     if (r.success) {
       logger.info(
@@ -291,6 +301,9 @@ async function sendBatch(
         code,
         token:      tokenSuffix,
         errMessage: errMsg,
+        stack:      r.error?.stack,
+        validationErrors: r.error?.errorInfo ?? r.error ?? "none",
+        invalidFields: message,
         // Full payload context so the caller can reproduce the failing request
         channelId,
         title,
@@ -382,6 +395,7 @@ export async function sendFcmToMany(
       total += await sendBatch(admin, app, message, chunk);
     } catch (err) {
       logger.error({ err }, "[FCM] sendFcmToMany batch threw");
+      throw err;
     }
   }
 
@@ -426,6 +440,7 @@ export async function sendFcmDataOnly(
       total += await sendBatch(admin, app, message, chunk);
     } catch (err) {
       logger.error({ err }, "[FCM] sendFcmDataOnly batch threw");
+      throw err;
     }
   }
 
