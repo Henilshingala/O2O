@@ -22,6 +22,7 @@ import { db } from "@workspace/db";
 import { fcmTokens } from "@workspace/db/schema";
 import { inArray } from "drizzle-orm";
 import { logger } from "./logger.js";
+import * as admin from "firebase-admin";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -87,8 +88,6 @@ function getAdminApp(): App | null {
       { project_id: parsed.project_id, client_email: parsed.client_email },
       "[FCM] Parsed service account — project_id and client_email verified",
     );
-
-    const admin = require("firebase-admin") as typeof import("firebase-admin");
 
     // Guard against double-init (hot-reload in dev, or module cache edge cases)
     const existing = admin.apps.find((a) => a?.name === "[DEFAULT]");
@@ -384,8 +383,6 @@ export async function sendFcmToMany(
 
   logger.info({ uniqueTokenCount: unique.length }, "[FCM] Tokens Found");
 
-  const admin = require("firebase-admin") as typeof import("firebase-admin");
-
   let total = 0;
   for (let i = 0; i < unique.length; i += FCM_MAX_BATCH) {
     const chunk   = unique.slice(i, i + FCM_MAX_BATCH);
@@ -429,8 +426,6 @@ export async function sendFcmDataOnly(
 
   const unique = [...new Set(tokens.filter(Boolean))];
   if (unique.length === 0) return 0;
-
-  const admin = require("firebase-admin") as typeof import("firebase-admin");
 
   let total = 0;
   for (let i = 0; i < unique.length; i += FCM_MAX_BATCH) {
