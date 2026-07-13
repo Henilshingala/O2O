@@ -106,9 +106,10 @@ export async function createNotification(
   io?: { to: (room: string) => { emit: (event: string, data: unknown) => void } } | null,
   options?: NotificationOptions,
 ) {
+  // ── [FCM] Message Created ─────────────────────────────────────────────────
   logger.info(
-    { userId, type, title, channelId: options?.channelId, screen: options?.screen },
-    "[NOTIF] createNotification called",
+    { userId, type, title, body, channelId: options?.channelId, screen: options?.screen },
+    "[FCM] Message Created",
   );
 
   // ── 1. Persist to PostgreSQL (must succeed before anything else) ──────────
@@ -124,11 +125,17 @@ export async function createNotification(
   }
 
   // ── 3. Firebase push — for offline / background devices ───────────────────
+  // Log recipient before fetching tokens so we can trace "no tokens" situations
+  logger.info(
+    { recipientId: userId, senderId: options?.senderId },
+    "[FCM] Recipient",
+  );
+
   // Fetch recipient tokens, excluding sender's own devices
   const tokens = await getFcmTokensForRecipient(userId, options?.senderId);
   logger.info(
     { userId, tokenCount: tokens.length, senderId: options?.senderId },
-    "[NOTIF] FCM tokens fetched for recipient",
+    "[FCM] Tokens Found",
   );
 
   if (tokens.length === 0) {
@@ -168,13 +175,17 @@ export async function createNotification(
     logger.info(
       {
         notificationId: id,
-        channelId: fcmPayload.channelId,
-        collapseKey: fcmPayload.collapseKey,
-        dataKeys: Object.keys(data),
-        screen: data.screen,
-        hasImageUrl: !!imageUrl,
+        channelId:      fcmPayload.channelId,
+        collapseKey:    fcmPayload.collapseKey,
+        title:          fcmPayload.title,
+        body:           fcmPayload.body,
+        dataKeys:       Object.keys(data),
+        screen:         data.screen,
+        hasImageUrl:    !!imageUrl,
+        ttlSeconds:     fcmPayload.ttlSeconds,
+        tokenCount:     tokens.length,
       },
-      "[NOTIF] Dispatching FCM push",
+      "[FCM] Sending",
     );
 
     // Fire-and-forget — never block the API response
@@ -220,6 +231,8 @@ router.post("/fcm-token", async (req: AuthRequest, res) => {
       return res.status(400).json({ error: "token and deviceId required" });
     }
 
+    logger.info({ userId, deviceId, token: token.slice(-10) }, "[FCM] Token registration request");
+
     // 1. Remove any stale row that has this exact token but a different user
     //    (handles factory-reset / account-switch scenarios)
     await db
@@ -238,6 +251,7 @@ router.post("/fcm-token", async (req: AuthRequest, res) => {
         .update(fcmTokens)
         .set({ token, updatedAt: new Date() })
         .where(eq(fcmTokens.id, existing[0].id));
+      logger.info({ userId, deviceId }, "[FCM] Token updated (existing device)");
     } else {
       await db.insert(fcmTokens).values({
         id:       genId("fcm"),
@@ -247,10 +261,12 @@ router.post("/fcm-token", async (req: AuthRequest, res) => {
         platform: "android",
         updatedAt: new Date(),
       });
+      logger.info({ userId, deviceId }, "[FCM] Token inserted (new device)");
     }
 
     return res.json({ success: true });
   } catch (error) {
+    logger.error({ error }, "[FCM] Token registration failed");
     return res.status(500).json({ error: "Server error" });
   }
 });
@@ -268,13 +284,16 @@ router.delete("/fcm-token", async (req: AuthRequest, res) => {
       await db
         .delete(fcmTokens)
         .where(and(eq(fcmTokens.userId, userId), eq(fcmTokens.token, token)));
+      logger.info({ userId, token: token.slice(-10) }, "[FCM] Token removed on logout");
     } else if (deviceId) {
       await db
         .delete(fcmTokens)
         .where(and(eq(fcmTokens.userId, userId), eq(fcmTokens.deviceId, deviceId)));
+      logger.info({ userId, deviceId }, "[FCM] Device tokens removed on logout");
     } else {
       // No specifics provided → remove ALL tokens for this user (full logout)
       await db.delete(fcmTokens).where(eq(fcmTokens.userId, userId));
+      logger.info({ userId }, "[FCM] All tokens removed on full logout");
     }
 
     return res.json({ success: true });

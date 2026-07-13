@@ -136,7 +136,7 @@ async function purgeStaleTokens(stale: string[]): Promise<void> {
   if (stale.length === 0) return;
   try {
     await db.delete(fcmTokens).where(inArray(fcmTokens.token, stale));
-    logger.info({ count: stale.length }, "[FCM] Purged stale tokens from DB");
+    logger.info({ count: stale.length }, "[FCM] Invalid Token Removed");
   } catch (err) {
     logger.warn({ err }, "[FCM] Failed to purge stale tokens");
   }
@@ -237,27 +237,74 @@ async function sendBatch(
   message: MulticastMessage,
   batchTokens: string[],
 ): Promise<number> {
+  const channelId = (message.android?.notification as any)?.channelId ?? "none";
+  const title     = message.notification?.title ?? "";
+
   logger.info(
-    { tokenCount: batchTokens.length, channelId: (message.android?.notification as any)?.channelId },
-    "[FCM] Sending batch...",
+    { tokenCount: batchTokens.length, channelId, title },
+    "[FCM] Sending",
   );
 
-  const response = await admin.messaging(app).sendEachForMulticast(message);
+  let response: Awaited<ReturnType<typeof admin.messaging.prototype.sendEachForMulticast>>;
+  try {
+    response = await admin.messaging(app).sendEachForMulticast(message);
+  } catch (err: any) {
+    // Top-level failure (e.g. auth error, network) — log with full payload context
+    logger.error(
+      {
+        err,
+        code:        err?.errorInfo?.code ?? err?.code ?? "unknown",
+        errMessage:  err?.message,
+        channelId,
+        title,
+        tokenCount:  batchTokens.length,
+        // Print last 8 chars of each token for correlation without leaking full tokens
+        tokens:      batchTokens.map((t) => t.slice(-8)),
+      },
+      "[FCM] Firebase Error — sendEachForMulticast threw",
+    );
+    return 0;
+  }
 
   const stale: string[] = [];
+
   response.responses.forEach((r, i) => {
+    const tokenSuffix = batchTokens[i]?.slice(-8) ?? "?";
     if (r.success) {
-      logger.debug({ token: batchTokens[i]?.slice(-8), messageId: r.messageId }, "[FCM] Token delivery success");
+      logger.info(
+        { token: tokenSuffix, messageId: r.messageId },
+        "[FCM] Firebase Success",
+      );
+      logger.info(
+        { token: tokenSuffix, messageId: r.messageId },
+        "[FCM] Message ID",
+      );
       return;
     }
+
+    // Delivery failure for this specific token
     const code: string = r.error?.errorInfo?.code ?? (r.error as any)?.code ?? "unknown";
-    logger.warn(
-      { code, token: batchTokens[i]?.slice(-8), errorMessage: r.error?.message },
-      "[FCM] Token delivery failure",
+    const errMsg = r.error?.message ?? "unknown";
+
+    logger.error(
+      {
+        code,
+        token:      tokenSuffix,
+        errMessage: errMsg,
+        // Full payload context so the caller can reproduce the failing request
+        channelId,
+        title,
+        payloadDataKeys: Object.keys(message.data ?? {}),
+      },
+      "[FCM] Firebase Error",
     );
+
     if (isStaleCode(code)) {
       stale.push(batchTokens[i]!);
-      logger.info({ token: batchTokens[i]?.slice(-8) }, "[FCM] Stale token flagged for removal");
+      logger.info(
+        { token: tokenSuffix, code },
+        "[FCM] Invalid Token Removed — flagged for DB purge",
+      );
     }
   });
 
@@ -293,18 +340,20 @@ export async function sendFcmToMany(
 ): Promise<number> {
   logger.info(
     {
-      tokenCount: tokens.length,
-      title: payload.title,
-      channelId: payload.channelId,
-      collapseKey: payload.collapseKey,
-      hasImageUrl: !!payload.imageUrl,
-      dataKeys: payload.data ? Object.keys(payload.data) : [],
+      tokenCount:   tokens.length,
+      title:        payload.title,
+      body:         payload.body,
+      channelId:    payload.channelId,
+      collapseKey:  payload.collapseKey,
+      hasImageUrl:  !!payload.imageUrl,
+      dataKeys:     payload.data ? Object.keys(payload.data) : [],
+      data:         payload.data,
     },
-    "[FCM] sendFcmToMany called",
+    "[FCM] Payload",
   );
 
   if (tokens.length === 0) {
-    logger.warn("[FCM] sendFcmToMany called with empty token list — no push sent");
+    logger.warn("[FCM] Tokens Found: 0 — no push sent");
     return 0;
   }
 
@@ -320,7 +369,7 @@ export async function sendFcmToMany(
     return 0;
   }
 
-  logger.info({ uniqueTokenCount: unique.length }, "[FCM] Sending to unique tokens");
+  logger.info({ uniqueTokenCount: unique.length }, "[FCM] Tokens Found");
 
   const admin = require("firebase-admin") as typeof import("firebase-admin");
 
@@ -328,7 +377,7 @@ export async function sendFcmToMany(
   for (let i = 0; i < unique.length; i += FCM_MAX_BATCH) {
     const chunk   = unique.slice(i, i + FCM_MAX_BATCH);
     const message = buildMulticastMessage(chunk, payload);
-    logger.debug({ batchIndex: Math.floor(i / FCM_MAX_BATCH), batchSize: chunk.length }, "[FCM] Sending batch");
+    logger.info({ batchIndex: Math.floor(i / FCM_MAX_BATCH), batchSize: chunk.length }, "[FCM] Sending batch");
     try {
       total += await sendBatch(admin, app, message, chunk);
     } catch (err) {

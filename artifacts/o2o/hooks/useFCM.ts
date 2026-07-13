@@ -18,6 +18,13 @@
  * Background (quit-state) handler is registered in index.js via:
  *   messaging().setBackgroundMessageHandler(...)
  *
+ * IMPORTANT — single initialization:
+ *   Callbacks (onForegroundMessage, onSilentMessage, navigate) are stored in
+ *   refs so that the main effect only runs when `enabled` changes (i.e. on
+ *   login / logout). Inline arrow functions passed by the parent will NOT
+ *   retrigger the effect — which was the root cause of the repeated
+ *   "Initialising FCM listeners / Cleaning up FCM listeners" loop.
+ *
  * Usage:
  *   const { unregisterToken } = useFCM({ onForegroundMessage, onSilentMessage, navigate });
  */
@@ -135,6 +142,24 @@ export function useFCM({
   enabled = true,
 }: UseFCMOptions = {}) {
   /**
+   * Store callbacks in refs so that changes to the callback references do NOT
+   * retrigger the main useEffect. Listeners call these refs at invocation time,
+   * which means they always use the latest callback without ever causing a
+   * re-initialization cycle.
+   *
+   * Pattern: assign in render body (not in an effect) so the ref is always
+   * synchronised before any listener could fire.
+   */
+  const onForegroundMessageRef = useRef(onForegroundMessage);
+  onForegroundMessageRef.current = onForegroundMessage;
+
+  const onSilentMessageRef = useRef(onSilentMessage);
+  onSilentMessageRef.current = onSilentMessage;
+
+  const navigateRef = useRef(navigate);
+  navigateRef.current = navigate;
+
+  /**
    * All listener unsubscribe functions collected here and called on unmount.
    * This guarantees zero memory leaks from Firebase listeners.
    */
@@ -213,21 +238,27 @@ export function useFCM({
   const handleNavigation = useCallback(
     (data?: Record<string, string>) => {
       if (!data) {
-        console.log("[FCM] handleNavigation called with no data");
+        console.log("[FCM] Navigation target: none (no data)");
         return;
       }
       if (!data.screen) {
-        console.warn("[FCM] handleNavigation: no screen in data — cannot navigate. data keys:", Object.keys(data));
+        console.warn("[FCM] Navigation target: unknown — no screen in data. Keys:", Object.keys(data));
         return;
       }
-      console.log(`[FCM] Navigating to screen="${data.screen}" with params:`, JSON.stringify(data));
+      console.log(`[FCM] Navigation target: screen="${data.screen}" params:`, JSON.stringify(data));
       const { screen, ...params } = data;
-      navigate?.(screen, params);
+      navigateRef.current?.(screen, params);
     },
-    [navigate],
+    [], // stable — uses ref internally
   );
 
   // ── Main effect ────────────────────────────────────────────────────────────
+  //
+  // IMPORTANT: This effect only depends on `enabled`.
+  // Callbacks (onForegroundMessage, onSilentMessage, navigate) are accessed via
+  // refs so that changing the callback reference (e.g. a parent re-render passing
+  // a new inline arrow function) does NOT cause cleanup + re-initialization.
+  // This fixes the "Initialising FCM listeners / Cleaning up FCM listeners" loop.
 
   useEffect(() => {
     if (!enabled) {
@@ -276,7 +307,7 @@ export function useFCM({
         // ── Step 3: Token refresh listener ─────────────────────────────────
         console.log("[FCM] Step 3/6 — Registering token refresh listener");
         const unsubRefresh = onTokenRefresh(messagingInst, async (newToken) => {
-          console.log("[FCM] Token refreshed by Firebase (last 10):", newToken.slice(-10));
+          console.log("[FCM] Token refresh — new token (last 10):", newToken.slice(-10));
           if (mounted) await registerToken(newToken);
         });
         unsubscribers.current.push(unsubRefresh);
@@ -301,7 +332,7 @@ export function useFCM({
             if (!hasNotif && msg.data) {
               // Silent data-only push (edit, delete, reaction, typing, read-receipt)
               console.log("[FCM] Foreground SILENT message — dispatching to onSilentMessage");
-              onSilentMessage?.(msg.data as Record<string, string>);
+              onSilentMessageRef.current?.(msg.data as Record<string, string>);
               return;
             }
 
@@ -311,7 +342,7 @@ export function useFCM({
               console.log(
                 `[FCM] Foreground VISIBLE message — showing in-app banner. title="${msg.notification.title}"`,
               );
-              onForegroundMessage?.({
+              onForegroundMessageRef.current?.({
                 title: msg.notification.title ?? "O2O",
                 body:  msg.notification.body  ?? "",
                 data:  msg.data as Record<string, string> | undefined,
@@ -327,7 +358,7 @@ export function useFCM({
         console.log("[FCM] Step 5/6 — Registering background-tap listener (onNotificationOpenedApp)");
         const unsubBgTap = onNotificationOpenedApp(messagingInst, (msg) => {
           const screen = (msg.data as any)?.screen ?? "none";
-          console.log(`[FCM] Background notification tapped — screen=${screen} data:`, JSON.stringify(msg.data));
+          console.log(`[FCM] Notification opened (background) — screen=${screen} data:`, JSON.stringify(msg.data));
           if (mounted) handleNavigation(msg.data as Record<string, string> | undefined);
         });
         unsubscribers.current.push(unsubBgTap);
@@ -340,7 +371,7 @@ export function useFCM({
         if (initial) {
           const screen = (initial.data as any)?.screen ?? "none";
           console.log(
-            `[FCM] App launched from notification tap — screen=${screen}` +
+            `[FCM] Notification opened (quit-state) — screen=${screen}` +
             ` messageId=${initial.messageId ?? "none"} data:`,
             JSON.stringify(initial.data),
           );
@@ -363,13 +394,18 @@ export function useFCM({
 
     init();
 
-    // Cleanup: unsubscribe all listeners when component unmounts or enabled→false
+    // Cleanup: unsubscribe all listeners when enabled changes (login/logout only)
     return () => {
       console.log("[FCM] Cleaning up FCM listeners");
       mounted = false;
       cleanup();
     };
-  }, [enabled, registerToken, onForegroundMessage, onSilentMessage, handleNavigation, cleanup]);
+
+  // IMPORTANT: Do NOT add onForegroundMessage, onSilentMessage, or navigate here.
+  // They are accessed via refs — adding them would cause cleanup+reinit on every
+  // parent re-render that passes a new inline arrow function (the original bug).
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [enabled]);
 
   return { unregisterToken };
 }

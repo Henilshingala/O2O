@@ -54,9 +54,15 @@ public class MainApplication extends Application implements ReactApplication {
    * Channel IDs MUST match the values sent in the FCM payload from the backend
    * (see api-server/src/lib/fcm.ts → channelId field).
    *
+   * ALL channels use IMPORTANCE_HIGH so that:
+   *   - Heads-up (peek) banners appear while the device is in use
+   *   - Notifications appear on the lock screen (visibility=PUBLIC in payload)
+   *   - Sound and vibration play immediately
+   *
    * Channels are permanent once created — the system ignores updates to
    * importance/sound/vibration after the first install. Users can customise
    * each channel individually in Settings → App info → Notifications.
+   * A fresh install (or clearing app data) picks up any channel changes.
    *
    * Required: Android 8.0+ (API 26+). Safe no-op on older versions.
    */
@@ -66,11 +72,13 @@ public class MainApplication extends Application implements ReactApplication {
     NotificationManager nm = getSystemService(NotificationManager.class);
     if (nm == null) return;
 
+    // Audio attributes shared by message-style channels
     AudioAttributes messageAudio = new AudioAttributes.Builder()
         .setUsage(AudioAttributes.USAGE_NOTIFICATION_COMMUNICATION_INSTANT)
         .setContentType(AudioAttributes.CONTENT_TYPE_SONIFICATION)
         .build();
 
+    // Audio attributes shared by alert-style channels
     AudioAttributes alertAudio = new AudioAttributes.Builder()
         .setUsage(AudioAttributes.USAGE_NOTIFICATION)
         .setContentType(AudioAttributes.CONTENT_TYPE_SONIFICATION)
@@ -80,7 +88,7 @@ public class MainApplication extends Application implements ReactApplication {
     NotificationChannel chatCh = new NotificationChannel(
         "o2o_chat",
         "Messages",
-        NotificationManager.IMPORTANCE_HIGH     // shows heads-up banner + sound
+        NotificationManager.IMPORTANCE_HIGH     // heads-up banner + sound + vibration
     );
     chatCh.setDescription("Chat and group message notifications");
     chatCh.enableVibration(true);
@@ -118,17 +126,25 @@ public class MainApplication extends Application implements ReactApplication {
     orderCh.setSound(android.provider.Settings.System.DEFAULT_NOTIFICATION_URI, alertAudio);
     nm.createNotificationChannel(orderCh);
 
-    // ── o2o_social — Friend requests, mentions (IMPORTANCE_DEFAULT) ───────────
+    // ── o2o_social — Friend requests, mentions (IMPORTANCE_HIGH) ─────────────
+    //
+    // FIX: was IMPORTANCE_DEFAULT — heads-up banner was never shown.
+    // Friend-request and friend-accepted notifications use this channel.
+    // Sound was also missing — added now.
     NotificationChannel socialCh = new NotificationChannel(
         "o2o_social",
         "Social",
-        NotificationManager.IMPORTANCE_DEFAULT  // no heads-up; shows in shade
+        NotificationManager.IMPORTANCE_HIGH     // FIX: was IMPORTANCE_DEFAULT
     );
     socialCh.setDescription("Friend requests, follows, and social activity");
     socialCh.enableVibration(true);
-    socialCh.setVibrationPattern(new long[]{0, 200});
+    socialCh.setVibrationPattern(new long[]{0, 200, 100, 200});
     socialCh.enableLights(true);
     socialCh.setLightColor(0xFF8B5CF6);         // purple
+    socialCh.setSound(                          // FIX: was missing entirely
+        android.provider.Settings.System.DEFAULT_NOTIFICATION_URI,
+        alertAudio
+    );
     nm.createNotificationChannel(socialCh);
 
     // ── o2o_calls — Calls (IMPORTANCE_HIGH, full-screen intent ready) ─────────
@@ -145,16 +161,25 @@ public class MainApplication extends Application implements ReactApplication {
     callsCh.setSound(android.provider.Settings.System.DEFAULT_NOTIFICATION_URI, alertAudio);
     nm.createNotificationChannel(callsCh);
 
-    // ── o2o_default — Fallback channel (IMPORTANCE_DEFAULT) ──────────────────
+    // ── o2o_default — Fallback channel (IMPORTANCE_HIGH) ─────────────────────
+    //
+    // FIX: was IMPORTANCE_DEFAULT — any notification without an explicit channelId
+    // (or with an unrecognised channelId) fell here and showed no heads-up banner.
+    // Sound was also missing — added now.
     NotificationChannel defaultCh = new NotificationChannel(
         "o2o_default",
         "O2O Notifications",
-        NotificationManager.IMPORTANCE_DEFAULT
+        NotificationManager.IMPORTANCE_HIGH     // FIX: was IMPORTANCE_DEFAULT
     );
     defaultCh.setDescription("General O2O notifications");
     defaultCh.enableVibration(true);
     defaultCh.setVibrationPattern(new long[]{0, 250, 250, 250});
     defaultCh.enableLights(true);
+    defaultCh.setLightColor(0xFF3B82F6);        // brand blue
+    defaultCh.setSound(                         // FIX: was missing entirely
+        android.provider.Settings.System.DEFAULT_NOTIFICATION_URI,
+        alertAudio
+    );
     nm.createNotificationChannel(defaultCh);
   }
 }

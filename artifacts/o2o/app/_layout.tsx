@@ -166,6 +166,12 @@ function navigateFromFCM(
  *
  * Sits inside AuthProvider so it knows whether the user is logged in.
  * FCM listeners are only registered when `user` is truthy.
+ *
+ * IMPORTANT — stable callbacks:
+ *   onForegroundMessage must be wrapped in useCallback (stable reference).
+ *   useFCM stores all callbacks in refs internally, so even if the reference
+ *   changed it would not reinitialize — but using useCallback here is the
+ *   correct React pattern and removes any ambiguity.
  */
 function FCMProvider({ children }: { children: React.ReactNode }) {
   const { user } = useAuth();
@@ -182,11 +188,19 @@ function FCMProvider({ children }: { children: React.ReactNode }) {
     // Future: could write to local cache / invalidate react-query here.
   }, []);
 
+  // Stable reference — does NOT recreate on every render.
+  // Without useCallback, an inline arrow here would create a new reference every
+  // time banner state changes, which was the cause of the FCM reinit loop.
+  const handleForegroundMessage = useCallback(
+    (msg: InAppBannerData) => setBanner(msg),
+    [],
+  );
+
   useFCM({
-    enabled:            !!user,
-    onForegroundMessage: (msg) => setBanner(msg),
-    onSilentMessage:    handleSilentMessage,
-    navigate:           handleNavigate,
+    enabled:             !!user,
+    onForegroundMessage: handleForegroundMessage,
+    onSilentMessage:     handleSilentMessage,
+    navigate:            handleNavigate,
   });
 
   return (
