@@ -11,3 +11,5 @@
   - **On failure:** The `catch` blocks in `sendBatch`, `sendFcmToMany`, and `sendFcmDataOnly` were updated to re-throw exceptions instead of hiding them. The logged error now contains the COMPLETE Firebase Admin SDK error, including `error.code`, `error.message`, the `stack` trace, `validationErrors`, and the complete `message` payload to pinpoint `invalidFields`.
 - **Is the backend ready for testing?** Yes, the project has been updated and compiled (`pnpm run typecheck` and `pnpm run build` completed with no TypeScript errors).
 - **Git commit hash:** `9ebfee552`
+
+> **Note:** After hours and nights of hard work and smart work, finally Firebase push notification is working now! 🚀
