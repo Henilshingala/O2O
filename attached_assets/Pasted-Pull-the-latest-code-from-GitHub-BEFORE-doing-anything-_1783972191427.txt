@@ -1,0 +1,316 @@
+Pull the latest code from GitHub BEFORE doing anything.
+
+IMPORTANT
+
+Do NOT guess.
+Do NOT make random changes.
+Do NOT refactor unrelated code.
+Do NOT change Android UI.
+Do NOT change React Native screens.
+Do NOT change Socket.IO.
+Do NOT change the chat system.
+
+The ONLY issue to solve is:
+
+Android push notifications NEVER appear.
+
+In-app notifications work.
+Socket.IO works.
+Chat works.
+Database works.
+FCM token registration works.
+
+The backend logs still contain:
+
+[FCM] Firebase Admin not initialised — push skipped
+
+This means the backend never sends any notification to Firebase.
+
+==========================================================
+YOUR JOB
+==========================================================
+
+Perform a COMPLETE end-to-end forensic trace.
+
+Trace the notification pipeline from start to finish.
+
+User sends message
+
+↓
+
+Express API receives request
+
+↓
+
+Message saved in PostgreSQL
+
+↓
+
+Socket.IO emit
+
+↓
+
+Notification row created
+
+↓
+
+Recipient FCM tokens loaded
+
+↓
+
+Firebase Admin initialization
+
+↓
+
+FCM payload creation
+
+↓
+
+admin.messaging().send()
+
+↓
+
+Firebase response
+
+↓
+
+Android receives push
+
+↓
+
+NotificationManager
+
+↓
+
+System notification
+
+==========================================================
+DO NOT ASSUME ANYTHING
+==========================================================
+
+Inspect ALL of these:
+
+- src/lib/fcm.ts
+- notifications.ts
+- api.ts
+- server entrypoint
+- package.json
+- tsconfig.json
+- esbuild configuration
+- build scripts
+- Render startup command
+- Firebase Admin SDK initialization
+- FIREBASE_SERVICE_ACCOUNT loading
+- JSON.parse()
+- private_key newline normalization
+- admin.initializeApp()
+- admin.apps.length
+- sendEachForMulticast()
+- send()
+- every try/catch
+- every early return
+- every initialization flag
+- every singleton
+- every import
+
+==========================================================
+VERIFY ENVIRONMENT
+==========================================================
+
+Verify that Render actually has:
+
+FIREBASE_SERVICE_ACCOUNT
+
+Verify:
+
+- environment variable exists
+- not empty
+- JSON parses successfully
+- required fields exist
+- private_key is valid
+- initializeApp() executes
+- admin.apps.length becomes > 0
+
+==========================================================
+ADD TEMPORARY DEBUG LOGS
+==========================================================
+
+I do NOT want hidden exceptions.
+
+Log EVERYTHING.
+
+Server startup:
+
+FCM_STARTUP
+
+FIREBASE_SERVICE_ACCOUNT exists
+
+JSON parse success
+
+Firebase initialize started
+
+Firebase initialize success
+
+admin.apps.length
+
+or
+
+FULL exception
+
+including stack trace.
+
+When sending:
+
+Recipient user id
+
+Recipient tokens
+
+Payload
+
+Calling Firebase
+
+Firebase response
+
+Firebase message id
+
+Failure count
+
+Success count
+
+Exact Firebase error code
+
+Exact Firebase error message
+
+Complete stack trace
+
+Never swallow exceptions.
+
+==========================================================
+IF INITIALIZATION FAILS
+==========================================================
+
+Find EXACTLY why.
+
+Do NOT write:
+
+"probably"
+
+"maybe"
+
+"likely"
+
+I want:
+
+File
+
+Line
+
+Function
+
+Exception
+
+Root cause
+
+==========================================================
+IF INITIALIZATION SUCCEEDS
+==========================================================
+
+Verify that:
+
+admin.messaging().send()
+
+or
+
+sendEachForMulticast()
+
+actually executes.
+
+Verify Firebase returns a message ID.
+
+Example:
+
+projects/o2os/messages/0:172837463847...
+
+If no message ID exists,
+find exactly why.
+
+==========================================================
+CHECK BUILD SYSTEM
+==========================================================
+
+Inspect whether ESBuild, TypeScript or ESM/CommonJS conversion is rewriting firebase-admin imports incorrectly.
+
+If "Dynamic require of firebase-admin is not supported" still exists anywhere in the build output, fix the ROOT CAUSE.
+
+Do NOT work around it.
+
+==========================================================
+DO NOT STOP
+==========================================================
+
+The work is NOT complete until Render logs show ALL of these:
+
+Firebase initialized successfully
+
+admin.apps.length > 0
+
+Recipient tokens found
+
+Calling Firebase send()
+
+Firebase send successful
+
+Firebase Message ID:
+projects/.../messages/...
+
+No more:
+
+Firebase Admin not initialised — push skipped
+
+==========================================================
+AFTER FIXING
+==========================================================
+
+Run the backend.
+
+Deploy to Render.
+
+Verify the new Render logs.
+
+If the logs still contain:
+
+Firebase Admin not initialised
+
+or
+
+Push skipped
+
+continue debugging.
+
+Do NOT stop.
+
+==========================================================
+OUTPUT
+==========================================================
+
+Create a markdown report named:
+
+FCM_ROOT_CAUSE_REPORT.md
+
+The report must contain:
+
+1. Root cause
+2. File(s) changed
+3. Why Firebase Admin was not initializing
+4. Exact fix
+5. Before/after logs
+6. Firebase initialization proof
+7. Firebase message ID proof
+8. Render deployment verification
+9. Git commit hash
+
+Commit all verified fixes.
+
+Push everything to GitHub.
+
+Do not finish until Firebase Admin initializes correctly and the Render logs prove that Firebase successfully sends notifications.
