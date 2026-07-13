@@ -22,7 +22,12 @@ import { db } from "@workspace/db";
 import { fcmTokens } from "@workspace/db/schema";
 import { inArray } from "drizzle-orm";
 import { logger } from "./logger.js";
-import * as admin from "firebase-admin";
+// firebase-admin v13+ modular API — do NOT use `import * as admin` because
+// admin.apps / admin.initializeApp / admin.credential / admin.messaging are
+// undefined in the ESM bundle (they live on the compat namespace, not the
+// default export). Use the sub-package entry points instead.
+import { initializeApp, getApps, cert } from "firebase-admin/app";
+import { getMessaging }                  from "firebase-admin/messaging";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -53,7 +58,7 @@ export interface FcmPayload {
 
 // ─── Firebase Admin singleton ─────────────────────────────────────────────────
 
-import type { App } from "firebase-admin/app";
+import type { App }              from "firebase-admin/app";
 import type { MulticastMessage } from "firebase-admin/messaging";
 
 const FCM_MAX_BATCH       = 500;     // Firebase hard limit per sendEachForMulticast call
@@ -133,19 +138,19 @@ function getAdminApp(): App | null {
     );
 
     // Guard against double-init (hot-reload in dev, or module cache edge cases)
-    const existing = admin.apps.find((a) => a?.name === "[DEFAULT]");
+    const existing = getApps().find((a) => a?.name === "[DEFAULT]");
     if (existing) {
       _app = existing;
       logger.info("[FCM] Reusing existing Firebase Admin app");
       return _app;
     }
 
-    _app = admin.initializeApp({
-      credential: admin.credential.cert(parsed as Parameters<typeof admin.credential.cert>[0]),
+    _app = initializeApp({
+      credential: cert(parsed as Parameters<typeof cert>[0]),
     });
 
     logger.info(
-      { appsLength: admin.apps.length },
+      { appsLength: getApps().length },
       "[FCM] Firebase Admin SDK initialised successfully",
     );
     return _app;
@@ -204,12 +209,12 @@ export function initFirebaseAdmin(): void {
 
   if (app) {
     logger.info(
-      { appsLength: admin.apps.length },
+      { appsLength: getApps().length },
       "[FCM_STARTUP] Firebase Admin SDK ready — admin.apps.length > 0",
     );
   } else {
     logger.error(
-      { reason: _initFailReason, appsLength: admin.apps.length },
+      { reason: _initFailReason, appsLength: getApps().length },
       "[FCM_STARTUP] Firebase Admin SDK FAILED TO INITIALIZE — no pushes will be sent. " +
       "Reason: " + _initFailReason,
     );
@@ -338,7 +343,6 @@ function buildDataOnlyMulticastMessage(
 // ─── Core batch sender ────────────────────────────────────────────────────────
 
 async function sendBatch(
-  admin: typeof import("firebase-admin"),
   app: App,
   message: MulticastMessage,
   batchTokens: string[],
@@ -358,9 +362,9 @@ async function sendBatch(
     "[FCM] Sending",
   );
 
-  let response: Awaited<ReturnType<typeof admin.messaging.prototype.sendEachForMulticast>>;
+  let response: Awaited<ReturnType<ReturnType<typeof getMessaging>["sendEachForMulticast"]>>;
   try {
-    response = await admin.messaging(app).sendEachForMulticast(message);
+    response = await getMessaging(app).sendEachForMulticast(message);
   } catch (err: any) {
     // Top-level failure (e.g. auth error, network) — log with full payload context
     logger.error(
@@ -496,7 +500,7 @@ export async function sendFcmToMany(
     const message = buildMulticastMessage(chunk, payload);
     logger.info({ batchIndex: Math.floor(i / FCM_MAX_BATCH), batchSize: chunk.length }, "[FCM] Sending batch");
     try {
-      total += await sendBatch(admin, app, message, chunk);
+      total += await sendBatch(app, message, chunk);
     } catch (err) {
       logger.error({ err }, "[FCM] sendFcmToMany batch threw");
       throw err;
@@ -539,7 +543,7 @@ export async function sendFcmDataOnly(
     const chunk   = unique.slice(i, i + FCM_MAX_BATCH);
     const message = buildDataOnlyMulticastMessage(chunk, data, collapseKey);
     try {
-      total += await sendBatch(admin, app, message, chunk);
+      total += await sendBatch(app, message, chunk);
     } catch (err) {
       logger.error({ err }, "[FCM] sendFcmDataOnly batch threw");
       throw err;
