@@ -182,9 +182,15 @@ function buildMulticastMessage(
       notification: {
         channelId:            payload.channelId ?? "o2o_default",
         sound:                "default",
+        // Firebase Admin SDK field: vibrateTimingsMillis (NOT vibrationTimingsMillis)
+        // Both names exist in older docs — vibrateTimingsMillis is the correct v1 API name.
         vibrateTimingsMillis: [0, 250, 250, 250],
-        priority:             "high",
-        visibility:           "public",
+        // notificationPriority: HIGH makes the notification a heads-up banner
+        notificationPriority: "PRIORITY_HIGH",
+        // visibility: PUBLIC shows the notification on the lock screen
+        visibility:           "PUBLIC",
+        // color: accent colour for the notification icon (overrides channel default)
+        color:                "#3B82F6",
         // NOTE: Do NOT set clickAction here — it breaks React Native notification handling.
         //       @react-native-firebase/messaging launches MainActivity automatically.
         //       Setting "FLUTTER_NOTIFICATION_CLICK" (Flutter-only value) causes Android

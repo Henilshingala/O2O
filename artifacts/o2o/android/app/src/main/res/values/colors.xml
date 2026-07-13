@@ -3,4 +3,6 @@
   <color name="iconBackground">#ffffff</color>
   <color name="colorPrimary">#023c69</color>
   <color name="colorPrimaryDark">#1E3A8A</color>
+  <!-- FCM notification accent colour (status-bar icon tint, LED on supported hardware) -->
+  <color name="fcm_notification_color">#3B82F6</color>
 </resources>

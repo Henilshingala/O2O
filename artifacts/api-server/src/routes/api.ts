@@ -534,8 +534,13 @@ router.post("/chats/:id/messages", validateBody(sendMessageSchema), async (req: 
 
     // ── 3. Firebase push — to the recipient (never the sender) ──────────────
     if (otherId) {
+      // Fetch sender name from DB — never trust req.body for notification title
+      const senderRow = await db.select({ fullName: schema.users.fullName })
+        .from(schema.users)
+        .where(eq(schema.users.id, req.user!.userId))
+        .limit(1);
+      const senderName = senderRow[0]?.fullName || "Someone";
       const msgType    = req.body.type || "text";
-      const senderName = req.body.senderName || "Someone";
       let preview = req.body.text?.slice(0, 80) || "New message";
       if (msgType === "image") preview = `📷 ${senderName} sent a photo`;
       else if (msgType === "video") preview = `🎥 ${senderName} sent a video`;
@@ -556,7 +561,7 @@ router.post("/chats/:id/messages", validateBody(sendMessageSchema), async (req: 
           chatId,
           messageId:   id,
           collapseKey: chatId,        // chat messages collapse per conversation
-          ttlSeconds:  86400,          // 24 h — old chat previews aren’t useful
+          ttlSeconds:  86400,          // 24 h — old chat previews aren't useful
           params:      { id: chatId },
         },
       );
@@ -872,8 +877,13 @@ router.post("/groups/:id/messages", validateBody(sendMessageSchema), async (req:
       .from(schema.groupMembers)
       .where(eq(schema.groupMembers.groupId, groupId));
     const senderId = req.user!.userId;
+    // Fetch sender name from DB — never trust req.body for notification title
+    const senderRow2 = await db.select({ fullName: schema.users.fullName })
+      .from(schema.users)
+      .where(eq(schema.users.id, senderId))
+      .limit(1);
+    const senderName = senderRow2[0]?.fullName || "Someone";
     const msgType  = req.body.type || "text";
-    const senderName = req.body.senderName || "Someone";
     let preview = req.body.text?.slice(0, 80) || "New message";
     if (msgType === "image") preview = `📷 ${senderName} sent a photo`;
     else if (msgType === "video") preview = `🎥 ${senderName} sent a video`;

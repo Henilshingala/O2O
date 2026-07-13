@@ -63,6 +63,38 @@
     android:requestLegacyExternalStorage="true"
     android:extractNativeLibs="true">
 
+    <!-- ── Firebase Cloud Messaging ─────────────────────────────────────────── -->
+    <!--
+      Default channel for FCM notifications.
+      MUST match a channel created in MainApplication.java.
+      Without this, notifications sent without an explicit channel_id will
+      be silently dropped on Android 8.0+ (API 26+).
+    -->
+    <meta-data
+      android:name="com.google.firebase.messaging.default_notification_channel_id"
+      android:value="o2o_default"
+      tools:replace="android:value" />
+
+    <!--
+      Small white-on-transparent notification icon.
+      FCM requires a separate icon for the status bar — using ic_launcher
+      (which is coloured) produces a grey silhouette on Android 5+.
+      ic_notification is a flat white version of the app logo.
+    -->
+    <meta-data
+      android:name="com.google.firebase.messaging.default_notification_icon"
+      android:resource="@drawable/ic_notification" />
+
+    <!--
+      Accent colour used for the notification icon background (Android 5-7)
+      and LED light on supported hardware.
+    -->
+    <meta-data
+      android:name="com.google.firebase.messaging.default_notification_color"
+      android:resource="@color/fcm_notification_color"
+      tools:replace="android:resource" />
+
+
     <activity
       android:name=".MainActivity"
       android:configChanges="keyboard|keyboardHidden|orientation|screenSize|screenLayout|uiMode"
