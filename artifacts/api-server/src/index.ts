@@ -4,6 +4,7 @@ import app from "./app.js";
 import { logger } from "./lib/logger.js";
 import { seedSuperAdmin } from "./lib/seed-admin.js";
 import { initSocket, emitToBid } from "./socket/index.js";
+import { initFirebaseAdmin } from "./lib/fcm.js";
 import { db } from "@workspace/db";
 import { bids } from "@workspace/db/schema";
 import { eq, and, lt, sql } from "drizzle-orm";
@@ -92,6 +93,7 @@ async function ensureTablesExist() {
 
 async function startup() {
   await ensureTablesExist();
+  initFirebaseAdmin(); // pre-warm Firebase Admin SDK — errors surface here at startup
   await seedSuperAdmin();
 
   const httpServer = http.createServer(app);

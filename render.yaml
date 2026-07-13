@@ -23,3 +23,5 @@ services:
         value: Super Admin
       - key: CORS_ORIGIN
         value: '*'
+      - key: FIREBASE_SERVICE_ACCOUNT
+        sync: false

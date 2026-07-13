@@ -61,14 +61,24 @@ const DEFAULT_TTL_SECONDS = 2419200; // 28 days
 
 let _app: App | null = null;
 let _initAttempted   = false; // guarantees exactly-once init even under concurrent calls
+let _initFailReason  = "not attempted yet"; // human-readable reason for the last failure
 
 function getAdminApp(): App | null {
   // Fast path — already attempted (success or failure)
-  if (_initAttempted) return _app;
+  if (_initAttempted) {
+    if (!_app) {
+      logger.warn(
+        { reason: _initFailReason },
+        "[FCM] Firebase Admin not initialised — push skipped (init failed at startup)",
+      );
+    }
+    return _app;
+  }
   _initAttempted = true;
 
   const raw = process.env["FIREBASE_SERVICE_ACCOUNT"];
   if (!raw) {
+    _initFailReason = "FIREBASE_SERVICE_ACCOUNT env var is not set";
     logger.warn("[FCM] FIREBASE_SERVICE_ACCOUNT not set — push notifications disabled");
     return null;
   }
@@ -79,13 +89,46 @@ function getAdminApp(): App | null {
     // JSON.parse handles both real \n (from a proper JSON string) and the
     // literal two-char sequence \\n that some secret managers produce.
     // We normalise the private_key field explicitly as a safety net.
-    const parsed = JSON.parse(raw) as Record<string, unknown>;
+    let parsed: Record<string, unknown>;
+    try {
+      parsed = JSON.parse(raw) as Record<string, unknown>;
+    } catch (parseErr: unknown) {
+      const e = parseErr as Error;
+      _initFailReason = `JSON.parse failed: ${e.message}`;
+      logger.error(
+        { err: parseErr, rawLength: raw.length, rawPrefix: raw.slice(0, 60) },
+        "[FCM_STARTUP] FATAL — FIREBASE_SERVICE_ACCOUNT is not valid JSON. " +
+        "Paste the complete service-account JSON (not base64, not escaped). " +
+        `Parse error: ${e.message}`,
+      );
+      return null;
+    }
+
     if (typeof parsed.private_key === "string") {
       parsed.private_key = (parsed.private_key as string).replace(/\\n/g, "\n");
     }
 
+    // Validate required fields before calling initializeApp
+    const requiredFields = ["type", "project_id", "private_key_id", "private_key", "client_email"];
+    const missingFields  = requiredFields.filter((f) => !parsed[f]);
+    if (missingFields.length > 0) {
+      _initFailReason = `Service account JSON missing required fields: ${missingFields.join(", ")}`;
+      logger.error(
+        { missingFields, presentFields: Object.keys(parsed) },
+        "[FCM_STARTUP] FATAL — service account JSON is missing required fields",
+      );
+      return null;
+    }
+
     logger.info(
-      { project_id: parsed.project_id, client_email: parsed.client_email },
+      {
+        project_id:   parsed.project_id,
+        client_email: parsed.client_email,
+        type:         parsed.type,
+        private_key_prefix: typeof parsed.private_key === "string"
+          ? (parsed.private_key as string).slice(0, 40)
+          : "NOT_A_STRING",
+      },
       "[FCM] Parsed service account — project_id and client_email verified",
     );
 
@@ -101,11 +144,75 @@ function getAdminApp(): App | null {
       credential: admin.credential.cert(parsed as Parameters<typeof admin.credential.cert>[0]),
     });
 
-    logger.info("[FCM] Firebase Admin SDK initialised successfully");
+    logger.info(
+      { appsLength: admin.apps.length },
+      "[FCM] Firebase Admin SDK initialised successfully",
+    );
     return _app;
-  } catch (err) {
-    logger.error({ err }, "[FCM] Failed to initialise — check FIREBASE_SERVICE_ACCOUNT JSON format");
+  } catch (err: unknown) {
+    const e = err as Error & { errorInfo?: unknown; code?: string };
+    _initFailReason = `admin.initializeApp() threw: ${e.message ?? String(err)}`;
+    logger.error(
+      {
+        err,
+        code:       e.code,
+        errorInfo:  e.errorInfo,
+        stack:      e.stack,
+        message:    e.message,
+      },
+      "[FCM_STARTUP] FATAL — admin.initializeApp() threw an exception. " +
+      "Check that FIREBASE_SERVICE_ACCOUNT is the full service-account JSON " +
+      "from Firebase Console → Project Settings → Service Accounts.",
+    );
     return null;
+  }
+}
+
+/**
+ * Pre-warm Firebase Admin SDK at server startup.
+ *
+ * Call this once during app initialization (before serving requests) so that
+ * any configuration error surfaces immediately in the startup logs rather than
+ * silently on the first push attempt.
+ *
+ * Safe to call multiple times — the underlying singleton is initialized exactly once.
+ */
+export function initFirebaseAdmin(): void {
+  logger.info("[FCM_STARTUP] === Firebase Admin SDK initialization ===");
+
+  const raw = process.env["FIREBASE_SERVICE_ACCOUNT"];
+  logger.info(
+    {
+      exists:      !!raw,
+      length:      raw?.length ?? 0,
+      prefix:      raw ? raw.slice(0, 20) : "(not set)",
+      nodeEnv:     process.env["NODE_ENV"],
+    },
+    `[FCM_STARTUP] FIREBASE_SERVICE_ACCOUNT exists: ${!!raw}`,
+  );
+
+  if (!raw) {
+    logger.error(
+      "[FCM_STARTUP] FIREBASE_SERVICE_ACCOUNT is NOT set. " +
+      "Go to Render Dashboard → o2o-api → Environment → Add Environment Variable. " +
+      "Key: FIREBASE_SERVICE_ACCOUNT  Value: (paste entire service-account JSON)",
+    );
+    return;
+  }
+
+  const app = getAdminApp();
+
+  if (app) {
+    logger.info(
+      { appsLength: admin.apps.length },
+      "[FCM_STARTUP] Firebase Admin SDK ready — admin.apps.length > 0",
+    );
+  } else {
+    logger.error(
+      { reason: _initFailReason, appsLength: admin.apps.length },
+      "[FCM_STARTUP] Firebase Admin SDK FAILED TO INITIALIZE — no pushes will be sent. " +
+      "Reason: " + _initFailReason,
+    );
   }
 }
 
