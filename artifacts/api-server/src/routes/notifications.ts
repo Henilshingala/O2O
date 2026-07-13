@@ -6,6 +6,7 @@ import { randomUUID } from "crypto";
 import { requireAuth, type AuthRequest } from "../middlewares/auth";
 import { parseCursorPagination, sendListResponse, buildOffsetMeta, parseOffsetPagination } from "../lib/pagination";
 import { sendFcmToMany, sendFcmDataOnly, type FcmPayload } from "../lib/fcm";
+import { logger } from "../lib/logger.js";
 
 const router = Router();
 router.use(requireAuth);
@@ -105,20 +106,38 @@ export async function createNotification(
   io?: { to: (room: string) => { emit: (event: string, data: unknown) => void } } | null,
   options?: NotificationOptions,
 ) {
+  logger.info(
+    { userId, type, title, channelId: options?.channelId, screen: options?.screen },
+    "[NOTIF] createNotification called",
+  );
+
   // ── 1. Persist to PostgreSQL (must succeed before anything else) ──────────
   const id = genId("notif");
   const row = { id, userId, title, body, type, isRead: false };
   await db.insert(notifications).values(row);
+  logger.info({ notificationId: id }, "[NOTIF] Notification persisted to DB");
 
   // ── 2. Socket.IO — real-time delivery to online clients ───────────────────
   if (io) {
     io.to(`user:${userId}`).emit("notification:new", row);
+    logger.debug({ userId }, "[NOTIF] Socket.IO event emitted");
   }
 
   // ── 3. Firebase push — for offline / background devices ───────────────────
   // Fetch recipient tokens, excluding sender's own devices
   const tokens = await getFcmTokensForRecipient(userId, options?.senderId);
-  if (tokens.length > 0) {
+  logger.info(
+    { userId, tokenCount: tokens.length, senderId: options?.senderId },
+    "[NOTIF] FCM tokens fetched for recipient",
+  );
+
+  if (tokens.length === 0) {
+    logger.warn(
+      { userId },
+      "[NOTIF] No FCM tokens found for recipient — push notification will not be sent. " +
+      "Ensure the user has logged in on an Android device and the FCM token was registered.",
+    );
+  } else {
     // Resolve sender avatar for rich notification (if not already provided)
     const imageUrl = options?.imageUrl ?? (await getSenderAvatar(options?.senderId));
 
@@ -146,8 +165,22 @@ export async function createNotification(
       ...(imageUrl ? { imageUrl } : {}),
     };
 
+    logger.info(
+      {
+        notificationId: id,
+        channelId: fcmPayload.channelId,
+        collapseKey: fcmPayload.collapseKey,
+        dataKeys: Object.keys(data),
+        screen: data.screen,
+        hasImageUrl: !!imageUrl,
+      },
+      "[NOTIF] Dispatching FCM push",
+    );
+
     // Fire-and-forget — never block the API response
-    sendFcmToMany(tokens, fcmPayload).catch(() => { /* logged inside fcm.ts */ });
+    sendFcmToMany(tokens, fcmPayload).catch((err) => {
+      logger.error({ err, notificationId: id }, "[NOTIF] sendFcmToMany threw unexpectedly");
+    });
   }
 
   return row;

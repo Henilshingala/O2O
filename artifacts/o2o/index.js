@@ -17,31 +17,56 @@ import RootLayout from "./app/_layout";
 
 // ─── Firebase background / headless-JS message handler ───────────────────────
 // Must be registered BEFORE AppRegistry.registerComponent().
-// Runs inside a headless JS task when the app is fully closed or backgrounded
-// and a push notification arrives.
+//
+// This handler runs inside a headless JS task when the app is:
+//   - Fully closed (terminated state), OR
+//   - In the background and a push arrives
 //
 // For VISIBLE notifications (payload has `notification` block):
-//   The Firebase SDK displays the system notification automatically.
-//   No code needed here.
+//   The @react-native-firebase/messaging SDK displays the system notification
+//   automatically via its native FirebaseMessagingService. This JS handler
+//   still fires so we can log receipt, but no display code is needed here.
 //
 // For SILENT / DATA-ONLY notifications (no `notification` block):
-//   We receive the message here but intentionally do nothing in headless mode.
-//   The in-app handler (useFCM.onSilentMessage) runs when the app is foregrounded.
+//   We receive the message here. No visible notification is shown.
+//   The in-app handler (useFCM.onSilentMessage) runs when app is foregrounded.
 //
-// This handler must complete quickly and never throw — a crash here will cause
-// Firebase to log a delivery failure even though the token is valid.
+// IMPORTANT:
+//   This handler must complete quickly and never throw — a crash here will
+//   cause Firebase to log a delivery failure even though the token is valid.
+//
+// IMPORTANT:
+//   The `clickAction` in the server FCM payload must NOT be set to
+//   "FLUTTER_NOTIFICATION_CLICK". That Flutter-only value breaks React Native
+//   notification display. The sdk uses MainActivity directly without a
+//   custom clickAction.
 setBackgroundMessageHandler(getMessaging(), async (remoteMessage) => {
   try {
-    if (!remoteMessage.notification && remoteMessage.data) {
-      // Silent data-only push: edit, delete, reaction, typing, read-receipt.
+    const hasNotification = !!remoteMessage.notification;
+    const hasData = !!(remoteMessage.data && Object.keys(remoteMessage.data).length > 0);
+    const type = remoteMessage.data?.["type"] ?? "unknown";
+    const screen = remoteMessage.data?.["screen"] ?? "none";
+    const messageId = remoteMessage.messageId ?? "no-id";
+
+    if (hasNotification) {
+      // Visible notification — the SDK will show the system tray notification
+      // automatically. We just log for debugging.
+      console.log(
+        `[FCM] Background VISIBLE notification received — messageId=${messageId} type=${type} screen=${screen}` +
+        ` title="${remoteMessage.notification?.title}" body="${remoteMessage.notification?.body}"`,
+      );
+    } else if (hasData) {
+      // Silent data-only push (edit, delete, reaction, typing, read-receipt).
       // No visible notification is shown. The app will sync state when foregrounded.
-      const type = remoteMessage.data["type"] ?? "unknown";
-      console.log("[FCM] Background silent message:", type);
+      console.log(
+        `[FCM] Background SILENT message received — messageId=${messageId} type=${type} screen=${screen}`,
+      );
+    } else {
+      console.log(`[FCM] Background message with no notification and no data — messageId=${messageId}`);
     }
-    // Visible notifications are shown by the SDK — nothing extra to do.
   } catch (err) {
     // Never let this handler throw — Firebase SDK may penalise the device
-    console.warn("[FCM] Background handler error:", err);
+    console.warn("[FCM] Background handler error (non-fatal):", err);
   }
 });
 

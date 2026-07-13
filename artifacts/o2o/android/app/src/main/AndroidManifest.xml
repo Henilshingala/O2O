@@ -1,26 +1,39 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android" xmlns:tools="http://schemas.android.com/tools" >
-  <!-- Network permissions -->
+
+  <!-- ── Network ────────────────────────────────────────────────────────────── -->
   <uses-permission android:name="android.permission.INTERNET"/>
-  
-  <!-- Camera and media permissions for image/video upload -->
+
+  <!-- ── Camera and media permissions for image/video upload ───────────────── -->
   <uses-permission android:name="android.permission.CAMERA"/>
   <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" android:maxSdkVersion="32"/>
   <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" android:maxSdkVersion="28"/>
   <uses-permission android:name="android.permission.READ_MEDIA_IMAGES"/>
   <uses-permission android:name="android.permission.READ_MEDIA_VIDEO"/>
-  
-  <!-- Location permissions for user profiles and geo features -->
+
+  <!-- ── Location permissions for user profiles and geo features ───────────── -->
   <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION"/>
   <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION"/>
-  
-  <!-- Audio recording for voice messages -->
+
+  <!-- ── Audio recording for voice messages ─────────────────────────────────── -->
   <uses-permission android:name="android.permission.RECORD_AUDIO"/>
-  
-  <!-- Haptic feedback -->
+
+  <!-- ── Haptic feedback ────────────────────────────────────────────────────── -->
   <uses-permission android:name="android.permission.VIBRATE"/>
-  
-  <!-- Push notifications -->
+
+  <!-- ── Push notifications ─────────────────────────────────────────────────── -->
+  <!-- Required on Android 13+ (API 33+) to show any notification. -->
   <uses-permission android:name="android.permission.POST_NOTIFICATIONS"/>
+
+  <!-- Wake the CPU to process FCM messages when the device is asleep. -->
+  <uses-permission android:name="android.permission.WAKE_LOCK"/>
+
+  <!-- Allow FCM background service to keep running. -->
+  <uses-permission android:name="android.permission.FOREGROUND_SERVICE"/>
+
+  <!-- Receive notifications after device reboot (restores FCM registration). -->
+  <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED"/>
+
+  <!-- ── Intent queries ─────────────────────────────────────────────────────── -->
   <queries>
     <intent>
       <action android:name="android.intent.action.VIEW"/>
@@ -38,18 +51,54 @@
       <data android:scheme="geo"/>
     </intent>
   </queries>
-  <application android:name=".MainApplication" android:label="@string/app_name" android:icon="@mipmap/ic_launcher" android:allowBackup="true" android:theme="@style/AppTheme" android:supportsRtl="true" android:enableOnBackInvokedCallback="false" android:requestLegacyExternalStorage="true" android:extractNativeLibs="true">
-    <activity android:name=".MainActivity" android:configChanges="keyboard|keyboardHidden|orientation|screenSize|screenLayout|uiMode" android:launchMode="singleTask" android:windowSoftInputMode="adjustResize" android:theme="@style/AppTheme" android:exported="true" android:screenOrientation="portrait">
+
+  <application
+    android:name=".MainApplication"
+    android:label="@string/app_name"
+    android:icon="@mipmap/ic_launcher"
+    android:allowBackup="true"
+    android:theme="@style/AppTheme"
+    android:supportsRtl="true"
+    android:enableOnBackInvokedCallback="false"
+    android:requestLegacyExternalStorage="true"
+    android:extractNativeLibs="true">
+
+    <activity
+      android:name=".MainActivity"
+      android:configChanges="keyboard|keyboardHidden|orientation|screenSize|screenLayout|uiMode"
+      android:launchMode="singleTask"
+      android:windowSoftInputMode="adjustResize"
+      android:theme="@style/AppTheme"
+      android:exported="true"
+      android:screenOrientation="portrait">
+
+      <!-- Standard launcher intent -->
       <intent-filter>
         <action android:name="android.intent.action.MAIN"/>
         <category android:name="android.intent.category.LAUNCHER"/>
       </intent-filter>
+
+      <!-- Deep-link: o2o://screen/id — used by FCM notification taps -->
       <intent-filter>
         <action android:name="android.intent.action.VIEW"/>
         <category android:name="android.intent.category.DEFAULT"/>
         <category android:name="android.intent.category.BROWSABLE"/>
         <data android:scheme="o2o"/>
       </intent-filter>
+
+      <!--
+        FCM notification tap handler for @react-native-firebase/messaging.
+
+        When a notification is tapped while the app is in the background or
+        terminated, Android must be able to match an activity to open. The
+        @react-native-firebase/messaging SDK sends an implicit intent with
+        action "android.intent.action.MAIN" — MainActivity already handles
+        this via the LAUNCHER filter above, so NO additional filter is needed.
+
+        DO NOT add an intent-filter for "FLUTTER_NOTIFICATION_CLICK" here.
+        That is a Flutter-only mechanism and will break React Native navigation.
+      -->
     </activity>
+
   </application>
 </manifest>

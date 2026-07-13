@@ -72,6 +72,8 @@ function getAdminApp(): App | null {
     return null;
   }
 
+  logger.info("[FCM] Initialising Firebase Admin SDK...");
+
   try {
     // JSON.parse handles both real \n (from a proper JSON string) and the
     // literal two-char sequence \\n that some secret managers produce.
@@ -80,6 +82,11 @@ function getAdminApp(): App | null {
     if (typeof parsed.private_key === "string") {
       parsed.private_key = (parsed.private_key as string).replace(/\\n/g, "\n");
     }
+
+    logger.info(
+      { project_id: parsed.project_id, client_email: parsed.client_email },
+      "[FCM] Parsed service account — project_id and client_email verified",
+    );
 
     const admin = require("firebase-admin") as typeof import("firebase-admin");
 
@@ -137,13 +144,27 @@ async function purgeStaleTokens(stale: string[]): Promise<void> {
 
 // ─── Message builders ─────────────────────────────────────────────────────────
 
+/**
+ * Build the multicast message for a visible push notification.
+ *
+ * IMPORTANT — clickAction / click_action:
+ *   Do NOT set clickAction in the Android notification block.
+ *   @react-native-firebase/messaging automatically resolves the launch activity
+ *   (MainActivity) without needing a click_action. Setting "FLUTTER_NOTIFICATION_CLICK"
+ *   (a Flutter-only value) causes Android to fail resolving the intent, which silently
+ *   prevents the notification from appearing or the tap from working in React Native apps.
+ *
+ * IMPORTANT — sound / vibration:
+ *   Do NOT combine defaultSound/defaultVibrateTimings with explicit sound/vibrateTimingsMillis.
+ *   When a custom value is provided, omit the "default" fallback flag to avoid SDK conflicts.
+ */
 function buildMulticastMessage(
   tokens: string[],
   payload: FcmPayload,
 ): MulticastMessage {
   const ttl = payload.ttlSeconds ?? DEFAULT_TTL_SECONDS;
 
-  return {
+  const message: MulticastMessage = {
     tokens,
 
     // ── Visible notification shown in the system tray ─────────────────────────
@@ -164,20 +185,25 @@ function buildMulticastMessage(
         vibrateTimingsMillis: [0, 250, 250, 250],
         priority:             "high",
         visibility:           "public",
-        defaultSound:         true,
-        defaultVibrateTimings: true,
-        clickAction:          "FLUTTER_NOTIFICATION_CLICK",
-        // imageUrl → large icon on Android 12+
+        // NOTE: Do NOT set clickAction here — it breaks React Native notification handling.
+        //       @react-native-firebase/messaging launches MainActivity automatically.
+        //       Setting "FLUTTER_NOTIFICATION_CLICK" (Flutter-only value) causes Android
+        //       to fail resolving the activity intent, silently dropping notifications.
+        // NOTE: Do NOT combine defaultSound/defaultVibrateTimings with explicit values —
+        //       they conflict and produce undefined SDK behaviour.
         ...(payload.imageUrl ? { imageUrl: payload.imageUrl } : {}),
       },
     },
 
     // ── Data payload for deep-linking (always present) ────────────────────────
+    // NOTE: Do NOT include click_action here — it's a Flutter concept and is ignored
+    //       (or causes harm) in React Native Firebase apps.
     data: {
-      click_action: "FLUTTER_NOTIFICATION_CLICK",
       ...(payload.data ?? {}),
     },
   };
+
+  return message;
 }
 
 function buildDataOnlyMulticastMessage(
@@ -205,17 +231,27 @@ async function sendBatch(
   message: MulticastMessage,
   batchTokens: string[],
 ): Promise<number> {
+  logger.info(
+    { tokenCount: batchTokens.length, channelId: (message.android?.notification as any)?.channelId },
+    "[FCM] Sending batch...",
+  );
+
   const response = await admin.messaging(app).sendEachForMulticast(message);
 
   const stale: string[] = [];
   response.responses.forEach((r, i) => {
-    if (r.success) return;
+    if (r.success) {
+      logger.debug({ token: batchTokens[i]?.slice(-8), messageId: r.messageId }, "[FCM] Token delivery success");
+      return;
+    }
     const code: string = r.error?.errorInfo?.code ?? (r.error as any)?.code ?? "unknown";
+    logger.warn(
+      { code, token: batchTokens[i]?.slice(-8), errorMessage: r.error?.message },
+      "[FCM] Token delivery failure",
+    );
     if (isStaleCode(code)) {
       stale.push(batchTokens[i]!);
       logger.info({ token: batchTokens[i]?.slice(-8) }, "[FCM] Stale token flagged for removal");
-    } else {
-      logger.warn({ code, token: batchTokens[i]?.slice(-8) }, "[FCM] Delivery failure (non-stale)");
     }
   });
 
@@ -249,13 +285,36 @@ export async function sendFcmToMany(
   tokens: string[],
   payload: FcmPayload,
 ): Promise<number> {
-  if (tokens.length === 0) return 0;
+  logger.info(
+    {
+      tokenCount: tokens.length,
+      title: payload.title,
+      channelId: payload.channelId,
+      collapseKey: payload.collapseKey,
+      hasImageUrl: !!payload.imageUrl,
+      dataKeys: payload.data ? Object.keys(payload.data) : [],
+    },
+    "[FCM] sendFcmToMany called",
+  );
+
+  if (tokens.length === 0) {
+    logger.warn("[FCM] sendFcmToMany called with empty token list — no push sent");
+    return 0;
+  }
 
   const app = getAdminApp();
-  if (!app) return 0;
+  if (!app) {
+    logger.warn("[FCM] Firebase Admin not initialised — push skipped");
+    return 0;
+  }
 
   const unique = [...new Set(tokens.filter(Boolean))]; // de-dup + remove empty
-  if (unique.length === 0) return 0;
+  if (unique.length === 0) {
+    logger.warn("[FCM] All tokens were empty/duplicate after dedup — no push sent");
+    return 0;
+  }
+
+  logger.info({ uniqueTokenCount: unique.length }, "[FCM] Sending to unique tokens");
 
   const admin = require("firebase-admin") as typeof import("firebase-admin");
 
@@ -263,6 +322,7 @@ export async function sendFcmToMany(
   for (let i = 0; i < unique.length; i += FCM_MAX_BATCH) {
     const chunk   = unique.slice(i, i + FCM_MAX_BATCH);
     const message = buildMulticastMessage(chunk, payload);
+    logger.debug({ batchIndex: Math.floor(i / FCM_MAX_BATCH), batchSize: chunk.length }, "[FCM] Sending batch");
     try {
       total += await sendBatch(admin, app, message, chunk);
     } catch (err) {
@@ -270,6 +330,7 @@ export async function sendFcmToMany(
     }
   }
 
+  logger.info({ total, tokenCount: unique.length }, "[FCM] sendFcmToMany complete");
   return total;
 }
 
@@ -284,10 +345,18 @@ export async function sendFcmDataOnly(
   data: Record<string, string>,
   collapseKey?: string,
 ): Promise<number> {
+  logger.info(
+    { tokenCount: tokens.length, dataKeys: Object.keys(data), collapseKey },
+    "[FCM] sendFcmDataOnly called",
+  );
+
   if (tokens.length === 0) return 0;
 
   const app = getAdminApp();
-  if (!app) return 0;
+  if (!app) {
+    logger.warn("[FCM] Firebase Admin not initialised — silent push skipped");
+    return 0;
+  }
 
   const unique = [...new Set(tokens.filter(Boolean))];
   if (unique.length === 0) return 0;

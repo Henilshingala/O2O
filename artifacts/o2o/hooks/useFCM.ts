@@ -8,6 +8,8 @@
  *  4. Foreground messages:
  *     - Data-only (silent) messages → dispatch to onSilentMessage callback.
  *     - Visible messages → show the in-app banner via onForegroundMessage.
+ *       NOTE: FCM does NOT auto-display system notifications when the app is
+ *       in the foreground — the in-app banner IS the foreground notification.
  *  5. Background/quit notification taps → navigate to the correct screen.
  *  6. On logout → unregister the token from the backend immediately.
  *
@@ -46,6 +48,7 @@ async function getOrCreateDeviceId(): Promise<string> {
   if (!id) {
     id = `android_${Date.now()}_${Math.random().toString(36).slice(2, 10)}`;
     await AsyncStorage.setItem(DEVICE_ID_KEY, id);
+    console.log("[FCM] Created new device ID:", id);
   }
   return id;
 }
@@ -58,22 +61,42 @@ async function getOrCreateDeviceId(): Promise<string> {
  * Returns true if notifications are allowed.
  */
 async function ensureNotificationPermission(): Promise<boolean> {
+  console.log(`[FCM] Checking notification permission — OS=${Platform.OS} API=${Platform.Version}`);
+
   // Android < 13: no runtime permission required
-  if (Platform.OS !== "android" || Number(Platform.Version) < 33) return true;
+  if (Platform.OS !== "android") {
+    console.log("[FCM] Non-Android platform — permission skipped");
+    return true;
+  }
+  if (Number(Platform.Version) < 33) {
+    console.log(`[FCM] Android API ${Platform.Version} < 33 — POST_NOTIFICATIONS not required`);
+    return true;
+  }
 
   const alreadyAsked = await AsyncStorage.getItem(NOTIF_PERMISSION_ASKED);
+  console.log("[FCM] Stored permission state:", alreadyAsked ?? "not asked yet");
 
-  if (alreadyAsked === "granted") return true;
-  if (alreadyAsked === "denied")  return false; // user already declined, don't ask again
+  if (alreadyAsked === "granted") {
+    console.log("[FCM] POST_NOTIFICATIONS already granted");
+    return true;
+  }
+  if (alreadyAsked === "denied") {
+    console.warn("[FCM] POST_NOTIFICATIONS previously denied — will not ask again");
+    return false;
+  }
 
   // First time — show the system dialog
+  console.log("[FCM] Requesting POST_NOTIFICATIONS permission from user...");
   try {
     const result = await PermissionsAndroid.request(
       PermissionsAndroid.PERMISSIONS.POST_NOTIFICATIONS ?? ("android.permission.POST_NOTIFICATIONS" as any),
     );
     const granted = result === PermissionsAndroid.RESULTS.GRANTED;
     await AsyncStorage.setItem(NOTIF_PERMISSION_ASKED, granted ? "granted" : "denied");
-    if (!granted) console.info("[FCM] POST_NOTIFICATIONS permission denied by user");
+    console.log(`[FCM] Permission dialog result: ${result} — granted=${granted}`);
+    if (!granted) {
+      console.warn("[FCM] POST_NOTIFICATIONS permission denied by user — push notifications will not work");
+    }
     return granted;
   } catch (err) {
     console.warn("[FCM] Permission request threw:", err);
@@ -128,24 +151,32 @@ export function useFCM({
   // ── Token registration ─────────────────────────────────────────────────────
 
   const registerToken = useCallback(async (token: string) => {
-    if (!token) return;
+    if (!token) {
+      console.warn("[FCM] registerToken called with empty token — skipping");
+      return;
+    }
     // Skip network call if the token hasn't changed since last registration
-    if (token === registeredToken.current) return;
+    if (token === registeredToken.current) {
+      console.log("[FCM] Token unchanged — skipping re-registration");
+      return;
+    }
     registeredToken.current = token;
 
     // Persist locally so AuthContext logout can read it even if the hook unmounts first
     await AsyncStorage.setItem(FCM_TOKEN_KEY, token);
+    console.log("[FCM] Token obtained (last 10 chars):", token.slice(-10));
 
     try {
       const deviceId = await getOrCreateDeviceId();
-      await customFetch("/api/notifications/fcm-token", {
+      console.log("[FCM] Registering token with backend — deviceId:", deviceId);
+      const response = await customFetch("/api/notifications/fcm-token", {
         method: "POST",
         body:   JSON.stringify({ token, deviceId }),
       });
-      console.log("[FCM] Token registered:", token.slice(-10));
+      console.log("[FCM] Token registered with backend — status:", (response as any)?.status ?? "ok");
     } catch (err) {
       // Non-fatal — token will be registered on next app launch
-      console.warn("[FCM] Failed to register token:", err);
+      console.warn("[FCM] Failed to register token with backend:", err);
     }
   }, []);
 
@@ -159,16 +190,21 @@ export function useFCM({
     registeredToken.current = null;
     await AsyncStorage.removeItem(FCM_TOKEN_KEY);
 
+    console.log("[FCM] Unregistering token on logout — deviceId:", deviceId);
+
     if (token) {
       try {
         await customFetch("/api/notifications/fcm-token", {
           method: "DELETE",
           body:   JSON.stringify({ token, deviceId }),
         });
-        console.log("[FCM] Token unregistered on logout");
-      } catch {
+        console.log("[FCM] Token unregistered successfully");
+      } catch (err) {
+        console.warn("[FCM] Failed to unregister token (non-fatal):", err);
         /* Logout must never be blocked by a network error */
       }
+    } else {
+      console.log("[FCM] No token to unregister (already cleared)");
     }
   }, []);
 
@@ -176,9 +212,17 @@ export function useFCM({
 
   const handleNavigation = useCallback(
     (data?: Record<string, string>) => {
-      if (!navigate || !data?.screen) return;
+      if (!data) {
+        console.log("[FCM] handleNavigation called with no data");
+        return;
+      }
+      if (!data.screen) {
+        console.warn("[FCM] handleNavigation: no screen in data — cannot navigate. data keys:", Object.keys(data));
+        return;
+      }
+      console.log(`[FCM] Navigating to screen="${data.screen}" with params:`, JSON.stringify(data));
       const { screen, ...params } = data;
-      navigate(screen, params);
+      navigate?.(screen, params);
     },
     [navigate],
   );
@@ -186,47 +230,87 @@ export function useFCM({
   // ── Main effect ────────────────────────────────────────────────────────────
 
   useEffect(() => {
-    if (!enabled || Platform.OS !== "android") return;
+    if (!enabled) {
+      console.log("[FCM] Hook disabled (user not logged in) — no listeners registered");
+      return;
+    }
+    if (Platform.OS !== "android") {
+      console.log("[FCM] Non-Android platform — hook inactive");
+      return;
+    }
+
+    console.log("[FCM] Initialising FCM listeners...");
 
     // mounted flag prevents state updates after unmount
     let mounted = true;
 
     async function init() {
       try {
-        // 1. Permission (requested at most once per install, persisted)
+        // ── Step 1: Request POST_NOTIFICATIONS permission ──────────────────
+        console.log("[FCM] Step 1/6 — Requesting notification permission");
         const allowed = await ensureNotificationPermission();
-        if (!allowed || !mounted) return;
+        if (!allowed) {
+          console.warn("[FCM] Step 1/6 — Permission denied; FCM inactive");
+          return;
+        }
+        if (!mounted) return;
+        console.log("[FCM] Step 1/6 — Permission granted");
 
-        // 2. Get and register the current FCM token
+        // ── Step 2: Get and register the current FCM token ─────────────────
+        console.log("[FCM] Step 2/6 — Retrieving FCM token from Firebase");
         const messagingInst = getMessaging();
-        const token = await getToken(messagingInst);
+        let token: string;
+        try {
+          token = await getToken(messagingInst);
+          console.log("[FCM] Step 2/6 — Token retrieved successfully");
+        } catch (tokenErr) {
+          console.error("[FCM] Step 2/6 — Failed to get FCM token:", tokenErr);
+          console.error("[FCM] DIAGNOSIS: If you see 'SERVICE_NOT_AVAILABLE', check:");
+          console.error("  1. google-services.json is present in android/app/");
+          console.error("  2. Device/emulator has Google Play Services");
+          console.error("  3. Firebase project is configured for this app's package (com.o2o.app)");
+          return;
+        }
         if (mounted) await registerToken(token);
 
-        // 3. Token refresh listener — re-register automatically
+        // ── Step 3: Token refresh listener ─────────────────────────────────
+        console.log("[FCM] Step 3/6 — Registering token refresh listener");
         const unsubRefresh = onTokenRefresh(messagingInst, async (newToken) => {
-          console.log("[FCM] Token refreshed by Firebase");
+          console.log("[FCM] Token refreshed by Firebase (last 10):", newToken.slice(-10));
           if (mounted) await registerToken(newToken);
         });
         unsubscribers.current.push(unsubRefresh);
 
-        // 4. Foreground message handler
-        //    - No notification block → silent data-only message → onSilentMessage
-        //    - Notification block present → visible message → onForegroundMessage (in-app banner)
-        //    NOTE: Socket.IO already delivers the real-time update when the app is foreground.
-        //          The FCM foreground handler should show a banner only; do not duplicate data.
+        // ── Step 4: Foreground message handler ─────────────────────────────
+        // IMPORTANT: FCM does NOT auto-display system notifications in foreground.
+        // We show an in-app banner (via onForegroundMessage) instead — same as WhatsApp.
+        // Background/terminated notifications are handled automatically by the SDK.
+        console.log("[FCM] Step 4/6 — Registering foreground message listener");
         const unsubForeground = onMessage(
           messagingInst,
           async (msg: FirebaseMessagingTypes.RemoteMessage) => {
             if (!mounted) return;
 
-            if (!msg.notification && msg.data) {
-              // Silent data-only push (edit, delete, reaction, typing, read receipt)
+            const hasNotif = !!msg.notification;
+            const type     = msg.data?.["type"] ?? "unknown";
+            console.log(
+              `[FCM] Foreground message received — type=${type} hasNotification=${hasNotif}` +
+              ` messageId=${msg.messageId ?? "none"}`,
+            );
+
+            if (!hasNotif && msg.data) {
+              // Silent data-only push (edit, delete, reaction, typing, read-receipt)
+              console.log("[FCM] Foreground SILENT message — dispatching to onSilentMessage");
               onSilentMessage?.(msg.data as Record<string, string>);
               return;
             }
 
             if (msg.notification) {
-              // Visible notification received while foregrounded
+              // Visible notification received while foregrounded — show in-app banner.
+              // The system tray notification is NOT shown in foreground (FCM limitation).
+              console.log(
+                `[FCM] Foreground VISIBLE message — showing in-app banner. title="${msg.notification.title}"`,
+              );
               onForegroundMessage?.({
                 title: msg.notification.title ?? "O2O",
                 body:  msg.notification.body  ?? "",
@@ -237,22 +321,41 @@ export function useFCM({
         );
         unsubscribers.current.push(unsubForeground);
 
-        // 5. Background tap — app was backgrounded, user tapped the notification
+        // ── Step 5: Background tap handler ─────────────────────────────────
+        // App was backgrounded, user tapped the notification in the system tray.
+        // onNewIntent() in MainActivity.java ensures the intent data is forwarded.
+        console.log("[FCM] Step 5/6 — Registering background-tap listener (onNotificationOpenedApp)");
         const unsubBgTap = onNotificationOpenedApp(messagingInst, (msg) => {
+          const screen = (msg.data as any)?.screen ?? "none";
+          console.log(`[FCM] Background notification tapped — screen=${screen} data:`, JSON.stringify(msg.data));
           if (mounted) handleNavigation(msg.data as Record<string, string> | undefined);
         });
         unsubscribers.current.push(unsubBgTap);
 
-        // 6. Quit-state tap — app was fully closed, user tapped the notification
-        //    getInitialNotification() returns the notification that launched the app.
+        // ── Step 6: Quit-state tap handler ─────────────────────────────────
+        // App was fully closed, user tapped the notification.
+        // getInitialNotification() returns the notification that launched the app.
+        console.log("[FCM] Step 6/6 — Checking getInitialNotification (quit-state tap)");
         const initial = await getInitialNotification(messagingInst);
-        if (initial && mounted) {
-          // Delay ensures React Navigation is mounted and ready before navigating
-          setTimeout(
-            () => handleNavigation(initial.data as Record<string, string> | undefined),
-            600,
+        if (initial) {
+          const screen = (initial.data as any)?.screen ?? "none";
+          console.log(
+            `[FCM] App launched from notification tap — screen=${screen}` +
+            ` messageId=${initial.messageId ?? "none"} data:`,
+            JSON.stringify(initial.data),
           );
+          if (mounted) {
+            // Delay ensures React Navigation is mounted and ready before navigating
+            setTimeout(
+              () => handleNavigation(initial.data as Record<string, string> | undefined),
+              600,
+            );
+          }
+        } else {
+          console.log("[FCM] No initial notification (normal launch, not from tapped notification)");
         }
+
+        console.log("[FCM] All 6 FCM lifecycle steps complete — notifications fully active");
       } catch (err) {
         console.warn("[FCM] Initialisation error:", err);
       }
@@ -262,6 +365,7 @@ export function useFCM({
 
     // Cleanup: unsubscribe all listeners when component unmounts or enabled→false
     return () => {
+      console.log("[FCM] Cleaning up FCM listeners");
       mounted = false;
       cleanup();
     };
