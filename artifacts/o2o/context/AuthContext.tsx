@@ -50,7 +50,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const cacheUser = useCallback((u: User) => {
     if (!isMounted.current) return;
-    setUserCache((prev: Record<string, User>) => ({ ...prev, [u.id]: u }));
+    setUserCache((prev: Record<string, User>) => {
+      const existing = prev[u.id];
+      if (existing && JSON.stringify(existing) === JSON.stringify(u)) {
+        return prev;
+      }
+      return { ...prev, [u.id]: u };
+    });
   }, []);
 
   const refreshAccessToken = useCallback(async (): Promise<string | null> => {
