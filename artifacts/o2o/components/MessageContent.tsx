@@ -62,14 +62,13 @@ export function MessageContent({
 }: MessageContentProps) {
   const colors = useColors();
 
-  // DEBUG LOG AS REQUESTED
+  // TRACE LOG
   console.log(
     "[TRACE]",
     "artifacts/o2o/components/MessageContent.tsx",
     item.id,
     item.type,
     item.senderId,
-    user.id,
     isMine
   );
 
@@ -137,7 +136,7 @@ export function MessageContent({
     if (albumUrls && albumUrls.length > 0) {
       const validUrls = albumUrls.filter(Boolean);
       content = (
-        <View style={styles.wrapper}>
+        <View style={[styles.wrapper, { alignSelf: isMine ? "flex-end" : "flex-start" }]}>
           {!isMine && senderName && (
             <Text style={[styles.sender, { color: colors.primary }]}>{senderName}</Text>
           )}
@@ -151,7 +150,7 @@ export function MessageContent({
     } else {
       const url = resolveMediaUrl(String(item.metadata?.url || item.text));
       content = (
-        <View style={styles.wrapper}>
+        <View style={[styles.wrapper, { alignSelf: isMine ? "flex-end" : "flex-start" }]}>
           {!isMine && senderName && (
             <Text style={[styles.sender, { color: colors.primary }]}>{senderName}</Text>
           )}
@@ -166,7 +165,7 @@ export function MessageContent({
   else if (item.type === "audio") {
     const url = resolveMediaUrl(String(item.metadata?.url || ""));
     content = (
-      <View style={styles.wrapper}>
+      <View style={[styles.wrapper, { alignSelf: isMine ? "flex-end" : "flex-start" }]}>
         {!isMine && senderName && (
           <Text style={[styles.sender, { color: colors.primary }]}>{senderName}</Text>
         )}
@@ -194,7 +193,7 @@ export function MessageContent({
     const url = resolveMediaUrl(String(item.metadata?.url || ""));
     const fileName = String(item.metadata?.fileName || "Document");
     content = (
-      <View style={styles.wrapper}>
+      <View style={[styles.wrapper, { alignSelf: isMine ? "flex-end" : "flex-start" }]}>
         {!isMine && senderName && (
           <Text style={[styles.sender, { color: colors.primary }]}>{senderName}</Text>
         )}
@@ -219,7 +218,7 @@ export function MessageContent({
     const lat = Number(item.metadata?.lat);
     const lng = Number(item.metadata?.lng);
     content = (
-      <View style={styles.wrapper}>
+      <View style={[styles.wrapper, { alignSelf: isMine ? "flex-end" : "flex-start" }]}>
         {!isMine && senderName && (
           <Text style={[styles.sender, { color: colors.primary }]}>{senderName}</Text>
         )}
@@ -249,7 +248,7 @@ export function MessageContent({
     const totalVotes = options.reduce((s, o) => s + (o.votes?.length ?? 0), 0);
 
     content = (
-      <View style={styles.wrapper}>
+      <View style={[styles.wrapper, { alignSelf: isMine ? "flex-end" : "flex-start" }]}>
         <View style={[styles.pollMsg, { backgroundColor: colors.card, borderColor: colors.border }]}>
           <Text style={[styles.pollQuestion, { color: colors.foreground }]}>📊 {item.text}</Text>
           {options.map((opt, idx) => {
