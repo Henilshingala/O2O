@@ -315,7 +315,7 @@ export function MessageContent({
 }
 
 const styles = StyleSheet.create({
-  selectionWrap: { flexDirection: "row", alignItems: "center" },
+  selectionWrap: { flexDirection: "row", alignItems: "center", width: "100%" },
   selectionIndicatorWrap: { paddingHorizontal: 8, alignSelf: "center" },
   selectionCircle: {
     width: 22,
