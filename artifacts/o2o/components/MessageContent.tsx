@@ -62,6 +62,16 @@ export function MessageContent({
 }: MessageContentProps) {
   const colors = useColors();
 
+  // DEBUG LOG AS REQUESTED
+  console.log(`[MESSAGE_RENDER]
+messageId=${item.id}
+type=${item.type}
+senderId=${item.senderId}
+currentUserId=${user.id}
+isMine=${isMine}
+alignment=${isMine ? "right" : "left"}
+component=MessageContent`);
+
   // Filter: message deleted for this user locally
   if (item.metadata?.deletedForMe === true) return null;
 
@@ -126,7 +136,7 @@ export function MessageContent({
     if (albumUrls && albumUrls.length > 0) {
       const validUrls = albumUrls.filter(Boolean);
       content = (
-        <View style={[styles.wrapper, isMine ? styles.mine : styles.theirs]}>
+        <View style={styles.wrapper}>
           {!isMine && senderName && (
             <Text style={[styles.sender, { color: colors.primary }]}>{senderName}</Text>
           )}
@@ -140,7 +150,7 @@ export function MessageContent({
     } else {
       const url = resolveMediaUrl(String(item.metadata?.url || item.text));
       content = (
-        <View style={[styles.wrapper, isMine ? styles.mine : styles.theirs]}>
+        <View style={styles.wrapper}>
           {!isMine && senderName && (
             <Text style={[styles.sender, { color: colors.primary }]}>{senderName}</Text>
           )}
@@ -155,7 +165,7 @@ export function MessageContent({
   else if (item.type === "audio") {
     const url = resolveMediaUrl(String(item.metadata?.url || ""));
     content = (
-      <View style={[styles.wrapper, isMine ? styles.mine : styles.theirs]}>
+      <View style={styles.wrapper}>
         {!isMine && senderName && (
           <Text style={[styles.sender, { color: colors.primary }]}>{senderName}</Text>
         )}
@@ -183,7 +193,7 @@ export function MessageContent({
     const url = resolveMediaUrl(String(item.metadata?.url || ""));
     const fileName = String(item.metadata?.fileName || "Document");
     content = (
-      <View style={[styles.wrapper, isMine ? styles.mine : styles.theirs]}>
+      <View style={styles.wrapper}>
         {!isMine && senderName && (
           <Text style={[styles.sender, { color: colors.primary }]}>{senderName}</Text>
         )}
@@ -208,7 +218,7 @@ export function MessageContent({
     const lat = Number(item.metadata?.lat);
     const lng = Number(item.metadata?.lng);
     content = (
-      <View style={[styles.wrapper, isMine ? styles.mine : styles.theirs]}>
+      <View style={styles.wrapper}>
         {!isMine && senderName && (
           <Text style={[styles.sender, { color: colors.primary }]}>{senderName}</Text>
         )}
@@ -238,7 +248,7 @@ export function MessageContent({
     const totalVotes = options.reduce((s, o) => s + (o.votes?.length ?? 0), 0);
 
     content = (
-      <View style={[styles.wrapper, isMine ? styles.mine : styles.theirs]}>
+      <View style={styles.wrapper}>
         <View style={[styles.pollMsg, { backgroundColor: colors.card, borderColor: colors.border }]}>
           <Text style={[styles.pollQuestion, { color: colors.foreground }]}>📊 {item.text}</Text>
           {options.map((opt, idx) => {
@@ -307,7 +317,7 @@ export function MessageContent({
           </View>
         </View>
       )}
-      <View style={{ flex: 1 }}>
+      <View style={{ flex: 1, alignItems: isMine ? "flex-end" : "flex-start" }}>
         {content}
       </View>
     </TouchableOpacity>
@@ -326,8 +336,6 @@ const styles = StyleSheet.create({
     justifyContent: "center",
   },
   wrapper: { marginVertical: 4, maxWidth: "82%", marginHorizontal: 16 },
-  mine: { alignSelf: "flex-end" },
-  theirs: { alignSelf: "flex-start" },
   sender: { fontSize: 11, fontWeight: "700", marginBottom: 4, marginLeft: 4 },
   locationMsg: { padding: 16, borderRadius: 16, alignItems: "center", minWidth: 180 },
   pollMsg: { padding: 16, borderRadius: 16, borderWidth: 1, width: 260 },
