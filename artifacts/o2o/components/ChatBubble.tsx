@@ -17,6 +17,13 @@ function formatTime(ts: string) {
 export function ChatBubble({ text, timestamp, isMine, senderName }: ChatBubbleProps) {
   const colors = useColors();
 
+  console.log(
+    "[TRACE]",
+    "artifacts/o2o/components/ChatBubble.tsx",
+    "text_message",
+    isMine
+  );
+
   return (
     <View
       style={[

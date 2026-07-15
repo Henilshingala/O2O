@@ -63,14 +63,15 @@ export function MessageContent({
   const colors = useColors();
 
   // DEBUG LOG AS REQUESTED
-  console.log(`[MESSAGE_RENDER]
-messageId=${item.id}
-type=${item.type}
-senderId=${item.senderId}
-currentUserId=${user.id}
-isMine=${isMine}
-alignment=${isMine ? "right" : "left"}
-component=MessageContent`);
+  console.log(
+    "[TRACE]",
+    "artifacts/o2o/components/MessageContent.tsx",
+    item.id,
+    item.type,
+    item.senderId,
+    user.id,
+    isMine
+  );
 
   // Filter: message deleted for this user locally
   if (item.metadata?.deletedForMe === true) return null;

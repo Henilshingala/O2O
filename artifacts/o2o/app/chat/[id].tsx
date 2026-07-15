@@ -402,6 +402,17 @@ export default function ChatScreen() {
         renderItem={({ item }) => {
           // Hide "delete for me" messages
           if (item.metadata?.deletedForMe === true) return null;
+          
+          console.log(
+            "[TRACE]",
+            "artifacts/o2o/app/chat/[id].tsx",
+            item.id,
+            item.type,
+            item.senderId,
+            user.id,
+            item.senderId === user.id
+          );
+
           return (
             <MessageContent
               item={item}
