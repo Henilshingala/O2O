@@ -268,7 +268,7 @@ export function MessageContent({
   // ── Text (default) ────────────────────────────────────────────────────────
   else {
     content = (
-      <View style={{ width: "100%" }}>
+      <>
         <ChatBubble
           text={item.text}
           timestamp={item.timestamp}
@@ -281,7 +281,7 @@ export function MessageContent({
             {item.status === "failed" && <Text style={styles.failedText}>Failed to send</Text>}
           </View>
         )}
-      </View>
+      </>
     );
   }
 
@@ -307,7 +307,9 @@ export function MessageContent({
           </View>
         </View>
       )}
-      {content}
+      <View style={{ flex: 1 }}>
+        {content}
+      </View>
     </TouchableOpacity>
   );
 }
