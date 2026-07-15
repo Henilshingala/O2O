@@ -9,15 +9,33 @@
  * Fix: re-declare each affected package with only the fields RN 0.68 understands.
  */
 
+const fs = require('fs');
+const path = require('path');
+
+function resolvePkgRoot(pkgName) {
+  try {
+    return path.dirname(require.resolve(pkgName + '/package.json'));
+  } catch (e) {
+    // Fallback if package.json is not exported
+    let current = path.dirname(require.resolve(pkgName));
+    while (!fs.existsSync(path.join(current, 'package.json'))) {
+      const parent = path.dirname(current);
+      if (parent === current) throw new Error("Could not find package root for " + pkgName);
+      current = parent;
+    }
+    return current;
+  }
+}
+
 module.exports = {
   dependencies: {
     'react-native-safe-area-context': {
       platforms: {
         android: {
           // Only fields accepted by RN 0.68 autolinking
-          sourceDir: require('path').join(
-            require.resolve('react-native-safe-area-context/package.json'),
-            '../android',
+          sourceDir: path.join(
+            resolvePkgRoot('react-native-safe-area-context'),
+            'android',
           ),
           packageImportPath: 'import com.th3rdwave.safeareacontext.SafeAreaContextPackage;',
           packageInstance: 'new SafeAreaContextPackage()',
@@ -27,9 +45,9 @@ module.exports = {
     'react-native-screens': {
       platforms: {
         android: {
-          sourceDir: require('path').join(
-            require.resolve('react-native-screens/package.json'),
-            '../android',
+          sourceDir: path.join(
+            resolvePkgRoot('react-native-screens'),
+            'android',
           ),
           packageImportPath: 'import com.swmansion.rnscreens.RNScreensPackage;',
           packageInstance: 'new RNScreensPackage()',
@@ -39,9 +57,9 @@ module.exports = {
     'react-native-svg': {
       platforms: {
         android: {
-          sourceDir: require('path').join(
-            require.resolve('react-native-svg/package.json'),
-            '../android',
+          sourceDir: path.join(
+            resolvePkgRoot('react-native-svg'),
+            'android',
           ),
           packageImportPath: 'import com.horcrux.svg.SvgPackage;',
           packageInstance: 'new SvgPackage()',
