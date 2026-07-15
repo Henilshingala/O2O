@@ -6,6 +6,8 @@
  * RN 0.68's CLI validator rejects those fields and silently SKIPS the whole
  * package, meaning its native code is never linked into the APK.
  *
+ */
+
 const fs = require('fs');
 const path = require('path');
 
