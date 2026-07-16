@@ -59,7 +59,7 @@ export function AppInput({
           </TouchableOpacity>
         )}
       </View>
-      {error && (
+      {!!error && (
         <Text style={[styles.error, { color: colors.destructive }]}>{error}</Text>
       )}
     </View>
@@ -75,7 +75,7 @@ const styles = StyleSheet.create({
     borderWidth: 1.5,
     borderRadius: 10,
     paddingHorizontal: 14,
-    height: 48,
+    minHeight: 48,
   },
   input: { fontSize: 15, paddingVertical: 0 },
   rightIcon: { padding: 4 },

@@ -160,7 +160,7 @@ export default function CreateChannelScreen() {
           </Text>
           <Feather name={showCategories ? "chevron-up" : "chevron-down"} size={18} color={colors.mutedForeground} />
         </TouchableOpacity>
-        {errors.category && <Text style={[styles.fieldError, { color: colors.destructive }]}>{errors.category}</Text>}
+        {!!errors.category && <Text style={[styles.fieldError, { color: colors.destructive }]}>{errors.category}</Text>}
         {showCategories && (
           <View style={[styles.categoryList, { backgroundColor: colors.card, borderColor: colors.border }]}>
             {CATEGORIES.map((cat) => (

@@ -4,6 +4,7 @@ import {
   ActivityIndicator,
   Alert,
   FlatList,
+  Keyboard,
   KeyboardAvoidingView,
   Modal,
   Share,
@@ -12,6 +13,7 @@ import {
   TextInput,
   TouchableOpacity,
   View,
+  BackHandler,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Feather } from "@/compat/vector-icons";
@@ -20,6 +22,7 @@ import { Avatar } from "@/components/ui/Avatar";
 import { ChatAttachMenu, type ChatAttachMenuHandle } from "@/components/ChatAttachMenu";
 import { MessageContent } from "@/components/MessageContent";
 import { SelectionToolbar } from "@/components/SelectionToolbar";
+import { EmojiKeyboard, type EmojiType } from "rn-emoji-keyboard";
 import { ForwardModal } from "@/components/ForwardModal";
 import { MessageInfoModal } from "@/components/MessageInfoModal";
 import { useAuth } from "@/context/AuthContext";
@@ -62,6 +65,39 @@ export default function ChatScreen() {
 
   const existingChat = getChat(params.id) || chats.find((c) => c.id === params.id);
   chatRef.current = chat;
+
+  const [showEmojiPicker, setShowEmojiPicker] = useState(false);
+  const [cursorPosition, setCursorPosition] = useState(0);
+
+  useEffect(() => {
+    const backHandler = BackHandler.addEventListener('hardwareBackPress', () => {
+      if (showEmojiPicker) {
+        setShowEmojiPicker(false);
+        return true;
+      }
+      return false;
+    });
+    return () => backHandler.remove();
+  }, [showEmojiPicker]);
+
+  const toggleEmojiPicker = () => {
+    if (showEmojiPicker) {
+      setShowEmojiPicker(false);
+    } else {
+      Keyboard.dismiss();
+      setShowEmojiPicker(true);
+    }
+  };
+
+  const handleEmojiSelect = (emojiObj: EmojiType) => {
+    const emoji = emojiObj.emoji;
+    setText((prev) => {
+      const before = prev.slice(0, cursorPosition);
+      const after = prev.slice(cursorPosition);
+      return before + emoji + after;
+    });
+    setCursorPosition((prev) => prev + emoji.length);
+  };
 
   useEffect(() => {
     if (existingChat) {
@@ -438,6 +474,12 @@ export default function ChatScreen() {
           >
             <Feather name="plus" size={24} color={colors.primary} />
           </TouchableOpacity>
+          <TouchableOpacity
+            onPress={toggleEmojiPicker}
+            style={styles.attachBtn}
+          >
+            <Feather name={showEmojiPicker ? "keyboard" : "smile"} size={24} color={colors.primary} />
+          </TouchableOpacity>
           <TextInput
             style={[styles.input, { color: colors.foreground, backgroundColor: colors.muted }]}
             value={text}
@@ -445,6 +487,10 @@ export default function ChatScreen() {
             placeholder="Message..."
             placeholderTextColor={colors.mutedForeground}
             multiline
+            onFocus={() => {
+              if (showEmojiPicker) setShowEmojiPicker(false);
+            }}
+            onSelectionChange={(e) => setCursorPosition(e.nativeEvent.selection.start)}
           />
           <TouchableOpacity
             onPress={send}
@@ -452,6 +498,37 @@ export default function ChatScreen() {
           >
             <Feather name="send" size={18} color="#fff" />
           </TouchableOpacity>
+        </View>
+      )}
+
+      {showEmojiPicker && !selectionMode && (
+        <View style={{ height: 280, backgroundColor: colors.card }}>
+          <EmojiKeyboard
+            onEmojiSelected={handleEmojiSelect}
+            enableSearchBar
+            enableRecentlyUsed
+            allowMultipleSelections
+            theme={{
+              container: colors.card,
+              header: colors.foreground,
+              knob: colors.card,
+              category: {
+                icon: colors.mutedForeground,
+                iconActive: colors.primary,
+                container: colors.card,
+                containerActive: colors.muted,
+              },
+              search: {
+                text: colors.foreground,
+                placeholder: colors.mutedForeground,
+                icon: colors.mutedForeground,
+                background: colors.muted,
+              },
+            }}
+            styles={{
+              container: { paddingBottom: insets.bottom }
+            }}
+          />
         </View>
       )}
 

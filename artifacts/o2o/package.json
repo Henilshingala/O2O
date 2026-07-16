@@ -54,6 +54,7 @@
     "react-native-screens": "~3.13.1",
     "react-native-svg": "12.3.0",
     "react-native-vector-icons": "^10.3.0",
+    "rn-emoji-keyboard": "^1.7.0",
     "socket.io-client": "^4.8.3",
     "zod": "catalog:",
     "zod-validation-error": "^3.4.0"

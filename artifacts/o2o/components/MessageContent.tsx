@@ -19,8 +19,6 @@ import { resolveMediaUrl } from "@/lib/mediaUrl";
 import type { UploadProgress } from "@/lib/uploadMedia";
 import type { Message } from "@/types";
 
-const { width: SCREEN_W } = Dimensions.get("window");
-
 interface MessageContentProps {
   item: Message;
   isMine: boolean;
@@ -329,7 +327,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
   },
-  wrapper: { marginVertical: 4, maxWidth: SCREEN_W * 0.82, marginHorizontal: 16 },
+  wrapper: { marginVertical: 4, maxWidth: "82%", marginHorizontal: 16 },
   sender: { fontSize: 11, fontWeight: "700", marginBottom: 4, marginLeft: 4 },
   locationMsg: { padding: 16, borderRadius: 16, alignItems: "center", minWidth: 180 },
   pollMsg: { padding: 16, borderRadius: 16, borderWidth: 1, width: 260 },

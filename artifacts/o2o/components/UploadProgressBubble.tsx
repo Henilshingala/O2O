@@ -1,7 +1,6 @@
 import React, { useEffect, useRef, useState } from "react";
 import {
   Animated,
-  Dimensions,
   StyleSheet,
   Text,
   TouchableOpacity,
@@ -10,8 +9,6 @@ import {
 import { Feather } from "@/compat/vector-icons";
 import { useColors } from "@/hooks/useColors";
 import type { UploadProgress } from "@/lib/uploadMedia";
-
-const { width: SCREEN_W } = Dimensions.get("window");
 
 interface UploadProgressBubbleProps {
   fileName: string;
@@ -136,7 +133,7 @@ const styles = StyleSheet.create({
     padding: 12,
     marginVertical: 4,
     marginHorizontal: 16,
-    maxWidth: SCREEN_W * 0.80,
+    maxWidth: "80%",
     alignSelf: "flex-end",
   },
   header: {
