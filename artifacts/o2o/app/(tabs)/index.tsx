@@ -1,6 +1,7 @@
 import { router } from "@/compat/router";
 import React from "react";
 import {
+  Alert,
   ScrollView,
   StyleSheet,
   Text,
@@ -30,7 +31,7 @@ export default function HomeScreen() {
   const insets = useSafeAreaInsets();
   const { user, getUserById } = useAuth();
   const { chats, groups, channels, counts } = useData();
-  const { friends, incoming: friendRequests } = useFriends();
+  const { friends, incoming: friendRequests, acceptRequest, rejectRequest } = useFriends();
 
   const unreadNotifs = counts.notifications;
 
@@ -111,16 +112,20 @@ export default function HomeScreen() {
         {/* Friend Requests */}
         {friendRequests.length > 0 && (
           <>
-            <SectionHeader title="Pending Requests" onView={() => router.push("/(tabs)/people-search")} colors={colors} />
+            <SectionHeader title="Pending Requests" onView={() => router.push("/(tabs)/friends")} colors={colors} />
             <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ paddingHorizontal: 16, gap: 12 }}>
               {friendRequests.map((req) => (
                 <View key={req.id} style={[styles.friendCard, { backgroundColor: colors.card, borderColor: colors.border }]}>
                   <Avatar name={req.fullName} size={48} />
                   <Text style={[styles.friendName, { color: colors.foreground }]} numberOfLines={1}>{req.fullName}</Text>
-                  <TouchableOpacity style={[styles.acceptBtn, { backgroundColor: colors.primary }]} onPress={() => {
-                    // Use FriendsContext acceptRequest instead of direct fetch
-                    router.push("/(tabs)/people-search");
-                  }}>
+                  <TouchableOpacity
+                    style={[styles.acceptBtn, { backgroundColor: colors.primary }]}
+                    onPress={() => {
+                      acceptRequest(req.id).catch(() =>
+                        Alert.alert("Error", "Could not accept friend request. Try again.")
+                      );
+                    }}
+                  >
                     <Text style={styles.acceptText}>Accept</Text>
                   </TouchableOpacity>
                 </View>

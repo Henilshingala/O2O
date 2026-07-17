@@ -2,8 +2,10 @@ import { router, useLocalSearchParams } from "@/compat/router";
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   ActivityIndicator,
+  BackHandler,
   FlatList,
   Image,
+  Keyboard,
   KeyboardAvoidingView,
   Modal,
   Share,
@@ -13,6 +15,7 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
+import { EmojiKeyboard, type EmojiType } from "rn-emoji-keyboard";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Feather } from "@/compat/vector-icons";
 import * as Haptics from "@/compat/haptics";
@@ -43,10 +46,47 @@ export default function GroupChatScreen() {
   const [showForwardModal, setShowForwardModal] = useState(false);
   const [infoMessage, setInfoMessage] = useState<Message | null>(null);
 
+  // Emoji keyboard
+  const [showEmojiPicker, setShowEmojiPicker] = useState(false);
+  const [cursorPosition, setCursorPosition] = useState(0);
+
+  // Poll creation
+  const [showPollModal, setShowPollModal] = useState(false);
+  const [pollQuestion, setPollQuestion] = useState("");
+  const [pollOptions, setPollOptions] = useState(["", ""]);
+
   const attachMenuRef = useRef<ChatAttachMenuHandle>(null);
   const uploadPlaceholders = useRef<Map<string, any>>(new Map());
 
   const group = getGroup(params.id);
+
+  // Back handler dismisses emoji picker first
+  useEffect(() => {
+    const sub = BackHandler.addEventListener("hardwareBackPress", () => {
+      if (showEmojiPicker) { setShowEmojiPicker(false); return true; }
+      return false;
+    });
+    return () => sub.remove();
+  }, [showEmojiPicker]);
+
+  const toggleEmojiPicker = () => {
+    if (showEmojiPicker) {
+      setShowEmojiPicker(false);
+    } else {
+      Keyboard.dismiss();
+      setShowEmojiPicker(true);
+    }
+  };
+
+  const handleEmojiSelect = (emojiObj: EmojiType) => {
+    const emoji = emojiObj.emoji;
+    setText((prev) => {
+      const before = prev.slice(0, cursorPosition);
+      const after = prev.slice(cursorPosition);
+      return before + emoji + after;
+    });
+    setCursorPosition((prev) => prev + emoji.length);
+  };
 
   // ── All hooks must be called before any conditional returns ───────────────
   const { displayMessages, sendMessage, loadOlderMessages, loadingMore, setMessages } = useRealtimeMessages({
@@ -239,6 +279,27 @@ export default function GroupChatScreen() {
     [group, user, voteOnPoll, setMessages]
   );
 
+  // ── Poll send ─────────────────────────────────────────────────────────────
+  const handleSendPoll = () => {
+    if (!group || !user) return;
+    const validOptions = pollOptions.filter((o) => o.trim());
+    if (!pollQuestion.trim() || validOptions.length < 2) return;
+    setShowPollModal(false);
+    sendMessage({
+      senderId: user.id,
+      text: pollQuestion.trim(),
+      timestamp: new Date().toISOString(),
+      type: "poll",
+      groupId: group.id,
+      metadata: {
+        question: pollQuestion.trim(),
+        options: validOptions.map((o) => ({ text: o.trim(), votes: [] })),
+      },
+    });
+    setPollQuestion("");
+    setPollOptions(["", ""]);
+  };
+
   // ── Guard: show loader until group is available ───────────────────────────
   if (!user) return null;
   if (!group) {
@@ -339,6 +400,9 @@ export default function GroupChatScreen() {
           <TouchableOpacity onPress={() => setShowAttachMenu(!showAttachMenu)} style={styles.attachBtn}>
             <Feather name="plus" size={22} color={colors.primary} />
           </TouchableOpacity>
+          <TouchableOpacity onPress={toggleEmojiPicker} style={styles.attachBtn}>
+            <Feather name={showEmojiPicker ? "keyboard" : "smile"} size={22} color={colors.primary} />
+          </TouchableOpacity>
           <TextInput
             style={[styles.textInput, { backgroundColor: colors.muted, color: colors.foreground }]}
             value={text}
@@ -347,6 +411,8 @@ export default function GroupChatScreen() {
             placeholderTextColor={colors.mutedForeground}
             multiline
             maxLength={1000}
+            onFocus={() => { if (showEmojiPicker) setShowEmojiPicker(false); }}
+            onSelectionChange={(e) => setCursorPosition(e.nativeEvent.selection.start)}
           />
           <TouchableOpacity
             style={[styles.sendBtn, { backgroundColor: text.trim() ? colors.primary : colors.muted }]}
@@ -358,6 +424,35 @@ export default function GroupChatScreen() {
         </View>
       )}
 
+      {showEmojiPicker && !selectionMode && (
+        <View style={{ height: 280, backgroundColor: colors.card }}>
+          <EmojiKeyboard
+            onEmojiSelected={handleEmojiSelect}
+            enableSearchBar
+            enableRecentlyUsed
+            allowMultipleSelections
+            theme={{
+              container: colors.card,
+              header: colors.foreground,
+              knob: colors.card,
+              category: {
+                icon: colors.mutedForeground,
+                iconActive: colors.primary,
+                container: colors.card,
+                containerActive: colors.muted,
+              },
+              search: {
+                text: colors.foreground,
+                placeholder: colors.mutedForeground,
+                icon: colors.mutedForeground,
+                background: colors.muted,
+              },
+            }}
+            styles={{ container: { paddingBottom: insets.bottom } }}
+          />
+        </View>
+      )}
+
       <ChatAttachMenu
         ref={attachMenuRef}
         visible={showAttachMenu}
@@ -365,10 +460,58 @@ export default function GroupChatScreen() {
         senderId={user.id}
         groupId={group.id}
         bottomInset={insets.bottom + 16}
+        onShowPoll={() => setShowPollModal(true)}
         onSend={handleAttachSend}
         onSendPlaceholder={handleSendPlaceholder}
         onResolvePlaceholder={handleResolvePlaceholder}
       />
+
+      {/* Poll creation modal */}
+      <Modal visible={showPollModal} animationType="slide" transparent>
+        <View style={styles.modalOverlay}>
+          <View style={[styles.modalContent, { backgroundColor: colors.card }]}>
+            <Text style={[styles.modalTitle, { color: colors.foreground }]}>Create Poll</Text>
+            <TextInput
+              style={[styles.pollInput, { color: colors.foreground, backgroundColor: colors.muted }]}
+              placeholder="Ask a question..."
+              placeholderTextColor={colors.mutedForeground}
+              value={pollQuestion}
+              onChangeText={setPollQuestion}
+            />
+            {pollOptions.map((opt, idx) => (
+              <TextInput
+                key={idx}
+                style={[styles.pollInput, { color: colors.foreground, backgroundColor: colors.muted, marginTop: 8 }]}
+                placeholder={`Option ${idx + 1}`}
+                placeholderTextColor={colors.mutedForeground}
+                value={opt}
+                onChangeText={(val) => {
+                  const newOpts = [...pollOptions];
+                  newOpts[idx] = val;
+                  setPollOptions(newOpts);
+                }}
+              />
+            ))}
+            <TouchableOpacity onPress={() => setPollOptions([...pollOptions, ""])}>
+              <Text style={{ color: colors.primary, marginTop: 12, fontWeight: "600" }}>+ Add Option</Text>
+            </TouchableOpacity>
+            <View style={styles.modalActions}>
+              <TouchableOpacity
+                onPress={() => setShowPollModal(false)}
+                style={[styles.modalBtn, { backgroundColor: colors.muted }]}
+              >
+                <Text style={{ color: colors.foreground }}>Cancel</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                onPress={handleSendPoll}
+                style={[styles.modalBtn, { backgroundColor: colors.primary }]}
+              >
+                <Text style={{ color: "#fff" }}>Send Poll</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
 
       {/* Delete modal */}
       <Modal visible={showDeleteModal} animationType="fade" transparent>
@@ -443,4 +586,7 @@ const styles = StyleSheet.create({
   modalTitle: { fontSize: 17, fontWeight: "700", marginBottom: 16 },
   deleteOption: { flexDirection: "row", alignItems: "center", gap: 12, paddingVertical: 16, borderBottomWidth: StyleSheet.hairlineWidth },
   cancelBtn: { paddingHorizontal: 16, paddingVertical: 10, borderRadius: 8, alignSelf: "flex-end", marginTop: 12 },
+  pollInput: { borderRadius: 10, paddingHorizontal: 14, paddingVertical: 10, fontSize: 15 },
+  modalActions: { flexDirection: "row", justifyContent: "flex-end", gap: 10, marginTop: 16 },
+  modalBtn: { paddingHorizontal: 20, paddingVertical: 10, borderRadius: 10 },
 });
