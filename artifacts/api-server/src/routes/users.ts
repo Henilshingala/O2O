@@ -9,6 +9,91 @@ import { logger } from "../lib/logger";
 const router = Router();
 router.use(requireAuth);
 
+// ── GET /api/users/me ─────────────────────────────────────────────────────────
+router.get("/me", async (req: AuthRequest, res) => {
+  try {
+    const userId = req.user!.userId;
+    const result = await db
+      .select({
+        id: users.id,
+        username: users.username,
+        fullName: users.fullName,
+        email: users.email,
+        mobile: users.mobile,
+        city: users.city,
+        role: users.role,
+        avatar: users.avatar,
+        createdAt: users.createdAt,
+      })
+      .from(users)
+      .where(eq(users.id, userId))
+      .limit(1);
+    if (!result[0]) return res.status(404).json({ error: "User not found" });
+    return res.json(result[0]);
+  } catch (err) {
+    logger.error({ err }, "GET /users/me failed");
+    return res.status(500).json({ error: "Server error" });
+  }
+});
+
+// ── PATCH /api/users/me ───────────────────────────────────────────────────────
+const updateProfileSchema = z.object({
+  fullName: z.string().min(2).max(80).optional(),
+  username: z.string().min(3).max(30).regex(/^[a-zA-Z0-9_]+$/, "Username may only contain letters, numbers and underscores").optional(),
+  avatar: z.string().url().nullable().optional(),
+  city: z.string().min(1).max(60).optional(),
+  mobile: z.string().min(4).max(20).optional(),
+});
+
+router.patch("/me", async (req: AuthRequest, res) => {
+  try {
+    const parsed = updateProfileSchema.safeParse(req.body);
+    if (!parsed.success) {
+      return res.status(400).json({ error: parsed.error.errors[0]?.message ?? "Invalid data" });
+    }
+    const userId = req.user!.userId;
+    const updates = parsed.data;
+    if (Object.keys(updates).length === 0) {
+      return res.status(400).json({ error: "No fields to update" });
+    }
+
+    // Check username uniqueness if changed
+    if (updates.username) {
+      const existing = await db
+        .select({ id: users.id })
+        .from(users)
+        .where(eq(users.username, updates.username))
+        .limit(1);
+      if (existing[0] && existing[0].id !== userId) {
+        return res.status(409).json({ error: "Username already taken" });
+      }
+    }
+
+    await db.update(users).set(updates as any).where(eq(users.id, userId));
+
+    const updated = await db
+      .select({
+        id: users.id,
+        username: users.username,
+        fullName: users.fullName,
+        email: users.email,
+        mobile: users.mobile,
+        city: users.city,
+        role: users.role,
+        avatar: users.avatar,
+        createdAt: users.createdAt,
+      })
+      .from(users)
+      .where(eq(users.id, userId))
+      .limit(1);
+
+    return res.json(updated[0]);
+  } catch (err) {
+    logger.error({ err }, "PATCH /users/me failed");
+    return res.status(500).json({ error: "Server error" });
+  }
+});
+
 const settingsSchema = z.object({
   theme: z.enum(["system", "light", "dark"]).optional(),
   notificationsEnabled: z.boolean().optional(),

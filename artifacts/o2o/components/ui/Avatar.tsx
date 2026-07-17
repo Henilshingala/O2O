@@ -1,11 +1,11 @@
 import React from "react";
-import { StyleSheet, Text, View } from "react-native";
-import { useColors } from "@/hooks/useColors";
+import { Image, StyleSheet, Text, View } from "react-native";
 
 interface AvatarProps {
   name: string;
   size?: number;
   color?: string;
+  uri?: string | null;
 }
 
 const COLORS = [
@@ -21,7 +21,7 @@ function hashColor(str: string): string {
   return COLORS[Math.abs(hash) % COLORS.length];
 }
 
-export function Avatar({ name, size = 40, color }: AvatarProps) {
+export function Avatar({ name, size = 40, color, uri }: AvatarProps) {
   const initials = name
     .split(" ")
     .map((w) => w[0])
@@ -30,6 +30,19 @@ export function Avatar({ name, size = 40, color }: AvatarProps) {
     .slice(0, 2);
   const bg = color ?? hashColor(name);
   const fontSize = size * 0.38;
+
+  if (uri) {
+    return (
+      <Image
+        source={{ uri }}
+        style={[
+          styles.image,
+          { width: size, height: size, borderRadius: size / 2 },
+        ]}
+        resizeMode="cover"
+      />
+    );
+  }
 
   return (
     <View
@@ -46,4 +59,5 @@ export function Avatar({ name, size = 40, color }: AvatarProps) {
 const styles = StyleSheet.create({
   container: { alignItems: "center", justifyContent: "center" },
   initials: { fontWeight: "700" },
+  image: { backgroundColor: "#E2E8F0" },
 });

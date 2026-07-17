@@ -24,6 +24,7 @@ interface AuthContextType {
   resetPassword: (email: string, password: string) => Promise<{ success: boolean; error?: string }>;
   getUserById: (id: string) => User | undefined;
   cacheUser: (user: User) => void;
+  updateProfile: (updates: Partial<Pick<User, "fullName" | "username" | "avatar" | "city" | "mobile">>) => Promise<{ success: boolean; error?: string }>;
 }
 
 const AuthContext = createContext<AuthContextType | null>(null);
@@ -222,6 +223,23 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     return userCache[id];
   }, [userCache, cacheUser]);
 
+  const updateProfile = useCallback(async (
+    updates: Partial<Pick<User, "fullName" | "username" | "avatar" | "city" | "mobile">>
+  ): Promise<{ success: boolean; error?: string }> => {
+    try {
+      const updated = await customFetch<User>("/api/users/me", {
+        method: "PATCH",
+        body: JSON.stringify(updates),
+      });
+      setUser(updated);
+      cacheUser(updated);
+      return { success: true };
+    } catch (err: any) {
+      const msg = err?.data?.error || err?.message || "Failed to update profile";
+      return { success: false, error: msg };
+    }
+  }, [cacheUser]);
+
   return (
     <AuthContext.Provider
       value={{
@@ -235,6 +253,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         resetPassword,
         getUserById,
         cacheUser,
+        updateProfile,
       }}
     >
       {children}
