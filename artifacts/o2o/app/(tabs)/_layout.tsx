@@ -1,9 +1,10 @@
 import { Tabs } from "@/compat/router";
 import { Feather } from "@/compat/vector-icons";
 import React from "react";
-import { StyleSheet, View } from "react-native";
+import { StyleSheet, Text, View } from "react-native";
 import { useColors } from "@/hooks/useColors";
 import { useFriends } from "@/context/FriendsContext";
+import { useData } from "@/context/DataContext";
 
 import IndexScreen from "./index";
 import ChatScreen from "./chat";
@@ -20,6 +21,21 @@ function FriendsTabIcon({ color }: { color: string }) {
       {incoming.length > 0 && (
         <View style={styles.badge}>
           <View style={styles.badgeDot} />
+        </View>
+      )}
+    </View>
+  );
+}
+
+function ChatTabIcon({ color }: { color: string }) {
+  const { counts } = useData();
+  const unread = counts.messages ?? 0;
+  return (
+    <View>
+      <Feather name="message-circle" size={22} color={color} />
+      {unread > 0 && (
+        <View style={styles.countBadge}>
+          <Text style={styles.countText}>{unread > 99 ? "99+" : String(unread)}</Text>
         </View>
       )}
     </View>
@@ -58,7 +74,7 @@ function ClassicTabLayout() {
         component={ChatScreen}
         options={{
           title: "Chat",
-          tabBarIcon: ({ color }) => <Feather name="message-circle" size={22} color={color} />,
+          tabBarIcon: ({ color }) => <ChatTabIcon color={color} />,
         }}
       />
       <Tabs.Screen
@@ -104,4 +120,17 @@ export default function TabLayout() {
 const styles = StyleSheet.create({
   badge: { position: "absolute", top: -2, right: -4 },
   badgeDot: { width: 8, height: 8, borderRadius: 4, backgroundColor: "#EF4444" },
+  countBadge: {
+    position: "absolute",
+    top: -4,
+    right: -8,
+    backgroundColor: "#EF4444",
+    borderRadius: 8,
+    minWidth: 16,
+    height: 16,
+    alignItems: "center",
+    justifyContent: "center",
+    paddingHorizontal: 3,
+  },
+  countText: { color: "#fff", fontSize: 9, fontWeight: "700" },
 });

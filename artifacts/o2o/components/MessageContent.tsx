@@ -156,6 +156,15 @@ export function MessageContent({
   // ── Audio ────────────────────────────────────────────────────────────────
   else if (item.type === "audio") {
     const url = resolveMediaUrl(String(item.metadata?.url || ""));
+    const duration = item.metadata?.duration as string | undefined;
+    // Deterministic "waveform" bars from message id hash (visual only)
+    const barHeights = Array.from({ length: 20 }, (_, i) => {
+      const seed = (item.id.charCodeAt(i % item.id.length) + i * 7) % 100;
+      return 6 + (seed % 22);
+    });
+    const iconColor = isMine ? "#fff" : colors.primary;
+    const textColor = isMine ? "#fff" : colors.foreground;
+    const mutedColor = isMine ? "rgba(255,255,255,0.65)" : colors.mutedForeground;
     content = (
       <View style={[styles.wrapper, { alignSelf: isMine ? "flex-end" : "flex-start" }]}>
         {!isMine && senderName && (
@@ -168,12 +177,34 @@ export function MessageContent({
           ]}
           onPress={() => { if (url) Linking.openURL(url).catch(() => {}); }}
           onLongPress={onLongPress}
+          activeOpacity={0.75}
         >
-          <Feather name="mic" size={20} color={isMine ? "#fff" : colors.primary} />
-          <Text style={{ color: isMine ? "#fff" : colors.foreground, flex: 1 }}>
-            {item.metadata?.fileName ? String(item.metadata.fileName) : "Voice message"}
-          </Text>
-          <Feather name="play" size={18} color={isMine ? "#fff" : colors.primary} />
+          {/* Play icon */}
+          <View style={[styles.audioPlayCircle, { backgroundColor: isMine ? "rgba(255,255,255,0.22)" : colors.primary + "22" }]}>
+            <Feather name="play" size={16} color={iconColor} />
+          </View>
+
+          {/* Waveform + label */}
+          <View style={{ flex: 1, gap: 4 }}>
+            <View style={styles.audioWaveform}>
+              {barHeights.map((h, i) => (
+                <View
+                  key={i}
+                  style={[styles.audioBar, { height: h, backgroundColor: isMine ? "rgba(255,255,255,0.75)" : colors.primary + "99" }]}
+                />
+              ))}
+            </View>
+            <View style={{ flexDirection: "row", justifyContent: "space-between" }}>
+              <Text style={{ color: mutedColor, fontSize: 11 }}>
+                {item.metadata?.fileName ? String(item.metadata.fileName).split("/").pop() : "Voice message"}
+              </Text>
+              {duration && (
+                <Text style={{ color: mutedColor, fontSize: 11 }}>{duration}</Text>
+              )}
+            </View>
+          </View>
+
+          <Feather name="external-link" size={14} color={mutedColor} />
         </TouchableOpacity>
         {statusFooter}
       </View>
@@ -350,9 +381,26 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     gap: 10,
-    padding: 14,
+    padding: 12,
     borderRadius: 16,
-    minWidth: 200,
+    minWidth: 220,
+  },
+  audioPlayCircle: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  audioWaveform: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 2,
+    height: 28,
+  },
+  audioBar: {
+    width: 3,
+    borderRadius: 2,
   },
   fileMsg: {
     flexDirection: "row",

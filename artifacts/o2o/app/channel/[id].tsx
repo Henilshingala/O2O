@@ -1,7 +1,9 @@
 import { router, useLocalSearchParams } from "@/compat/router";
-import React, { useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import {
+  BackHandler,
   FlatList,
+  Keyboard,
   KeyboardAvoidingView,
   StyleSheet,
   Text,
@@ -9,6 +11,7 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
+import { EmojiKeyboard, type EmojiType } from "rn-emoji-keyboard";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Feather } from "@/compat/vector-icons";
 import * as Haptics from "@/compat/haptics";
@@ -25,6 +28,36 @@ export default function ChannelScreen() {
   const params = useLocalSearchParams<{ id: string }>();
   const [tab, setTab] = useState<"products" | "posts">("products");
   const [postText, setPostText] = useState("");
+  const [showEmojiPicker, setShowEmojiPicker] = useState(false);
+  const [cursorPosition, setCursorPosition] = useState(0);
+  const inputRef = useRef<TextInput>(null);
+
+  useEffect(() => {
+    const sub = BackHandler.addEventListener("hardwareBackPress", () => {
+      if (showEmojiPicker) { setShowEmojiPicker(false); return true; }
+      return false;
+    });
+    return () => sub.remove();
+  }, [showEmojiPicker]);
+
+  const toggleEmojiPicker = () => {
+    if (showEmojiPicker) {
+      setShowEmojiPicker(false);
+    } else {
+      Keyboard.dismiss();
+      setShowEmojiPicker(true);
+    }
+  };
+
+  const handleEmojiSelect = (emojiObj: EmojiType) => {
+    const emoji = emojiObj.emoji;
+    setPostText((prev) => {
+      const before = prev.slice(0, cursorPosition);
+      const after = prev.slice(cursorPosition);
+      return before + emoji + after;
+    });
+    setCursorPosition((prev) => prev + emoji.length);
+  };
 
   if (!user) return null;
   const channel = getChannel(params.id);
@@ -176,30 +209,66 @@ export default function ChannelScreen() {
       )}
 
       {tab === "posts" && isOwner && (
-        <View
-          style={[
-            styles.inputBar,
-            {
-              backgroundColor: colors.card,
-              borderTopColor: colors.border,
-              paddingBottom: insets.bottom + 8,
-            },
-          ]}
-        >
-          <TextInput
-            style={[styles.textInput, { backgroundColor: colors.muted, color: colors.foreground }]}
-            value={postText}
-            onChangeText={setPostText}
-            placeholder="Post Update..."
-            placeholderTextColor={colors.mutedForeground}
-          />
-          <TouchableOpacity
-            style={[styles.sendBtn, { backgroundColor: postText.trim() ? colors.primary : colors.muted }]}
-            onPress={sendPost}
+        <>
+          <View
+            style={[
+              styles.inputBar,
+              {
+                backgroundColor: colors.card,
+                borderTopColor: colors.border,
+                paddingBottom: insets.bottom + 8,
+              },
+            ]}
           >
-            <Feather name="send" size={18} color={postText.trim() ? "#fff" : colors.mutedForeground} />
-          </TouchableOpacity>
-        </View>
+            <TouchableOpacity onPress={toggleEmojiPicker} style={styles.emojiBtn}>
+              <Feather name={showEmojiPicker ? "keyboard" : "smile"} size={22} color={colors.primary} />
+            </TouchableOpacity>
+            <TextInput
+              ref={inputRef}
+              style={[styles.textInput, { backgroundColor: colors.muted, color: colors.foreground }]}
+              value={postText}
+              onChangeText={setPostText}
+              placeholder="Post Update..."
+              placeholderTextColor={colors.mutedForeground}
+              onFocus={() => { if (showEmojiPicker) setShowEmojiPicker(false); }}
+              onSelectionChange={(e) => setCursorPosition(e.nativeEvent.selection.start)}
+            />
+            <TouchableOpacity
+              style={[styles.sendBtn, { backgroundColor: postText.trim() ? colors.primary : colors.muted }]}
+              onPress={sendPost}
+            >
+              <Feather name="send" size={18} color={postText.trim() ? "#fff" : colors.mutedForeground} />
+            </TouchableOpacity>
+          </View>
+          {showEmojiPicker && (
+            <View style={{ height: 280, backgroundColor: colors.card }}>
+              <EmojiKeyboard
+                onEmojiSelected={handleEmojiSelect}
+                enableSearchBar
+                enableRecentlyUsed
+                allowMultipleSelections
+                theme={{
+                  container: colors.card,
+                  header: colors.foreground,
+                  knob: colors.card,
+                  category: {
+                    icon: colors.mutedForeground,
+                    iconActive: colors.primary,
+                    container: colors.card,
+                    containerActive: colors.muted,
+                  },
+                  search: {
+                    text: colors.foreground,
+                    placeholder: colors.mutedForeground,
+                    icon: colors.mutedForeground,
+                    background: colors.muted,
+                  },
+                }}
+                styles={{ container: { paddingBottom: insets.bottom } }}
+              />
+            </View>
+          )}
+        </>
       )}
 
       {!isOwner && tab === "posts" && (
@@ -273,4 +342,5 @@ const styles = StyleSheet.create({
     borderTopWidth: 1,
   },
   readOnlyText: { fontSize: 13 },
+  emojiBtn: { padding: 4 },
 });
