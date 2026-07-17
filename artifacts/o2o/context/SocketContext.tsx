@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useEffect } from "react";
+import React, { createContext, useContext, useEffect, useRef } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "@/context/AuthContext";
 import { connectSocket, disconnectSocket } from "@/lib/socket";
@@ -18,17 +18,22 @@ const SocketContext = createContext<null>(null);
 export function SocketProvider({ children }: { children: React.ReactNode }) {
   const { user } = useAuth();
   const queryClient = useQueryClient();
+  // Track registered listeners so we can remove them on cleanup without
+  // disconnecting the socket (which we only do on actual logout).
+  const cleanupRef = useRef<(() => void) | null>(null);
 
   useEffect(() => {
     if (!user) {
+      // Actual logout — tear down the socket completely.
       disconnectSocket();
       return;
     }
 
-    let mounted = true;
+    let cancelled = false;
     const apiBaseUrl = getBaseUrl();
+
     connectSocket(apiBaseUrl).then((sock) => {
-      if (!mounted) return;
+      if (cancelled) return;
 
       const debouncedInvalidateBids = debounce(() =>
         queryClient.invalidateQueries({ queryKey: ["bids"] })
@@ -42,8 +47,20 @@ export function SocketProvider({ children }: { children: React.ReactNode }) {
       const debouncedInvalidateCounts = debounce(() =>
         queryClient.invalidateQueries({ queryKey: ["counts"] })
       );
+      const debouncedInvalidateFriends = debounce(() => {
+        queryClient.invalidateQueries({ queryKey: ["friends"] });
+        queryClient.invalidateQueries({ queryKey: ["friend-requests"] });
+        queryClient.invalidateQueries({ queryKey: ["counts"] });
+      });
+      const debouncedInvalidateGroups = debounce(() =>
+        queryClient.invalidateQueries({ queryKey: ["groups"] })
+      );
+      const debouncedInvalidateChats = debounce(() =>
+        queryClient.invalidateQueries({ queryKey: ["chats"] })
+      );
 
-      sock.on("message:new", (msg: Message & { chatId?: string; groupId?: string; channelId?: string }) => {
+      // ── message:new ───────────────────────────────────────────────────────
+      const handleMessageNew = (msg: Message & { chatId?: string; groupId?: string; channelId?: string }) => {
         if (msg.chatId) {
           queryClient.setQueryData<Chat[]>(["chats"], (old) =>
             old?.map((c) =>
@@ -71,9 +88,11 @@ export function SocketProvider({ children }: { children: React.ReactNode }) {
             ) ?? old
           );
         }
-      });
+        debouncedInvalidateCounts();
+      };
 
-      sock.on("bid:offer", (offer: BidOffer & { bidId: string }) => {
+      // ── bid events ────────────────────────────────────────────────────────
+      const handleBidOffer = (offer: BidOffer & { bidId: string }) => {
         queryClient.setQueryData<Bid[]>(["bids"], (old) =>
           old?.map((b) => {
             if (b.id !== offer.bidId) return b;
@@ -92,29 +111,134 @@ export function SocketProvider({ children }: { children: React.ReactNode }) {
         );
         debouncedInvalidateBids();
         debouncedInvalidateCounts();
-      });
+      };
 
-      sock.on("bid:ended", () => {
+      const handleBidReceived = () => {
         debouncedInvalidateBids();
         debouncedInvalidateCounts();
-      });
-      sock.on("bid:winner", () => {
+      };
+
+      const handleBidUpdated = () => {
         debouncedInvalidateBids();
         debouncedInvalidateCounts();
-      });
-      sock.on("bid:accepted", () => {
+      };
+
+      const handleBidEnded = () => {
+        debouncedInvalidateBids();
+        debouncedInvalidateCounts();
+      };
+
+      const handleBidWinner = () => {
+        debouncedInvalidateBids();
+        debouncedInvalidateCounts();
+      };
+
+      const handleBidAccepted = () => {
         debouncedInvalidateOrders();
+        debouncedInvalidateBids();
         debouncedInvalidateCounts();
-      });
-      sock.on("notification:new", () => {
+      };
+
+      // ── notification:new ──────────────────────────────────────────────────
+      const handleNotificationNew = (data?: { type?: string }) => {
         debouncedInvalidateNotifications();
         debouncedInvalidateCounts();
-      });
+        // Friend events: also invalidate friends + requests
+        if (
+          data?.type === "friend_request" ||
+          data?.type === "friend_accepted"
+        ) {
+          debouncedInvalidateFriends();
+        }
+        // Order events: also invalidate orders
+        if (
+          data?.type === "order_created" ||
+          data?.type === "order_updated"
+        ) {
+          debouncedInvalidateOrders();
+        }
+      };
+
+      // ── group:update ──────────────────────────────────────────────────────
+      const handleGroupUpdate = () => {
+        debouncedInvalidateGroups();
+      };
+
+      // ── group:deleted ─────────────────────────────────────────────────────
+      const handleGroupDeleted = () => {
+        debouncedInvalidateGroups();
+      };
+
+      // ── group:removed (current user was removed from a group) ─────────────
+      const handleGroupRemoved = (_data: { groupId: string }) => {
+        debouncedInvalidateGroups();
+      };
+
+      // ── order:update ──────────────────────────────────────────────────────
+      const handleOrderUpdate = (data: { orderId: string; status: string }) => {
+        queryClient.setQueryData<any[]>(["orders"], (old) =>
+          old?.map((o) =>
+            o.id === data.orderId ? { ...o, status: data.status } : o
+          ) ?? old
+        );
+        debouncedInvalidateOrders();
+        debouncedInvalidateCounts();
+      };
+
+      // ── chat:deleted ──────────────────────────────────────────────────────
+      const handleChatDeleted = (data: { chatId: string }) => {
+        queryClient.setQueryData<Chat[]>(["chats"], (old) =>
+          old?.filter((c) => c.id !== data.chatId) ?? old
+        );
+        debouncedInvalidateChats();
+      };
+
+      // ── channel:update ────────────────────────────────────────────────────
+      const handleChannelUpdate = () => {
+        queryClient.invalidateQueries({ queryKey: ["channels"] });
+      };
+
+      sock.on("message:new", handleMessageNew);
+      sock.on("bid:offer", handleBidOffer);
+      sock.on("bid_received", handleBidReceived);
+      sock.on("bid_updated", handleBidUpdated);
+      sock.on("bid:ended", handleBidEnded);
+      sock.on("bid:winner", handleBidWinner);
+      sock.on("bid:accepted", handleBidAccepted);
+      sock.on("notification:new", handleNotificationNew);
+      sock.on("group:update", handleGroupUpdate);
+      sock.on("group:deleted", handleGroupDeleted);
+      sock.on("group:removed", handleGroupRemoved);
+      sock.on("order:update", handleOrderUpdate);
+      sock.on("chat:deleted", handleChatDeleted);
+      sock.on("channel:update", handleChannelUpdate);
+
+      cleanupRef.current = () => {
+        sock.off("message:new", handleMessageNew);
+        sock.off("bid:offer", handleBidOffer);
+        sock.off("bid_received", handleBidReceived);
+        sock.off("bid_updated", handleBidUpdated);
+        sock.off("bid:ended", handleBidEnded);
+        sock.off("bid:winner", handleBidWinner);
+        sock.off("bid:accepted", handleBidAccepted);
+        sock.off("notification:new", handleNotificationNew);
+        sock.off("group:update", handleGroupUpdate);
+        sock.off("group:deleted", handleGroupDeleted);
+        sock.off("group:removed", handleGroupRemoved);
+        sock.off("order:update", handleOrderUpdate);
+        sock.off("chat:deleted", handleChatDeleted);
+        sock.off("channel:update", handleChannelUpdate);
+      };
     });
 
     return () => {
-      mounted = false;
-      disconnectSocket();
+      cancelled = true;
+      // Remove listeners only — do NOT disconnect; socket stays alive
+      // across user context updates. Only disconnects on actual logout (user → null).
+      if (cleanupRef.current) {
+        cleanupRef.current();
+        cleanupRef.current = null;
+      }
     };
   }, [user, queryClient]);
 

@@ -41,10 +41,7 @@ export function useRealtimeMessages({
   useEffect(() => {
     if (!roomId) return;
     const socket = getSocket();
-    if (!socket) {
-      console.warn(`[useRealtimeMessages] No socket available for room ${roomId}`);
-      return;
-    }
+    if (!socket) return;
 
     const joinEvent = `join:${roomType}` as "join:chat" | "join:group" | "join:channel";
     const leaveEvent = `leave:${roomType}` as "leave:chat" | "leave:group" | "leave:channel";
@@ -124,8 +121,6 @@ export function useRealtimeMessages({
       setMessages((prev) =>
         prev.map((m) => {
           if (!payload.messageIds.includes(m.id)) return m;
-          // Only update status to "seen" if current sender (isMine context not available here,
-          // so we update all matching messages — screens filter display by senderId)
           const readBy = (m.metadata?.readBy as string[] | undefined) ?? [];
           if (readBy.includes(payload.userId)) return m;
           return {
@@ -141,16 +136,23 @@ export function useRealtimeMessages({
       );
     };
 
+    // ── reconnect: re-join the room so messages keep arriving ─────────────────
+    const handleReconnect = () => {
+      socket.emit(joinEvent, roomId);
+    };
+
     socket.on("message:new", handleNew);
     socket.on("message:delete", handleDelete);
     socket.on("message:vote", handleVote);
     socket.on("message:read", handleRead);
+    socket.on("connect", handleReconnect);
 
     return () => {
       socket.off("message:new", handleNew);
       socket.off("message:delete", handleDelete);
       socket.off("message:vote", handleVote);
       socket.off("message:read", handleRead);
+      socket.off("connect", handleReconnect);
       socket.emit(leaveEvent, roomId);
     };
   }, [roomId, roomType, queryClient, queryKey]);
@@ -188,7 +190,7 @@ export function useRealtimeMessages({
       });
       setNextCursor(data.nextCursor);
     } catch (e) {
-      console.error("Failed to load older messages:", e);
+      // Failed to load older messages — silently ignore
     } finally {
       setLoadingMore(false);
     }

@@ -251,13 +251,15 @@ router.patch("/channels/:id", async (req: AuthRequest, res) => {
     await db.update(schema.channels).set(updates).where(eq(schema.channels.id, channelId));
     const updated = await db.select().from(schema.channels).where(eq(schema.channels.id, channelId)).limit(1);
     const fols = await db.select().from(schema.channelFollowers).where(eq(schema.channelFollowers.channelId, channelId));
-    return res.json({
+    const payload = {
       ...updated[0],
       image: updated[0]?.logo,
       followers: fols.map((f) => f.userId),
       products: [],
       messages: [],
-    });
+    };
+    emitToChannel(channelId, "channel:update", payload);
+    return res.json(payload);
   } catch (error) { return res.status(500).json({ error: "Server error" }); }
 });
 
@@ -958,7 +960,9 @@ router.patch("/groups/:id", async (req: AuthRequest, res) => {
     await db.update(schema.groups).set(updates).where(eq(schema.groups.id, groupId));
     const updated = await db.select().from(schema.groups).where(eq(schema.groups.id, groupId)).limit(1);
     const members = await db.select().from(schema.groupMembers).where(eq(schema.groupMembers.groupId, groupId));
-    return res.json({ ...updated[0], members: members.map((m) => m.userId), messages: [] });
+    const payload = { ...updated[0], members: members.map((m) => m.userId), messages: [] };
+    emitToGroup(groupId, "group:update", payload);
+    return res.json(payload);
   } catch (error) { return res.status(500).json({ error: "Server error" }); }
 });
 
@@ -978,6 +982,10 @@ router.post("/groups/:id/members", async (req: AuthRequest, res) => {
     if (existing.length === 0) {
       await db.insert(schema.groupMembers).values({ groupId, userId });
     }
+    const members = await db.select().from(schema.groupMembers).where(eq(schema.groupMembers.groupId, groupId));
+    emitToGroup(groupId, "group:update", { groupId, members: members.map((m) => m.userId) });
+    // Also notify the newly added member
+    emitToUser(userId, "group:update", { groupId, members: members.map((m) => m.userId) });
     return res.json({ success: true });
   } catch (error) { return res.status(500).json({ error: "Server error" }); }
 });
@@ -994,6 +1002,10 @@ router.delete("/groups/:id/members/:userId", async (req: AuthRequest, res) => {
     await db.delete(schema.groupMembers).where(
       and(eq(schema.groupMembers.groupId, groupId), eq(schema.groupMembers.userId, memberId))
     );
+    const members = await db.select().from(schema.groupMembers).where(eq(schema.groupMembers.groupId, groupId));
+    emitToGroup(groupId, "group:update", { groupId, members: members.map((m) => m.userId) });
+    // Notify the removed member so they can remove it from their list
+    emitToUser(memberId, "group:removed", { groupId });
     return res.json({ success: true });
   } catch (error) { return res.status(500).json({ error: "Server error" }); }
 });
@@ -1006,6 +1018,8 @@ router.delete("/groups/:id", async (req: AuthRequest, res) => {
     if (group[0].createdBy !== req.user!.userId) {
       return res.status(403).json({ error: "Only group owner can delete" });
     }
+    // Notify all members before deleting
+    emitToGroup(groupId, "group:deleted", { groupId });
     await db.transaction(async (tx) => {
       await tx.delete(schema.groupMembers).where(eq(schema.groupMembers.groupId, groupId));
       await tx.delete(schema.groups).where(eq(schema.groups.id, groupId));
@@ -1031,6 +1045,7 @@ router.post("/groups/:id/transfer", async (req: AuthRequest, res) => {
       await db.insert(schema.groupMembers).values({ groupId, userId: newOwnerId });
     }
     await db.update(schema.groups).set({ createdBy: newOwnerId }).where(eq(schema.groups.id, groupId));
+    emitToGroup(groupId, "group:update", { groupId, createdBy: newOwnerId });
     return res.json({ success: true });
   } catch (error) { return res.status(500).json({ error: "Server error" }); }
 });
@@ -1471,6 +1486,9 @@ router.patch("/orders/:id/status", validateBody(orderStatusSchema), async (req: 
     const updated = await db.select().from(schema.orders).where(eq(schema.orders.id, orderId)).limit(1);
     const msgs = await db.select().from(schema.messages).where(eq(schema.messages.orderId, orderId));
     const [withName] = await enrichOrdersWithSellerName(updated);
+    // Notify both parties about the status change in realtime
+    emitToUser(order[0].buyerId, "order:update", { orderId, status });
+    emitToUser(order[0].sellerId, "order:update", { orderId, status });
     return res.json({ ...withName, messages: msgs });
   } catch (error) { return res.status(500).json({ error: "Server error" }); }
 });
