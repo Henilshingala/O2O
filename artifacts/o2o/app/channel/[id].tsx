@@ -241,7 +241,7 @@ export default function ChannelScreen() {
             </TouchableOpacity>
           </View>
           {showEmojiPicker && (
-            <View style={{ height: 280, backgroundColor: colors.card }}>
+            <View style={{ height: 360, backgroundColor: colors.card }}>
               <EmojiKeyboard
                 onEmojiSelected={handleEmojiSelect}
                 enableSearchBar

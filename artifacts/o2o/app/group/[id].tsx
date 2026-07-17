@@ -425,7 +425,7 @@ export default function GroupChatScreen() {
       )}
 
       {showEmojiPicker && !selectionMode && (
-        <View style={{ height: 280, backgroundColor: colors.card }}>
+        <View style={{ height: 360, backgroundColor: colors.card }}>
           <EmojiKeyboard
             onEmojiSelected={handleEmojiSelect}
             enableSearchBar

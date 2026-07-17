@@ -310,6 +310,30 @@ router.delete("/channels/:id/followers/:userId", async (req: AuthRequest, res) =
   } catch (error) { return res.status(500).json({ error: "Server error" }); }
 });
 
+// ── Owner adds a specific follower (private channel invite) ──────────────────
+router.post("/channels/:id/followers", async (req: AuthRequest, res) => {
+  try {
+    const channelId = req.params.id as string;
+    const { userId } = req.body as { userId: string };
+    if (!userId) return res.status(400).json({ error: "userId required" });
+
+    const [channel] = await db.select().from(schema.channels).where(eq(schema.channels.id, channelId)).limit(1);
+    if (!channel) return res.status(404).json({ error: "Channel not found" });
+    if (channel.ownerId !== req.user!.userId) {
+      return res.status(403).json({ error: "Only channel owner can add followers" });
+    }
+
+    const existing = await db.select().from(schema.channelFollowers)
+      .where(and(eq(schema.channelFollowers.channelId, channelId), eq(schema.channelFollowers.userId, userId)));
+    if (existing.length === 0) {
+      await db.insert(schema.channelFollowers).values({ channelId, userId });
+    }
+
+    emitToChannel(channelId, "channel:update", { channelId });
+    return res.json({ success: true });
+  } catch (error) { return res.status(500).json({ error: "Server error" }); }
+});
+
 router.post("/channels/:id/products/:productId/repost", async (req: AuthRequest, res) => {
   try {
     const channelId = req.params.id as string;
@@ -692,6 +716,43 @@ router.post("/chats/:chatId/read", async (req: AuthRequest, res) => {
       emitToChat(chatId, "message:read", { messageIds, userId, seenAt });
     }
     return res.json({ success: true, messageIds });
+  } catch (error) { return res.status(500).json({ error: "Server error" }); }
+});
+
+// ── Delete entire chat conversation ──────────────────────────────────────────
+router.delete("/chats/:id", async (req: AuthRequest, res) => {
+  try {
+    const chatId = req.params.id as string;
+    const userId = req.user!.userId;
+    const parts = await db.select().from(schema.chatParticipants)
+      .where(and(eq(schema.chatParticipants.chatId, chatId), eq(schema.chatParticipants.userId, userId)));
+    if (parts.length === 0) return res.status(403).json({ error: "Not a chat participant" });
+
+    await db.transaction(async (tx: any) => {
+      await tx.delete(schema.messages).where(eq(schema.messages.chatId, chatId));
+      await tx.delete(schema.chatParticipants).where(eq(schema.chatParticipants.chatId, chatId));
+      await tx.delete(schema.chats).where(eq(schema.chats.id, chatId));
+    });
+
+    emitToChat(chatId, "chat:deleted", { chatId });
+    return res.json({ success: true });
+  } catch (error) { return res.status(500).json({ error: "Server error" }); }
+});
+
+// ── Clear all messages in a chat (keep conversation) ─────────────────────────
+router.post("/chats/:id/clear", async (req: AuthRequest, res) => {
+  try {
+    const chatId = req.params.id as string;
+    const userId = req.user!.userId;
+    const parts = await db.select().from(schema.chatParticipants)
+      .where(and(eq(schema.chatParticipants.chatId, chatId), eq(schema.chatParticipants.userId, userId)));
+    if (parts.length === 0) return res.status(403).json({ error: "Not a chat participant" });
+
+    await db.delete(schema.messages).where(eq(schema.messages.chatId, chatId));
+    await db.update(schema.chats).set({ updatedAt: new Date() }).where(eq(schema.chats.id, chatId));
+
+    emitToChat(chatId, "chat:cleared", { chatId });
+    return res.json({ success: true });
   } catch (error) { return res.status(500).json({ error: "Server error" }); }
 });
 

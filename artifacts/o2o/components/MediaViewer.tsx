@@ -7,7 +7,7 @@
  *  - Drag down to dismiss (PanResponder + Animated)
  *  - Double-tap to zoom in/out
  *  - Pinch-to-zoom (react-native-gesture-handler PinchGestureHandler)
- *  - Video pages show a play-button overlay (opens URL via Linking)
+ *  - Video pages: tap play button → in-app VideoPlayer (no browser)
  */
 import React, {
   useCallback,
@@ -18,7 +18,6 @@ import {
   Animated,
   Dimensions,
   FlatList,
-  Linking,
   Modal,
   PanResponder,
   StyleSheet,
@@ -32,6 +31,7 @@ import {
   State as GestureState,
 } from "react-native-gesture-handler";
 import { Feather } from "@/compat/vector-icons";
+import { VideoPlayer } from "@/components/VideoPlayer";
 import { resolveMediaUrl } from "@/lib/mediaUrl";
 
 const { width: SW, height: SH } = Dimensions.get("window");
@@ -49,10 +49,12 @@ function MediaPage({
   url,
   type,
   isCurrent,
+  onPlayVideo,
 }: {
   url: string;
   type: "image" | "video";
   isCurrent: boolean;
+  onPlayVideo?: (uri: string) => void;
 }) {
   const scale = useRef(new Animated.Value(1)).current;
   const baseScale = useRef(1);
@@ -66,7 +68,6 @@ function MediaPage({
   const onPinchHandlerStateChange = (event: any) => {
     if (event.nativeEvent.state === GestureState.END) {
       baseScale.current *= event.nativeEvent.scale;
-      // Clamp: 1 – 4
       const next = Math.max(1, Math.min(4, baseScale.current));
       baseScale.current = next;
       Animated.spring(scale, { toValue: next, useNativeDriver: true }).start();
@@ -90,17 +91,18 @@ function MediaPage({
   }, []);
 
   const combinedScale = Animated.multiply(scale, pinchScale);
+  const resolvedUrl = resolveMediaUrl(url);
 
   return (
     <PinchGestureHandler
       onGestureEvent={onPinchEvent}
       onHandlerStateChange={onPinchHandlerStateChange}
-      enabled={isCurrent}
+      enabled={isCurrent && type === "image"}
     >
       <Animated.View style={styles.page}>
         <TouchableWithoutFeedback onPress={handleDoubleTap}>
           <Animated.Image
-            source={{ uri: resolveMediaUrl(url) }}
+            source={{ uri: resolvedUrl }}
             style={[styles.pageImg, { transform: [{ scale: combinedScale }] }]}
             resizeMode="contain"
           />
@@ -108,9 +110,11 @@ function MediaPage({
         {type === "video" && (
           <TouchableOpacity
             style={styles.videoOverlay}
-            onPress={() => Linking.openURL(resolveMediaUrl(url)).catch(() => {})}
+            onPress={() => onPlayVideo?.(resolvedUrl)}
           >
-            <Feather name="play-circle" size={72} color="rgba(255,255,255,0.92)" />
+            <View style={styles.playCircle}>
+              <Feather name="play" size={36} color="#fff" />
+            </View>
             <Text style={styles.videoHint}>Tap to play</Text>
           </TouchableOpacity>
         )}
@@ -127,12 +131,12 @@ export function MediaViewer({
   onClose,
 }: MediaViewerProps) {
   const [currentIndex, setCurrentIndex] = useState(initialIndex);
+  const [videoPlayerUri, setVideoPlayerUri] = useState<string | null>(null);
   const flatRef = useRef<FlatList>(null);
   const translateY = useRef(new Animated.Value(0)).current;
   const bgOpacity = useRef(new Animated.Value(1)).current;
   const isZoomed = useRef(false);
 
-  // Scroll to initial index when modal opens
   const handleShow = useCallback(() => {
     setCurrentIndex(initialIndex);
     translateY.setValue(0);
@@ -144,7 +148,6 @@ export function MediaViewer({
     });
   }, [initialIndex]);
 
-  // Drag-to-dismiss gesture
   const panResponder = useRef(
     PanResponder.create({
       onStartShouldSetPanResponder: () => false,
@@ -189,7 +192,11 @@ export function MediaViewer({
     >
       <Animated.View style={[styles.bg, { opacity: bgOpacity }]}>
         {/* Close */}
-        <TouchableOpacity style={styles.closeBtn} onPress={onClose} hitSlop={{ top: 12, right: 12, bottom: 12, left: 12 }}>
+        <TouchableOpacity
+          style={styles.closeBtn}
+          onPress={onClose}
+          hitSlop={{ top: 12, right: 12, bottom: 12, left: 12 }}
+        >
           <Feather name="x" size={26} color="#fff" />
         </TouchableOpacity>
 
@@ -222,11 +229,22 @@ export function MediaViewer({
                 url={item}
                 type={types[index] ?? "image"}
                 isCurrent={index === currentIndex}
+                onPlayVideo={(uri) => setVideoPlayerUri(uri)}
               />
             )}
           />
         </Animated.View>
       </Animated.View>
+
+      {/* In-app video player — opens over the viewer */}
+      {videoPlayerUri && (
+        <VideoPlayer
+          uri={videoPlayerUri}
+          fullscreen
+          autoPlay
+          onClose={() => setVideoPlayerUri(null)}
+        />
+      )}
     </Modal>
   );
 }
@@ -279,11 +297,21 @@ const styles = StyleSheet.create({
     ...StyleSheet.absoluteFillObject,
     justifyContent: "center",
     alignItems: "center",
-    gap: 8,
+    gap: 12,
+  },
+  playCircle: {
+    width: 80,
+    height: 80,
+    borderRadius: 40,
+    backgroundColor: "rgba(0,0,0,0.6)",
+    borderWidth: 2,
+    borderColor: "rgba(255,255,255,0.8)",
+    alignItems: "center",
+    justifyContent: "center",
   },
   videoHint: {
     color: "rgba(255,255,255,0.7)",
     fontSize: 13,
-    marginTop: 6,
+    marginTop: 4,
   },
 });

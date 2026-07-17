@@ -89,6 +89,12 @@ interface DataContextType {
   voteOnPoll: (messageId: string, roomType: "chat" | "group" | "channel", roomId: string, optionIndex: number) => Promise<void>;
   /** Mark all messages in a chat/group as read for the current user */
   markRoomRead: (roomType: "chat" | "group", roomId: string) => Promise<void>;
+  /** Delete an entire chat conversation (both participants) */
+  deleteChat: (chatId: string) => Promise<void>;
+  /** Clear all messages in a chat (conversation stays) */
+  clearChat: (chatId: string) => Promise<void>;
+  /** Owner adds a specific user as a channel follower (private channel invite) */
+  addChannelFollower: (channelId: string, userId: string) => Promise<void>;
 }
 
 const DataContext = createContext<DataContextType | null>(null);
@@ -468,6 +474,30 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
     await customFetch(endpoint, { method: "POST" }).catch(() => {});
   }, []);
 
+  // ── Delete entire chat ─────────────────────────────────────────────────────
+  const deleteChat = useCallback(async (chatId: string): Promise<void> => {
+    await customFetch(`/api/data/chats/${chatId}`, { method: "DELETE" });
+    queryClient.setQueryData<Chat[]>(["chats"], (old) => old?.filter((c) => c.id !== chatId) ?? old);
+    invalidate.counts();
+  }, [queryClient]);
+
+  // ── Clear all messages in a chat ──────────────────────────────────────────
+  const clearChat = useCallback(async (chatId: string): Promise<void> => {
+    await customFetch(`/api/data/chats/${chatId}/clear`, { method: "POST" });
+    queryClient.setQueryData<Chat[]>(["chats"], (old) =>
+      old?.map((c) => c.id === chatId ? { ...c, messages: [] } : c) ?? old
+    );
+  }, [queryClient]);
+
+  // ── Owner adds a specific follower (private channel invite) ───────────────
+  const addChannelFollower = useCallback(async (channelId: string, userId: string): Promise<void> => {
+    await customFetch(`/api/data/channels/${channelId}/followers`, {
+      method: "POST",
+      body: JSON.stringify({ userId }),
+    });
+    invalidate.channels();
+  }, []);
+
   return (
     <DataContext.Provider
       value={{
@@ -484,6 +514,7 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
         getReviews, getSellerReviews, canReview, submitReview,
         counts,
         deleteMessage, voteOnPoll, markRoomRead,
+        deleteChat, clearChat, addChannelFollower,
       }}
     >
       {children}

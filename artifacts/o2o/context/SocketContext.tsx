@@ -193,6 +193,14 @@ export function SocketProvider({ children }: { children: React.ReactNode }) {
         debouncedInvalidateChats();
       };
 
+      // ── chat:cleared ──────────────────────────────────────────────────────
+      const handleChatCleared = (data: { chatId: string }) => {
+        queryClient.setQueryData<Chat[]>(["chats"], (old) =>
+          old?.map((c) => c.id === data.chatId ? { ...c, messages: [] } : c) ?? old
+        );
+        debouncedInvalidateChats();
+      };
+
       // ── channel:update ────────────────────────────────────────────────────
       const handleChannelUpdate = () => {
         queryClient.invalidateQueries({ queryKey: ["channels"] });
@@ -211,6 +219,7 @@ export function SocketProvider({ children }: { children: React.ReactNode }) {
       sock.on("group:removed", handleGroupRemoved);
       sock.on("order:update", handleOrderUpdate);
       sock.on("chat:deleted", handleChatDeleted);
+      sock.on("chat:cleared", handleChatCleared);
       sock.on("channel:update", handleChannelUpdate);
 
       cleanupRef.current = () => {
@@ -227,6 +236,7 @@ export function SocketProvider({ children }: { children: React.ReactNode }) {
         sock.off("group:removed", handleGroupRemoved);
         sock.off("order:update", handleOrderUpdate);
         sock.off("chat:deleted", handleChatDeleted);
+        sock.off("chat:cleared", handleChatCleared);
         sock.off("channel:update", handleChannelUpdate);
       };
     });
@@ -240,7 +250,11 @@ export function SocketProvider({ children }: { children: React.ReactNode }) {
         cleanupRef.current = null;
       }
     };
-  }, [user, queryClient]);
+  // Depend only on user.id — not the full user object — so a profile update
+  // (avatar, username, city) does NOT tear down and re-register all socket
+  // listeners, eliminating the realtime gap during profile edits.
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user?.id, queryClient]);
 
   return <SocketContext.Provider value={null}>{children}</SocketContext.Provider>;
 }

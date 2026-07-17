@@ -81,7 +81,12 @@ export default function CreateChannelScreen() {
         image: imageUrl || undefined,
       } as any);
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-      router.replace({ pathname: "/channel/[id]", params: { id: channel.id } });
+      // Private channels go straight to info so owner can invite followers
+      if (form.visibility === "private") {
+        router.replace({ pathname: "/channel/info", params: { id: channel.id, showInvite: "1" } });
+      } else {
+        router.replace({ pathname: "/channel/[id]", params: { id: channel.id } });
+      }
     } finally {
       setLoading(false);
     }

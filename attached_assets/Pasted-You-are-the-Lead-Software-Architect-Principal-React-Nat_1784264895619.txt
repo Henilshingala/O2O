@@ -1,0 +1,614 @@
+You are the Lead Software Architect, Principal React Native Engineer, Senior Backend Engineer, Senior DevOps Engineer, Senior QA Engineer, and Technical Lead responsible for preparing this application for production release.
+
+THIS IS NOT A DEMO.
+
+THIS IS NOT A COLLEGE PROJECT.
+
+THIS IS A PRODUCTION APPLICATION.
+
+Your objective is to completely audit, identify, fix, verify, optimize and production-harden every issue listed below WITHOUT breaking any existing working functionality.
+
+==========================================================
+MANDATORY GIT WORKFLOW
+==========================================================
+
+BEFORE WRITING A SINGLE LINE OF CODE:
+
+1. Pull the latest code from the GitHub repository.
+2. Synchronize your local workspace with the latest main branch.
+3. Resolve merge conflicts if any.
+4. Never work on stale code.
+
+After EVERY successfully verified issue:
+
+Build Project
+↓
+
+Verify Fix
+
+↓
+
+Regression Test
+
+↓
+
+Commit Changes
+
+↓
+
+Push Changes to GitHub
+
+Do NOT wait until all issues are completed before pushing.
+
+Every verified issue must have its own commit and GitHub push.
+
+Always keep GitHub updated with verified working code.
+
+==========================================================
+ZERO REGRESSION POLICY
+==========================================================
+
+Many parts of this application already work correctly.
+
+DO NOT BREAK THEM.
+
+Before changing ANY file:
+
+• Audit current implementation.
+• Understand complete execution flow.
+• Trace frontend.
+• Trace backend.
+• Trace database.
+• Trace Socket.IO.
+• Trace API.
+• Trace state management.
+• Trace React Native components.
+• Find exact root cause.
+
+DO NOT GUESS.
+
+DO NOT ASSUME.
+
+DO NOT MAKE RANDOM CSS CHANGES.
+
+DO NOT CREATE TEMPORARY FIXES.
+
+DO NOT CREATE WORKAROUNDS.
+
+DO NOT REWRITE WORKING MODULES.
+
+Only modify code when the exact root cause has been identified.
+
+==========================================================
+VERIFY THESE FEATURES AFTER EVERY FIX
+==========================================================
+
+Authentication
+
+Signup
+
+Login
+
+Forgot Password
+
+JWT
+
+Profile
+
+Friends
+
+Groups
+
+Channels
+
+Marketplace
+
+Product Posts
+
+Realtime Chat
+
+Realtime Notifications
+
+Realtime Updates
+
+Push Notifications (FCM)
+
+Socket.IO
+
+Cloudinary Uploads
+
+Images
+
+Videos
+
+Audio
+
+Documents
+
+Polls
+
+Location Sharing
+
+Orders
+
+Bidding
+
+Offers
+
+Notifications
+
+Search
+
+Home Screen
+
+If ANY existing feature breaks:
+
+STOP.
+
+Fix regression immediately.
+
+Do not continue.
+
+==========================================================
+ISSUE #1
+REALTIME SYNCHRONIZATION
+==========================================================
+
+Currently I must close and reopen the application to receive updates.
+
+Messages
+
+Notifications
+
+Offers
+
+Orders
+
+Bid Requests
+
+Groups
+
+Channels
+
+Friends
+
+Everything must update instantly.
+
+Audit:
+
+Socket.IO
+
+Realtime subscriptions
+
+Reconnect logic
+
+Listeners
+
+Missing emits
+
+State updates
+
+Cache invalidation
+
+Context updates
+
+Optimistic updates
+
+Duplicate listeners
+
+Memory leaks
+
+Fix the entire realtime architecture.
+
+Result:
+
+Everything updates immediately without reopening the application.
+
+==========================================================
+ISSUE #2
+PROFILE & HOME
+==========================================================
+
+Users must be able to:
+
+Change profile picture
+
+Change username
+
+Edit profile
+
+Upload new profile image
+
+Update Cloudinary
+
+Update database
+
+Realtime profile refresh
+
+Also completely fix Home Screen UI:
+
+Alignment
+
+Spacing
+
+Overlapping
+
+Responsive layout
+
+Professional appearance
+
+==========================================================
+ISSUE #3
+CHAT MANAGEMENT
+==========================================================
+
+Implement complete conversation management.
+
+Long press chat
+
+Delete Chat
+
+Clear Chat
+
+Delete Conversation
+
+Remove recent chat
+
+Confirmation dialogs
+
+Realtime removal
+
+Database cleanup
+
+No ghost chats
+
+==========================================================
+ISSUE #4
+EMOJI KEYBOARD
+==========================================================
+
+Emoji keyboard works.
+
+UI is broken.
+
+Fix:
+
+Height
+
+Safe Area
+
+Category visibility
+
+Scrolling
+
+Search
+
+Recently used
+
+Layout
+
+Animations
+
+Make it feel like WhatsApp.
+
+==========================================================
+ISSUE #5
+VIDEO PLAYER
+==========================================================
+
+Current:
+
+Redirects to Cloudinary.
+
+Required:
+
+Play videos completely inside application.
+
+Features:
+
+Play
+
+Pause
+
+Seek
+
+Fullscreen
+
+Landscape
+
+Progress
+
+Buffering
+
+Loading
+
+Replay
+
+Mute
+
+Playback speed
+
+0.5x
+
+1x
+
+1.25x
+
+1.5x
+
+2x
+
+No external browser.
+
+==========================================================
+ISSUE #6
+AUDIO PLAYER
+==========================================================
+
+Current:
+
+Redirects to Cloudinary.
+
+Required:
+
+Professional in-app audio player.
+
+Features:
+
+Play
+
+Pause
+
+Seek
+
+Progress
+
+Current time
+
+Duration
+
+Waveform if possible
+
+Playback Speed
+
+0.5x
+
+1x
+
+1.5x
+
+2x
+
+Buffering
+
+No browser redirect.
+
+==========================================================
+ISSUE #7
+DOCUMENT VIEWER
+==========================================================
+
+Current:
+
+Redirects to Cloudinary.
+
+Required:
+
+Open supported documents inside application.
+
+PDF
+
+Images
+
+Text
+
+Supported files
+
+Unsupported files:
+
+Launch Android Open With chooser.
+
+Never open browser unnecessarily.
+
+==========================================================
+ISSUE #8
+PRODUCT POSTS
+==========================================================
+
+Completely redesign media presentation.
+
+Fix:
+
+Images
+
+Videos
+
+Grid
+
+Preview
+
+Loading
+
+UI
+
+Image layouts:
+
+1 image
+
+2 images
+
+3 images
+
+4 images
+
+More than 4 images
+
+Exactly like WhatsApp.
+
+More than 4:
+
+Last image displays +X overlay.
+
+Videos play inside application.
+
+Images open fullscreen.
+
+Professional UI.
+
+==========================================================
+ISSUE #9
+GROUP MANAGEMENT
+==========================================================
+
+Implement:
+
+Rename Group
+
+Change Group Photo
+
+Change Description
+
+Add Members
+
+Remove Members
+
+Manage Members
+
+Realtime updates
+
+Permissions
+
+==========================================================
+ISSUE #10
+PRIVATE CHANNEL MANAGEMENT
+==========================================================
+
+After creating private channel:
+
+Immediately display Invite Members dialog.
+
+Allow:
+
+Invite Friends
+
+Remove Members
+
+Edit Channel Name
+
+Edit Logo
+
+Edit Description
+
+Realtime updates
+
+==========================================================
+ISSUE #11
+MEDIA EXPERIENCE
+==========================================================
+
+Completely audit media architecture.
+
+Remove unnecessary Cloudinary redirects.
+
+Images
+
+Videos
+
+Audio
+
+Documents
+
+Marketplace
+
+Products
+
+Channels
+
+Chat
+
+Groups
+
+Everything should behave like a modern production messaging application.
+
+Open media inside application whenever possible.
+
+Only use external applications when absolutely required.
+
+==========================================================
+PRODUCTION CODE STANDARDS
+==========================================================
+
+No TODOs
+
+No debug files
+
+No console.log
+
+No dead code
+
+No duplicate logic
+
+No experimental files
+
+No unused imports
+
+No commented code
+
+No temporary hacks
+
+No unnecessary packages
+
+Clean architecture
+
+Reusable components
+
+Performance optimized
+
+Memory optimized
+
+Production ready
+
+==========================================================
+FINAL QUALITY CHECK
+==========================================================
+
+After ALL issues are completed:
+
+Run complete application.
+
+Verify Android build.
+
+Verify all listed issues.
+
+Verify every previously working feature.
+
+Run regression testing.
+
+Remove debugging code.
+
+Remove temporary files.
+
+Optimize rendering.
+
+Optimize state updates.
+
+Optimize memory usage.
+
+Commit final changes.
+
+Push final verified production-ready code to GitHub.
+
+==========================================================
+FINAL REPORT
+==========================================================
+
+After everything is complete provide a report containing:
+
+1. Root cause of every issue.
+2. Files modified.
+3. Why each fix works.
+4. Verification performed.
+5. Regression testing performed.
+6. Confirmation that no existing working functionality was affected.
+
+Never claim an issue is fixed unless you have verified it by tracing the implementation and confirming the expected behavior.

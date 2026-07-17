@@ -3,12 +3,15 @@ import {
   ActivityIndicator,
   Dimensions,
   Linking,
+  Platform,
   StyleSheet,
   Text,
   TouchableOpacity,
   View,
 } from "react-native";
+import ReactNativeBlobUtil from "react-native-blob-util";
 import { Feather } from "@/compat/vector-icons";
+import { AudioPlayer } from "@/components/AudioPlayer";
 import { ChatBubble } from "@/components/ChatBubble";
 import { MediaAlbum } from "@/components/MediaAlbum";
 import { MessageStatusIcon } from "@/components/MessageStatusIcon";
@@ -50,6 +53,52 @@ function parseProgressFromUrl(url: string): UploadProgress | null {
   }
 }
 
+/** Map file extension → MIME type for Android intent */
+function getMimeType(fileName: string): string {
+  const ext = (fileName.split(".").pop() ?? "").toLowerCase();
+  const map: Record<string, string> = {
+    pdf: "application/pdf",
+    doc: "application/msword",
+    docx: "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+    xls: "application/vnd.ms-excel",
+    xlsx: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+    ppt: "application/vnd.ms-powerpoint",
+    pptx: "application/vnd.openxmlformats-officedocument.presentationml.presentation",
+    txt: "text/plain",
+    csv: "text/csv",
+    zip: "application/zip",
+    rar: "application/x-rar-compressed",
+    png: "image/png",
+    jpg: "image/jpeg",
+    jpeg: "image/jpeg",
+    gif: "image/gif",
+    mp3: "audio/mpeg",
+    mp4: "video/mp4",
+    mov: "video/quicktime",
+  };
+  return map[ext] ?? "application/octet-stream";
+}
+
+/** Download file to cache then open with system viewer (no browser) */
+async function openDocument(url: string, fileName: string): Promise<void> {
+  try {
+    const mimeType = getMimeType(fileName);
+    const safeFileName = fileName.replace(/[^a-zA-Z0-9._-]/g, "_");
+    const destPath = `${ReactNativeBlobUtil.fs.dirs.CacheDir}/${safeFileName}`;
+
+    await ReactNativeBlobUtil.config({ path: destPath, fileCache: true }).fetch("GET", url);
+
+    if (Platform.OS === "android") {
+      await ReactNativeBlobUtil.android.actionViewIntent(destPath, mimeType);
+    } else {
+      await ReactNativeBlobUtil.ios.openDocument(destPath);
+    }
+  } catch {
+    // Fallback to URL if download or intent fails
+    Linking.openURL(url).catch(() => {});
+  }
+}
+
 export function MessageContent({
   item,
   isMine,
@@ -62,7 +111,6 @@ export function MessageContent({
   selectionMode,
 }: MessageContentProps) {
   const colors = useColors();
-
 
   // Filter: message deleted for this user locally
   if (item.metadata?.deletedForMe === true) return null;
@@ -153,68 +201,34 @@ export function MessageContent({
     }
   }
 
-  // ── Audio ────────────────────────────────────────────────────────────────
+  // ── Audio (in-app player) ─────────────────────────────────────────────────
   else if (item.type === "audio") {
     const url = resolveMediaUrl(String(item.metadata?.url || ""));
     const duration = item.metadata?.duration as string | undefined;
-    // Deterministic "waveform" bars from message id hash (visual only)
-    const barHeights = Array.from({ length: 20 }, (_, i) => {
-      const seed = (item.id.charCodeAt(i % item.id.length) + i * 7) % 100;
-      return 6 + (seed % 22);
-    });
-    const iconColor = isMine ? "#fff" : colors.primary;
-    const textColor = isMine ? "#fff" : colors.foreground;
-    const mutedColor = isMine ? "rgba(255,255,255,0.65)" : colors.mutedForeground;
+    const fileName = item.metadata?.fileName ? String(item.metadata.fileName) : undefined;
+
     content = (
       <View style={[styles.wrapper, { alignSelf: isMine ? "flex-end" : "flex-start" }]}>
         {!isMine && senderName && (
           <Text style={[styles.sender, { color: colors.primary }]}>{senderName}</Text>
         )}
-        <TouchableOpacity
-          style={[
-            styles.audioMsg,
-            { backgroundColor: isMine ? colors.senderBubble : colors.receiverBubble },
-          ]}
-          onPress={() => { if (url) Linking.openURL(url).catch(() => {}); }}
+        <AudioPlayer
+          uri={url}
+          fileName={fileName}
+          duration={duration}
+          isMine={isMine}
           onLongPress={onLongPress}
-          activeOpacity={0.75}
-        >
-          {/* Play icon */}
-          <View style={[styles.audioPlayCircle, { backgroundColor: isMine ? "rgba(255,255,255,0.22)" : colors.primary + "22" }]}>
-            <Feather name="play" size={16} color={iconColor} />
-          </View>
-
-          {/* Waveform + label */}
-          <View style={{ flex: 1, gap: 4 }}>
-            <View style={styles.audioWaveform}>
-              {barHeights.map((h, i) => (
-                <View
-                  key={i}
-                  style={[styles.audioBar, { height: h, backgroundColor: isMine ? "rgba(255,255,255,0.75)" : colors.primary + "99" }]}
-                />
-              ))}
-            </View>
-            <View style={{ flexDirection: "row", justifyContent: "space-between" }}>
-              <Text style={{ color: mutedColor, fontSize: 11 }}>
-                {item.metadata?.fileName ? String(item.metadata.fileName).split("/").pop() : "Voice message"}
-              </Text>
-              {duration && (
-                <Text style={{ color: mutedColor, fontSize: 11 }}>{duration}</Text>
-              )}
-            </View>
-          </View>
-
-          <Feather name="external-link" size={14} color={mutedColor} />
-        </TouchableOpacity>
+        />
         {statusFooter}
       </View>
     );
   }
 
-  // ── File / Document ───────────────────────────────────────────────────────
+  // ── File / Document (download + open with system viewer, no browser) ──────
   else if (item.type === "file") {
     const url = resolveMediaUrl(String(item.metadata?.url || ""));
     const fileName = String(item.metadata?.fileName || "Document");
+
     content = (
       <View style={[styles.wrapper, { alignSelf: isMine ? "flex-end" : "flex-start" }]}>
         {!isMine && senderName && (
@@ -222,7 +236,7 @@ export function MessageContent({
         )}
         <TouchableOpacity
           style={[styles.fileMsg, { backgroundColor: colors.muted, borderColor: colors.border }]}
-          onPress={() => { if (url) Linking.openURL(url).catch(() => {}); }}
+          onPress={() => { if (url) openDocument(url, fileName); }}
           onLongPress={onLongPress}
         >
           <Feather name="file-text" size={24} color={colors.primary} />
@@ -377,31 +391,6 @@ const styles = StyleSheet.create({
     borderRadius: 8,
   },
   pollTotal: { fontSize: 11, marginTop: 4, textAlign: "right" },
-  audioMsg: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 10,
-    padding: 12,
-    borderRadius: 16,
-    minWidth: 220,
-  },
-  audioPlayCircle: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  audioWaveform: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 2,
-    height: 28,
-  },
-  audioBar: {
-    width: 3,
-    borderRadius: 2,
-  },
   fileMsg: {
     flexDirection: "row",
     alignItems: "center",
