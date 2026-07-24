@@ -221,7 +221,7 @@ BACKEND
 
 Use ONLY:
 
-https://o2o-rphb.onrender.com/
+https://o2o-jtj7.onrender.com/
 
 Search the ENTIRE repository.
 
@@ -249,7 +249,7 @@ staging APIs
 
 There must be ONLY ONE backend URL:
 
-https://o2o-rphb.onrender.com/
+https://o2o-jtj7.onrender.com/
 
 ====================================================
 VERIFY API

@@ -132,7 +132,7 @@ Backend requirements:
 
 Use ONLY:
 
-https://o2o-rphb.onrender.com
+https://o2o-jtj7.onrender.com
 
 Replace every occurrence of:
 

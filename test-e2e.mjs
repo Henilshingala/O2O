@@ -1,4 +1,4 @@
-const BASE_URL = "https://o2o-rphb.onrender.com/api";
+const BASE_URL = "https://o2o-jtj7.onrender.com/api";
 
 async function request(path, method = "GET", body = null, token = null) {
   const headers = { "Content-Type": "application/json" };

@@ -70,13 +70,13 @@ export default function SplashScreen() {
 
   return (
     <View style={[styles.container, { backgroundColor: "#1E3A8A" }]}>
-      <Animated.View style={[styles.content, { opacity: fadeAnim, transform: [{ scale: scaleAnim }] }]}>
-        <View style={styles.logoBox}>
-          <Text style={styles.logoText}>O2O</Text>
-        </View>
+        <Animated.Image
+          source={require("../assets/images/logo.png")}
+          style={[styles.logoImage, { opacity: fadeAnim, transform: [{ scale: scaleAnim }] }]}
+          resizeMode="cover"
+        />
         <Text style={styles.appName}>O2O</Text>
         <Text style={styles.tagline}>Buy • Sell • Bid</Text>
-      </Animated.View>
 
       <View style={styles.bottom}>
         <View style={styles.progressTrack}>
@@ -101,18 +101,12 @@ export default function SplashScreen() {
 const styles = StyleSheet.create({
   container: { flex: 1, alignItems: "center", justifyContent: "center" },
   content: { alignItems: "center" },
-  logoBox: {
-    width: 100,
-    height: 100,
-    borderRadius: 28,
-    backgroundColor: "rgba(255,255,255,0.2)",
-    alignItems: "center",
-    justifyContent: "center",
+  logoImage: {
+    width: 110,
+    height: 110,
+    borderRadius: 24,
     marginBottom: 20,
-    borderWidth: 2,
-    borderColor: "rgba(255,255,255,0.3)",
   },
-  logoText: { fontSize: 32, fontWeight: "900", color: "#fff" },
   appName: { fontSize: 42, fontWeight: "900", color: "#fff", letterSpacing: 4 },
   tagline: { fontSize: 16, color: "rgba(255,255,255,0.8)", marginTop: 8, letterSpacing: 3 },
   bottom: { position: "absolute", bottom: 80, width: width * 0.6, alignItems: "center", gap: 12 },

@@ -7,7 +7,7 @@ const data = JSON.stringify({
 });
 
 const req = https.request(
-  "https://o2o-rphb.onrender.com/api/data/chats/fake-id/messages",
+  "https://o2o-jtj7.onrender.com/api/data/chats/fake-id/messages",
   {
     method: "POST",
     headers: {

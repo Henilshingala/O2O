@@ -24,7 +24,7 @@ import { useFCM } from "@/hooks/useFCM";
 
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 
-const API_BASE_URL = "https://o2o-rphb.onrender.com";
+const API_BASE_URL = "https://o2o-jtj7.onrender.com";
 setBaseUrl(API_BASE_URL);
 
 // Import all screens

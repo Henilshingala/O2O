@@ -3,6 +3,7 @@ import { router } from "@/compat/router";
 import React from "react";
 import {
   Dimensions,
+  Image,
   StyleSheet,
   Text,
   View,
@@ -23,9 +24,11 @@ export default function WelcomeScreen() {
         colors={["#1E3A8A", "#2563EB"]}
         style={[styles.header, { paddingTop: insets.top + 40 }]}
       >
-        <View style={styles.logoBox}>
-          <Text style={styles.logoText}>O2O</Text>
-        </View>
+        <Image
+          source={require("../assets/images/logo.png")}
+          style={styles.logoImage}
+          resizeMode="contain"
+        />
         <View style={styles.dotsRow}>
           {[0, 1, 2].map((i) => (
             <View key={i} style={[styles.dot, i === 0 && styles.dotActive]} />
@@ -73,18 +76,12 @@ const styles = StyleSheet.create({
     borderBottomLeftRadius: 32,
     borderBottomRightRadius: 32,
   },
-  logoBox: {
-    width: 88,
-    height: 88,
-    borderRadius: 22,
-    backgroundColor: "rgba(255,255,255,0.2)",
-    alignItems: "center",
-    justifyContent: "center",
+  logoImage: {
+    width: 90,
+    height: 90,
+    borderRadius: 20,
     marginBottom: 24,
-    borderWidth: 2,
-    borderColor: "rgba(255,255,255,0.3)",
   },
-  logoText: { fontSize: 30, fontWeight: "900", color: "#fff" },
   dotsRow: { flexDirection: "row", gap: 6 },
   dot: { width: 6, height: 6, borderRadius: 3, backgroundColor: "rgba(255,255,255,0.4)" },
   dotActive: { width: 20, backgroundColor: "#fff" },

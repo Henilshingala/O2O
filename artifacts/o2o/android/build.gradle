@@ -68,6 +68,13 @@ subprojects { project ->
   }
 
   project.afterEvaluate {
+    project.configurations.all {
+      resolutionStrategy.eachDependency { details ->
+        if (details.requested.group == 'com.android.support') {
+          details.useTarget 'androidx.appcompat:appcompat:1.6.1'
+        }
+      }
+    }
     project.tasks.withType(org.jetbrains.kotlin.gradle.tasks.KotlinCompile).configureEach {
       kotlinOptions {
         jvmTarget = "1.8"

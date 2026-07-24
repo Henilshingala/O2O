@@ -2,7 +2,7 @@
 
 **Date:** 2026-07-08  
 **Platform:** Android only (React Native 0.68.7 CLI, Hermes engine)  
-**Backend:** https://o2o-rphb.onrender.com (all API and Socket.IO traffic)
+**Backend:** https://o2o-jtj7.onrender.com (all API and Socket.IO traffic)
 
 ---
 
@@ -80,7 +80,7 @@ These two short patterns match all require-cycle warnings whose paths start with
 
 Grep results across `app/`, `lib/`, `context/`, `compat/`, `components/`:
 - **Zero** occurrences of `localhost`, `127.0.0.1`, `10.0.2.2`, or any local IP.
-- Production backend `https://o2o-rphb.onrender.com` is set once in `app/_layout.tsx` via `setBaseUrl(API_BASE_URL)` and in `context/SocketContext.tsx` for Socket.IO.
+- Production backend `https://o2o-jtj7.onrender.com` is set once in `app/_layout.tsx` via `setBaseUrl(API_BASE_URL)` and in `context/SocketContext.tsx` for Socket.IO.
 - References to "localhost" in `BUGFIX_REPORT.md`, `vite-run.txt`, `build-debug*.txt` are log/documentation files and do not affect the build.
 
 ---
@@ -171,7 +171,7 @@ All screens where `participants.find()`, `messages[last]`, or similar could retu
 
 ### Status: ✅ Correct
 
-- `lib/socket.ts`: `io("https://o2o-rphb.onrender.com", { transports: ["websocket", "polling"], ... })`.
+- `lib/socket.ts`: `io("https://o2o-jtj7.onrender.com", { transports: ["websocket", "polling"], ... })`.
 - Token read safely with `try/catch` around `AsyncStorage.getItem`.
 - `SocketContext.tsx` connects on auth, disconnects on logout.
 - `reconnectionAttempts: 10` with exponential backoff.
