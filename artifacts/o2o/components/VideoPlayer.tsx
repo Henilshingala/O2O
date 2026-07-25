@@ -31,7 +31,7 @@ import { Feather } from "@/compat/vector-icons";
 import { useColors } from "@/hooks/useColors";
 
 const SPEEDS = [0.5, 0.75, 1, 1.25, 1.5, 2];
-const SKIP = 10; // seconds
+const SKIP = 5; // seconds
 const THUMB_R = 8; // thumb radius px
 
 function fmt(sec: number) {
@@ -174,10 +174,7 @@ export function VideoPlayer({
   const seekTrackRef = useRef<View>(null);
 
   const measureTrack = useCallback(() => {
-    seekTrackRef.current?.measure((_fx, _fy, w, _h, px) => {
-      trackWidthRef.current = w;
-      trackPageXRef.current = px;
-    });
+    // We will measure on grant instead for robust coordinates
   }, []);
 
   const seekPan = useRef(
@@ -186,23 +183,34 @@ export function VideoPlayer({
       onMoveShouldSetPanResponder: () => true,
       onPanResponderGrant: (e) => {
         setIsSeeking(true);
-        const x = Math.max(0, Math.min(trackWidthRef.current, e.nativeEvent.pageX - trackPageXRef.current));
-        headPx.setValue(x);
-        const dur = durationRef.current;
-        if (dur > 0) {
-          const t = (x / trackWidthRef.current) * dur;
-          currentTimeRef.current = t;
-          setCurrentTime(t);
-        }
+        const pageX = e.nativeEvent.pageX;
+        seekTrackRef.current?.measure((_fx, _fy, w, _h, px) => {
+          trackWidthRef.current = w;
+          trackPageXRef.current = px;
+          if (w > 0) {
+            const x = Math.max(0, Math.min(w, pageX - px));
+            headPx.setValue(x);
+            const dur = durationRef.current;
+            if (dur > 0) {
+              const t = (x / w) * dur;
+              currentTimeRef.current = t;
+              setCurrentTime(t);
+            }
+          }
+        });
       },
       onPanResponderMove: (e) => {
-        const x = Math.max(0, Math.min(trackWidthRef.current, e.nativeEvent.pageX - trackPageXRef.current));
-        headPx.setValue(x);
-        const dur = durationRef.current;
-        if (dur > 0) {
-          const t = (x / trackWidthRef.current) * dur;
-          currentTimeRef.current = t;
-          setCurrentTime(t);
+        const w = trackWidthRef.current;
+        const px = trackPageXRef.current;
+        if (w > 0 && px > 0) {
+          const x = Math.max(0, Math.min(w, e.nativeEvent.pageX - px));
+          headPx.setValue(x);
+          const dur = durationRef.current;
+          if (dur > 0) {
+            const t = (x / w) * dur;
+            currentTimeRef.current = t;
+            setCurrentTime(t);
+          }
         }
       },
       onPanResponderRelease: () => {
@@ -319,15 +327,16 @@ export function VideoPlayer({
           {...seekPan.panHandlers}
         >
           {/* Background rail */}
-          <View style={styles.seekRail} />
+          <View style={styles.seekRail} pointerEvents="none" />
           {/* Buffered / filled */}
-          <Animated.View style={[styles.seekFill, { width: headPx }]} />
+          <Animated.View style={[styles.seekFill, { width: headPx }]} pointerEvents="none" />
           {/* Thumb */}
           <Animated.View
             style={[
               styles.seekThumb,
               { transform: [{ translateX: Animated.subtract(headPx, THUMB_R) }] },
             ]}
+            pointerEvents="none"
           />
         </View>
 
@@ -350,7 +359,7 @@ export function VideoPlayer({
       <Video
         ref={videoRef}
         source={{ uri }}
-        style={StyleSheet.absoluteFillObject}
+        style={{ width: "100%", height: "100%", backgroundColor: "transparent" }}
         paused={paused}
         muted={muted}
         rate={speed}
@@ -362,7 +371,7 @@ export function VideoPlayer({
         onError={() => { setLoading(false); setBuffering(false); }}
         progressUpdateInterval={250}
         repeat={false}
-        useTextureView={Platform.OS === "android"}
+        useTextureView={true}
         ignoreSilentSwitch="ignore"
       />
 
@@ -428,7 +437,7 @@ const styles = StyleSheet.create({
   // initialises correctly. It fills the inlineWrapper via absoluteFillObject.
   shell: {
     ...StyleSheet.absoluteFillObject,
-    backgroundColor: "#000",
+    backgroundColor: "transparent",
   },
   shellFullscreen: {
     flex: 1,

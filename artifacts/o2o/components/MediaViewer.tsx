@@ -244,6 +244,28 @@ export function MediaViewer({
           fullscreen
           autoPlay
           onClose={() => setVideoPlayerUri(null)}
+          onPrevious={
+            currentIndex > 0
+              ? () => {
+                  const prev = currentIndex - 1;
+                  setCurrentIndex(prev);
+                  flatRef.current?.scrollToIndex({ index: prev, animated: false });
+                  if (types[prev] === "video") setVideoPlayerUri(urls[prev]);
+                  else setVideoPlayerUri(null);
+                }
+              : undefined
+          }
+          onNext={
+            currentIndex < urls.length - 1
+              ? () => {
+                  const nxt = currentIndex + 1;
+                  setCurrentIndex(nxt);
+                  flatRef.current?.scrollToIndex({ index: nxt, animated: false });
+                  if (types[nxt] === "video") setVideoPlayerUri(urls[nxt]);
+                  else setVideoPlayerUri(null);
+                }
+              : undefined
+          }
         />
       )}
     </Modal>
