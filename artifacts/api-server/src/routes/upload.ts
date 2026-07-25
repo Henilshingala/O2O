@@ -107,11 +107,19 @@ const upload = multer({
 
 function uploadToCloudinary(
   filePath: string,
-  options: { resource_type: "image" | "video" | "auto"; folder: string },
+  options: { resource_type: "image" | "video" | "auto"; folder: string; original_filename?: string },
 ): Promise<{ secure_url: string; public_id: string }> {
   return new Promise((resolve, reject) => {
     const stream = cloudinary.uploader.upload_stream(
-      { resource_type: options.resource_type, folder: options.folder },
+      {
+        resource_type: options.resource_type,
+        folder: options.folder,
+        // Ensure raw/document files are publicly accessible (no auth required)
+        access_mode: "public",
+        type: "upload",
+        use_filename: true,
+        unique_filename: true,
+      },
       (error, result) => {
         if (error || !result) reject(error ?? new Error("Upload failed"));
         else resolve({ secure_url: result.secure_url, public_id: result.public_id });

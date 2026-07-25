@@ -1,8 +1,8 @@
 import React from "react";
 import {
   ActivityIndicator,
+  Alert,
   Dimensions,
-  Linking,
   Platform,
   StyleSheet,
   Text,
@@ -79,23 +79,79 @@ function getMimeType(fileName: string): string {
   return map[ext] ?? "application/octet-stream";
 }
 
-/** Download file to cache then open with system viewer (no browser) */
-async function openDocument(url: string, fileName: string): Promise<void> {
-  try {
-    const mimeType = getMimeType(fileName);
-    const safeFileName = fileName.replace(/[^a-zA-Z0-9._-]/g, "_");
-    const destPath = `${ReactNativeBlobUtil.fs.dirs.CacheDir}/${safeFileName}`;
+/** Shows a loading indicator state - tracks ongoing operations */
+let _downloadingMap: Record<string, boolean> = {};
 
-    await ReactNativeBlobUtil.config({ path: destPath, fileCache: true }).fetch("GET", url);
+/**
+ * Download a remote file to the device Downloads folder then open it
+ * with the Android native app chooser. Never falls back to Cloudinary.
+ */
+async function openDocument(url: string, fileName: string): Promise<void> {
+  // Prevent duplicate simultaneous downloads of the same file
+  if (_downloadingMap[url]) return;
+  _downloadingMap[url] = true;
+
+  try {
+    let nameToUse = fileName;
+    // If file name has no extension, try to infer from URL
+    if (!nameToUse.includes(".")) {
+      const urlExt = url.split("?")[0].split(".").pop();
+      if (urlExt && urlExt.length <= 5) {
+        nameToUse = `${nameToUse}.${urlExt}`;
+      }
+    }
+
+    const mimeType = getMimeType(nameToUse);
+    const safeFileName = nameToUse.replace(/[^a-zA-Z0-9._\-]/g, "_");
+    // CacheDir is always writable (no scoped storage restrictions on Android 10+)
+    const destDir = ReactNativeBlobUtil.fs.dirs.CacheDir;
+    const destPath = `${destDir}/${Date.now()}_${safeFileName}`;
+
+    let finalPath: string;
+
+    if (url.startsWith("file://")) {
+      finalPath = url.replace("file://", "");
+    } else if (url.startsWith("/")) {
+      finalPath = url;
+    } else {
+      // Download from remote using blob-util (handles CDN redirects correctly)
+      const res = await ReactNativeBlobUtil.config({
+        path: destPath,
+        overwrite: true,
+      }).fetch("GET", url, {
+        "Cache-Control": "no-store",
+        "User-Agent":
+          "Mozilla/5.0 (Linux; Android 13; Mobile) AppleWebKit/537.36 Chrome/114.0 Mobile Safari/537.36",
+      });
+
+      const status = res.info().status;
+      if (status !== 200) {
+        throw new Error(`Server returned HTTP ${status}. Cannot open file.`);
+      }
+
+      finalPath = res.path();
+
+      // Verify we got actual bytes
+      const fileInfo = await ReactNativeBlobUtil.fs.stat(finalPath);
+      if (!fileInfo || fileInfo.size === 0) {
+        throw new Error(`Downloaded file is empty. Please check your connection and try again.`);
+      }
+    }
 
     if (Platform.OS === "android") {
-      await ReactNativeBlobUtil.android.actionViewIntent(destPath, mimeType);
+      await ReactNativeBlobUtil.android.actionViewIntent(finalPath, mimeType);
     } else {
-      await ReactNativeBlobUtil.ios.openDocument(destPath);
+      await ReactNativeBlobUtil.ios.openDocument(finalPath);
     }
-  } catch {
-    // Fallback to URL if download or intent fails
-    Linking.openURL(url).catch(() => {});
+  } catch (error: any) {
+    console.error("openDocument error:", error);
+    Alert.alert(
+      "Could Not Open File",
+      error?.message ?? "An unknown error occurred while trying to open this file.",
+      [{ text: "OK" }]
+    );
+  } finally {
+    delete _downloadingMap[url];
   }
 }
 
@@ -243,7 +299,7 @@ export function MessageContent({
           <Text style={{ color: colors.foreground, flex: 1 }} numberOfLines={2}>
             {fileName}
           </Text>
-          <Feather name="download" size={18} color={colors.primary} />
+          <Feather name="external-link" size={18} color={colors.primary} />
         </TouchableOpacity>
         {statusFooter}
       </View>
