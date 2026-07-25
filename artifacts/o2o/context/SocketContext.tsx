@@ -206,6 +206,19 @@ export function SocketProvider({ children }: { children: React.ReactNode }) {
         queryClient.invalidateQueries({ queryKey: ["channels"] });
       };
 
+      // ── reconnect: re-sync all data when socket reconnects after a drop ────
+      const handleReconnect = () => {
+        queryClient.invalidateQueries({ queryKey: ["chats"] });
+        queryClient.invalidateQueries({ queryKey: ["groups"] });
+        queryClient.invalidateQueries({ queryKey: ["channels"] });
+        queryClient.invalidateQueries({ queryKey: ["bids"] });
+        queryClient.invalidateQueries({ queryKey: ["orders"] });
+        queryClient.invalidateQueries({ queryKey: ["counts"] });
+        queryClient.invalidateQueries({ queryKey: ["notifications"] });
+        queryClient.invalidateQueries({ queryKey: ["friends"] });
+        queryClient.invalidateQueries({ queryKey: ["friend-requests"] });
+      };
+
       sock.on("message:new", handleMessageNew);
       sock.on("bid:offer", handleBidOffer);
       sock.on("bid_received", handleBidReceived);
@@ -221,6 +234,7 @@ export function SocketProvider({ children }: { children: React.ReactNode }) {
       sock.on("chat:deleted", handleChatDeleted);
       sock.on("chat:cleared", handleChatCleared);
       sock.on("channel:update", handleChannelUpdate);
+      sock.on("connect", handleReconnect);
 
       cleanupRef.current = () => {
         sock.off("message:new", handleMessageNew);
@@ -238,6 +252,7 @@ export function SocketProvider({ children }: { children: React.ReactNode }) {
         sock.off("chat:deleted", handleChatDeleted);
         sock.off("chat:cleared", handleChatCleared);
         sock.off("channel:update", handleChannelUpdate);
+        sock.off("connect", handleReconnect);
       };
     });
 

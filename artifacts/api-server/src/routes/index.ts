@@ -5,6 +5,7 @@ import coreApiRouter from "./api";
 import uploadRouter from "./upload";
 import analyticsRouter from "./analytics";
 import friendsRouter from "./friends";
+import proxyRouter from "./proxy";
 
 const router: IRouter = Router();
 
@@ -14,5 +15,6 @@ router.use("/data", coreApiRouter);
 router.use("/upload", uploadRouter);
 router.use("/analytics", analyticsRouter);
 router.use("/friends", friendsRouter);
+router.use("/proxy", proxyRouter);
 
 export default router;

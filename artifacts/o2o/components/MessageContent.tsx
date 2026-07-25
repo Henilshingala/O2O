@@ -20,6 +20,7 @@ import { useColors } from "@/hooks/useColors";
 import { openLocation } from "@/lib/openLocation";
 import { resolveMediaUrl } from "@/lib/mediaUrl";
 import type { UploadProgress } from "@/lib/uploadMedia";
+import { getBaseUrl } from "@workspace/api-client-react";
 import type { Message } from "@/types";
 
 interface MessageContentProps {
@@ -114,14 +115,20 @@ async function openDocument(url: string, fileName: string): Promise<void> {
     } else if (url.startsWith("/")) {
       finalPath = url;
     } else {
+      // Route Cloudinary URLs through our backend proxy to bypass
+      // access_mode restrictions on old private uploads (avoids 401).
+      let fetchUrl = url;
+      if (url.includes("cloudinary.com")) {
+        const base = getBaseUrl();
+        fetchUrl = `${base}/api/proxy/download?url=${encodeURIComponent(url)}`;
+      }
+
       // Download from remote using blob-util (handles CDN redirects correctly)
       const res = await ReactNativeBlobUtil.config({
         path: destPath,
         overwrite: true,
-      }).fetch("GET", url, {
+      }).fetch("GET", fetchUrl, {
         "Cache-Control": "no-store",
-        "User-Agent":
-          "Mozilla/5.0 (Linux; Android 13; Mobile) AppleWebKit/537.36 Chrome/114.0 Mobile Safari/537.36",
       });
 
       const status = res.info().status;

@@ -66,7 +66,13 @@ import NotificationsScreen from "./notifications";
 
 const queryClient = new QueryClient({
   defaultOptions: {
-    queries: { retry: 2, staleTime: 30_000, gcTime: 5 * 60_000 },
+    queries: {
+      retry: 2,
+      staleTime: 0,           // Always refetch when invalidated by socket events
+      gcTime: 5 * 60_000,
+      refetchOnMount: true,
+      refetchOnReconnect: true,
+    },
   },
 });
 

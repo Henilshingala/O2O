@@ -106,7 +106,8 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
   const { user } = useAuth();
   const enabled = !!user;
 
-  const queryDefaults = { staleTime: 30000, gcTime: 5 * 60000 };
+  // staleTime:0 means any socket-triggered invalidation causes an immediate refetch
+  const queryDefaults = { staleTime: 0, gcTime: 5 * 60000, refetchOnMount: true, refetchOnReconnect: true };
 
   const { data: channels = [], isLoading: loadingChannels } = useQuery<Channel[]>({ queryKey: ["channels"], queryFn: () => fetcher("/api/data/channels"), enabled, ...queryDefaults });
   const { data: chats = [], isLoading: loadingChats } = useQuery<Chat[]>({ queryKey: ["chats"], queryFn: () => fetcher("/api/data/chats"), enabled, ...queryDefaults });
@@ -119,8 +120,10 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
     queryKey: ["counts"],
     queryFn: () => fetcher("/api/data/counts"),
     enabled,
-    staleTime: 15000,
-    refetchInterval: 30000,
+    staleTime: 0,
+    refetchInterval: 15000,
+    refetchOnMount: true,
+    refetchOnReconnect: true,
   });
 
   const isLoading = enabled && (loadingChannels || loadingChats || loadingGroups || loadingBids || loadingOrders || loadingReviews || loadingWishlist || loadingCounts);
