@@ -138,14 +138,19 @@ function navigateFromFCM(
   }
   try {
     if (screen.startsWith("chat/")) {
+      // @ts-ignore — navigate overload generics don't match custom compat/router types
       navigationRef.navigate("chat/[id]" as never, { id: params?.id ?? params?.chatId } as never);
     } else if (screen.startsWith("group/")) {
+      // @ts-ignore
       navigationRef.navigate("group/[id]" as never, { id: params?.id ?? params?.groupId } as never);
     } else if (screen.startsWith("bid/live/")) {
+      // @ts-ignore
       navigationRef.navigate("bid/live/[id]" as never, { id: params?.id ?? params?.bidId } as never);
     } else if (screen.startsWith("bid/winner/")) {
+      // @ts-ignore
       navigationRef.navigate("bid/winner/[id]" as never, { id: params?.id ?? params?.bidId } as never);
     } else if (screen.startsWith("order/")) {
+      // @ts-ignore
       navigationRef.navigate("order/[id]" as never, { id: params?.id ?? params?.orderId } as never);
     } else if (screen === "notifications") {
       navigationRef.navigate("notifications" as never);

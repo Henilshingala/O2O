@@ -32,7 +32,7 @@ import {
 } from "react-native-gesture-handler";
 import { Feather } from "@/compat/vector-icons";
 import { VideoPlayer } from "@/components/VideoPlayer";
-import { resolveMediaUrl } from "@/lib/mediaUrl";
+import { resolveMediaUrl, getVideoThumbnailUrl } from "@/lib/mediaUrl";
 
 const { width: SW, height: SH } = Dimensions.get("window");
 
@@ -92,6 +92,7 @@ function MediaPage({
 
   const combinedScale = Animated.multiply(scale, pinchScale);
   const resolvedUrl = resolveMediaUrl(url);
+  const thumbnailUrl = type === "video" ? getVideoThumbnailUrl(url) : resolvedUrl;
 
   return (
     <PinchGestureHandler
@@ -102,7 +103,7 @@ function MediaPage({
       <Animated.View style={styles.page}>
         <TouchableWithoutFeedback onPress={handleDoubleTap}>
           <Animated.Image
-            source={{ uri: resolvedUrl }}
+            source={{ uri: thumbnailUrl }}
             style={[styles.pageImg, { transform: [{ scale: combinedScale }] }]}
             resizeMode="contain"
           />

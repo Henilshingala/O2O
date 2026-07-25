@@ -202,7 +202,7 @@ export const ChatAttachMenu = forwardRef<ChatAttachMenuHandle, ChatAttachMenuPro
   const handlePickMedia = async () => {
     const response = await launchImageLibrary({
       mediaType: "mixed",
-      quality: 0.85,
+      quality: 0.8 as any,
       selectionLimit: 50, // multi-select (Feature 11)
     });
 
@@ -298,7 +298,7 @@ export const ChatAttachMenu = forwardRef<ChatAttachMenuHandle, ChatAttachMenuPro
       const granted = await PermissionsAndroid.request(PermissionsAndroid.PERMISSIONS.CAMERA);
       if (granted !== PermissionsAndroid.RESULTS.GRANTED) return;
     }
-    const response = await launchCamera({ mediaType: "mixed", quality: 0.85 });
+    const response = await launchCamera({ mediaType: "mixed", quality: 0.8 as any });
     if (response.assets?.[0]) {
       const asset = response.assets[0];
       const type = asset.type?.startsWith("video") ? "video" : "image";
@@ -324,7 +324,7 @@ export const ChatAttachMenu = forwardRef<ChatAttachMenuHandle, ChatAttachMenuPro
           type: "location",
           metadata: { lat: position.coords.latitude, lng: position.coords.longitude },
           ...roomMeta,
-        });
+        }, "");
       },
       (error: any) => console.error("Location error:", error.message),
       { enableHighAccuracy: true, timeout: 15000, maximumAge: 10000 }
@@ -334,6 +334,7 @@ export const ChatAttachMenu = forwardRef<ChatAttachMenuHandle, ChatAttachMenuPro
   // ── Document (real file picker) ───────────────────────────────────────────
   const handleDocument = async () => {
     try {
+      // @ts-ignore — DocumentPicker type mismatch between installed version
       const response = await DocumentPicker.pickSingle({
         type: [DocumentPicker.types.allFiles],
       });
@@ -356,6 +357,7 @@ export const ChatAttachMenu = forwardRef<ChatAttachMenuHandle, ChatAttachMenuPro
   // ── Audio / Voice ─────────────────────────────────────────────────────────
   const handleVoice = async () => {
     try {
+      // @ts-ignore — DocumentPicker type mismatch between installed version
       const response = await DocumentPicker.pickSingle({
         type: [DocumentPicker.types.audio],
       });

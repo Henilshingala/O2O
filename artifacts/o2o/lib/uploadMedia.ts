@@ -1,6 +1,9 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { getBaseUrl } from "@workspace/api-client-react";
 
+// React Native's global object — not typed in standard lib.dom / esnext
+declare var global: Record<string, any>;
+
 const TOKEN_KEY = "@o2o_token";
 
 export interface UploadAsset {

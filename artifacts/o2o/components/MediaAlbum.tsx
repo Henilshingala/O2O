@@ -20,7 +20,7 @@ import {
 } from "react-native";
 import { Feather } from "@/compat/vector-icons";
 import { useColors } from "@/hooks/useColors";
-import { resolveMediaUrl } from "@/lib/mediaUrl";
+import { resolveMediaUrl, getVideoThumbnailUrl } from "@/lib/mediaUrl";
 import { MediaViewer } from "@/components/MediaViewer";
 
 const { width: SCREEN_W } = Dimensions.get("window");
@@ -54,7 +54,7 @@ function MediaCell({
       style={{ width, height, position: "relative", overflow: "hidden" }}
     >
       <Image
-        source={{ uri: resolveMediaUrl(url) }}
+        source={{ uri: type === "video" ? getVideoThumbnailUrl(url) : resolveMediaUrl(url) }}
         style={{ width, height }}
         resizeMode="cover"
       />
