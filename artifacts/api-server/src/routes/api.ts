@@ -189,7 +189,7 @@ router.get("/channels/:id/messages", async (req: AuthRequest, res) => {
     const channelId = req.params.id as string;
     const { limit, cursor } = parseCursorPagination(req.query as Record<string, unknown>, { limit: 50, maxLimit: 100 });
 
-    let whereClause = and(eq(schema.messages.channelId, channelId), isNull(schema.messages.deletedAt));
+    let whereClause = eq(schema.messages.channelId, channelId);
     if (cursor) {
       const cursorRow = await db.select({ ts: schema.messages.timestamp }).from(schema.messages).where(eq(schema.messages.id, cursor)).limit(1);
       if (cursorRow[0]) {
@@ -200,10 +200,12 @@ router.get("/channels/:id/messages", async (req: AuthRequest, res) => {
     const msgs = await db.select().from(schema.messages)
       .where(whereClause)
       .orderBy(desc(schema.messages.timestamp))
-      .limit(limit + 1);
+      .limit((limit * 2) + 10);
+    
+    const filteredMsgs = msgs.filter(m => !((m.metadata as any)?.deletedFor || []).includes(req.user!.userId));
 
-    const hasMore = msgs.length > limit;
-    const page = hasMore ? msgs.slice(0, limit) : msgs;
+    const hasMore = filteredMsgs.length > limit;
+    const page = hasMore ? filteredMsgs.slice(0, limit) : filteredMsgs;
     const nextCursor = hasMore ? page[page.length - 1]?.id ?? null : null;
     return res.json({ messages: page.reverse(), nextCursor });
   } catch (error) { return res.status(500).json({ error: "Server error" }); }
@@ -480,7 +482,7 @@ router.get("/chats", async (req: AuthRequest, res) => {
     // Single batched query instead of N+1 per-chat queries
     const allMsgs = paginatedChatIds.length > 0
       ? await db.select().from(schema.messages)
-          .where(and(inArray(schema.messages.chatId, paginatedChatIds), isNull(schema.messages.deletedAt)))
+          .where(inArray(schema.messages.chatId, paginatedChatIds))
           .orderBy(asc(schema.messages.timestamp))
       : [];
 
@@ -488,7 +490,7 @@ router.get("/chats", async (req: AuthRequest, res) => {
       ...c,
       participants: allParts.filter(p => p.chatId === c.id).map(p => p.userId),
       messages: allMsgs
-        .filter(m => m.chatId === c.id)
+        .filter(m => m.chatId === c.id && !((m.metadata as any)?.deletedFor || []).includes(userId))
         .sort((a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime())
     }));
     return sendListResponse(res, req, enriched, buildOffsetMeta(page, limit, total));
@@ -610,7 +612,7 @@ router.get("/chats/:id/messages", async (req: AuthRequest, res) => {
     }
     const { limit, cursor } = parseCursorPagination(req.query as Record<string, unknown>, { limit: 50, maxLimit: 100 });
 
-    let whereClause = and(eq(schema.messages.chatId, chatId), isNull(schema.messages.deletedAt));
+    let whereClause = eq(schema.messages.chatId, chatId);
     if (cursor) {
       const cursorRow = await db.select({ ts: schema.messages.timestamp }).from(schema.messages).where(eq(schema.messages.id, cursor)).limit(1);
       if (cursorRow[0]) {
@@ -621,10 +623,12 @@ router.get("/chats/:id/messages", async (req: AuthRequest, res) => {
     const msgs = await db.select().from(schema.messages)
       .where(whereClause)
       .orderBy(desc(schema.messages.timestamp))
-      .limit(limit + 1);
+      .limit((limit * 2) + 10); // Fetch extra to account for deletedFor filtering
 
-    const hasMore = msgs.length > limit;
-    const page = hasMore ? msgs.slice(0, limit) : msgs;
+    const filteredMsgs = msgs.filter(m => !((m.metadata as any)?.deletedFor || []).includes(req.user!.userId));
+
+    const hasMore = filteredMsgs.length > limit;
+    const page = hasMore ? filteredMsgs.slice(0, limit) : filteredMsgs;
     const nextCursor = hasMore ? page[page.length - 1]?.id ?? null : null;
     return res.json({ messages: page.reverse(), nextCursor });
   } catch (error) { return res.status(500).json({ error: "Server error" }); }
@@ -646,7 +650,7 @@ router.delete("/chats/:chatId/messages/:messageId", async (req: AuthRequest, res
     const { chatId, messageId } = req.params;
     const msg = await db.select().from(schema.messages).where(eq(schema.messages.id, messageId as string)).limit(1);
     if (!msg[0] || msg[0].senderId !== req.user!.userId) return res.status(403).json({ error: "Forbidden" });
-    await db.update(schema.messages).set({ deletedAt: new Date(), text: "Message deleted" }).where(eq(schema.messages.id, messageId as string));
+    await db.update(schema.messages).set({ deletedAt: new Date(), text: "This message was deleted.", type: "text" }).where(eq(schema.messages.id, messageId as string));
     emitToChat(chatId as string, "message:delete", { id: messageId });
     return res.json({ success: true });
   } catch (error) { return res.status(500).json({ error: "Server error" }); }
@@ -677,7 +681,7 @@ router.post("/chats/:chatId/messages/:messageId/vote", async (req: AuthRequest, 
 // ── Delete for me (chat) ────────────────────────────────────────────────────
 router.post("/chats/:chatId/messages/:messageId/delete-for-me", async (req: AuthRequest, res) => {
   try {
-    const { messageId } = req.params;
+    const { chatId, messageId } = req.params;
     const userId = req.user!.userId;
     const [msg] = await db.select().from(schema.messages).where(eq(schema.messages.id, messageId as string)).limit(1);
     if (!msg) return res.status(404).json({ error: "Message not found" });
@@ -687,6 +691,8 @@ router.post("/chats/:chatId/messages/:messageId/delete-for-me", async (req: Auth
       await db.update(schema.messages).set({ metadata: { ...meta, deletedFor: [...deletedFor, userId] } })
         .where(eq(schema.messages.id, messageId as string));
     }
+    // Also emit an event so the user's socket instantly updates
+    emitToUser(userId, "message:deleteForMe", { id: messageId });
     return res.json({ success: true });
   } catch (error) { return res.status(500).json({ error: "Server error" }); }
 });
@@ -759,7 +765,7 @@ router.post("/chats/:id/clear", async (req: AuthRequest, res) => {
 // ── Delete for me (group) ────────────────────────────────────────────────────
 router.post("/groups/:id/messages/:messageId/delete-for-me", async (req: AuthRequest, res) => {
   try {
-    const { messageId } = req.params;
+    const { id: groupId, messageId } = req.params;
     const userId = req.user!.userId;
     const [msg] = await db.select().from(schema.messages).where(eq(schema.messages.id, messageId as string)).limit(1);
     if (!msg) return res.status(404).json({ error: "Message not found" });
@@ -769,6 +775,7 @@ router.post("/groups/:id/messages/:messageId/delete-for-me", async (req: AuthReq
       await db.update(schema.messages).set({ metadata: { ...meta, deletedFor: [...deletedFor, userId] } })
         .where(eq(schema.messages.id, messageId as string));
     }
+    emitToUser(userId, "message:deleteForMe", { id: messageId });
     return res.json({ success: true });
   } catch (error) { return res.status(500).json({ error: "Server error" }); }
 });
@@ -830,7 +837,7 @@ router.delete("/groups/:id/messages/:messageId", async (req: AuthRequest, res) =
     const { id: groupId, messageId } = req.params;
     const [msg] = await db.select().from(schema.messages).where(eq(schema.messages.id, messageId as string)).limit(1);
     if (!msg || msg.senderId !== req.user!.userId) return res.status(403).json({ error: "Forbidden" });
-    await db.update(schema.messages).set({ deletedAt: new Date(), text: "Message deleted" }).where(eq(schema.messages.id, messageId as string));
+    await db.update(schema.messages).set({ deletedAt: new Date(), text: "This message was deleted.", type: "text" }).where(eq(schema.messages.id, messageId as string));
     emitToGroup(groupId as string, "message:delete", { id: messageId });
     return res.json({ success: true });
   } catch (error) { return res.status(500).json({ error: "Server error" }); }
@@ -885,7 +892,9 @@ router.get("/groups", async (req: AuthRequest, res) => {
     const enriched = myGroups.map(g => ({
       ...g,
       members: allParts.filter(p => p.groupId === g.id).map(p => p.userId),
-      messages: allMsgs.filter(m => m.groupId === g.id).sort((a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime())
+      messages: allMsgs
+        .filter(m => m.groupId === g.id && !((m.metadata as any)?.deletedFor || []).includes(userId))
+        .sort((a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime())
     }));
     return sendListResponse(res, req, enriched, buildOffsetMeta(page, limit, total));
   } catch (error) { return res.status(500).json({ error: "Server error" }); }
@@ -987,7 +996,7 @@ router.get("/groups/:id/messages", async (req: AuthRequest, res) => {
     if (membership.length === 0) return res.status(403).json({ error: "Not a group member" });
 
     const { limit, cursor } = parseCursorPagination(req.query as Record<string, unknown>, { limit: 50, maxLimit: 100 });
-    let whereClause = and(eq(schema.messages.groupId, groupId), isNull(schema.messages.deletedAt));
+    let whereClause = eq(schema.messages.groupId, groupId);
     if (cursor) {
       const cursorRow = await db.select({ ts: schema.messages.timestamp }).from(schema.messages).where(eq(schema.messages.id, cursor)).limit(1);
       if (cursorRow[0]) {
@@ -997,9 +1006,12 @@ router.get("/groups/:id/messages", async (req: AuthRequest, res) => {
     const msgs = await db.select().from(schema.messages)
       .where(whereClause)
       .orderBy(desc(schema.messages.timestamp))
-      .limit(limit + 1);
-    const hasMore = msgs.length > limit;
-    const page = hasMore ? msgs.slice(0, limit) : msgs;
+      .limit((limit * 2) + 10);
+    
+    const filteredMsgs = msgs.filter(m => !((m.metadata as any)?.deletedFor || []).includes(req.user!.userId));
+
+    const hasMore = filteredMsgs.length > limit;
+    const page = hasMore ? filteredMsgs.slice(0, limit) : filteredMsgs;
     const nextCursor = hasMore ? page[page.length - 1]?.id ?? null : null;
     return res.json({ messages: page.reverse(), nextCursor });
   } catch (error) { return res.status(500).json({ error: "Server error" }); }

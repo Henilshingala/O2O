@@ -97,7 +97,7 @@ export function useRealtimeMessages({
           m.id === payload.id
             ? {
                 ...m,
-                text: "Message deleted",
+                text: "This message was deleted.",
                 type: "text" as const,
                 metadata: {},
                 deletedAt: new Date().toISOString(),
@@ -105,6 +105,11 @@ export function useRealtimeMessages({
             : m
         )
       );
+    };
+
+    // ── message:deleteForMe ───────────────────────────────────────────────────
+    const handleDeleteForMe = (payload: { id: string }) => {
+      setMessages((prev) => prev.filter((m) => m.id !== payload.id));
     };
 
     // ── message:vote (poll vote update) ───────────────────────────────────────
@@ -143,6 +148,7 @@ export function useRealtimeMessages({
 
     socket.on("message:new", handleNew);
     socket.on("message:delete", handleDelete);
+    socket.on("message:deleteForMe", handleDeleteForMe);
     socket.on("message:vote", handleVote);
     socket.on("message:read", handleRead);
     socket.on("connect", handleReconnect);
@@ -150,6 +156,7 @@ export function useRealtimeMessages({
     return () => {
       socket.off("message:new", handleNew);
       socket.off("message:delete", handleDelete);
+      socket.off("message:deleteForMe", handleDeleteForMe);
       socket.off("message:vote", handleVote);
       socket.off("message:read", handleRead);
       socket.off("connect", handleReconnect);

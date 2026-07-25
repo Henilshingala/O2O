@@ -91,6 +91,42 @@ export function SocketProvider({ children }: { children: React.ReactNode }) {
         debouncedInvalidateCounts();
       };
 
+      // ── message:delete ────────────────────────────────────────────────────
+      const handleMessageDelete = (payload: { id: string }) => {
+        const updateMessages = (messages: Message[]) =>
+          messages.map((m) =>
+            m.id === payload.id
+              ? { ...m, text: "This message was deleted.", type: "text" as const, metadata: {}, deletedAt: new Date().toISOString() }
+              : m
+          );
+
+        queryClient.setQueryData<Chat[]>(["chats"], (old) =>
+          old?.map((c) => ({ ...c, messages: updateMessages(c.messages) })) ?? old
+        );
+        queryClient.setQueryData<Group[]>(["groups"], (old) =>
+          old?.map((g) => ({ ...g, messages: updateMessages(g.messages) })) ?? old
+        );
+        queryClient.setQueryData<Channel[]>(["channels"], (old) =>
+          old?.map((ch) => ({ ...ch, messages: updateMessages(ch.messages) })) ?? old
+        );
+      };
+
+      // ── message:deleteForMe ───────────────────────────────────────────────
+      const handleMessageDeleteForMe = (payload: { id: string }) => {
+        const updateMessages = (messages: Message[]) =>
+          messages.filter((m) => m.id !== payload.id);
+
+        queryClient.setQueryData<Chat[]>(["chats"], (old) =>
+          old?.map((c) => ({ ...c, messages: updateMessages(c.messages) })) ?? old
+        );
+        queryClient.setQueryData<Group[]>(["groups"], (old) =>
+          old?.map((g) => ({ ...g, messages: updateMessages(g.messages) })) ?? old
+        );
+        queryClient.setQueryData<Channel[]>(["channels"], (old) =>
+          old?.map((ch) => ({ ...ch, messages: updateMessages(ch.messages) })) ?? old
+        );
+      };
+
       // ── bid events ────────────────────────────────────────────────────────
       const handleBidOffer = (offer: BidOffer & { bidId: string }) => {
         queryClient.setQueryData<Bid[]>(["bids"], (old) =>
@@ -220,6 +256,8 @@ export function SocketProvider({ children }: { children: React.ReactNode }) {
       };
 
       sock.on("message:new", handleMessageNew);
+      sock.on("message:delete", handleMessageDelete);
+      sock.on("message:deleteForMe", handleMessageDeleteForMe);
       sock.on("bid:offer", handleBidOffer);
       sock.on("bid_received", handleBidReceived);
       sock.on("bid_updated", handleBidUpdated);
@@ -238,6 +276,8 @@ export function SocketProvider({ children }: { children: React.ReactNode }) {
 
       cleanupRef.current = () => {
         sock.off("message:new", handleMessageNew);
+        sock.off("message:delete", handleMessageDelete);
+        sock.off("message:deleteForMe", handleMessageDeleteForMe);
         sock.off("bid:offer", handleBidOffer);
         sock.off("bid_received", handleBidReceived);
         sock.off("bid_updated", handleBidUpdated);
