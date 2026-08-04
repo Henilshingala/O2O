@@ -31,7 +31,7 @@ export default function CreateProductPost() {
   const { createProduct } = useData();
   const params = useLocalSearchParams<{ channelId: string }>();
 
-  const [form, setForm] = useState({ name: "", description: "", price: "" });
+  const [form, setForm] = useState({ name: "", description: "", price: "", productCode: "" });
   const [details, setDetails] = useState<ProductDetail[]>([]);
   const [loading, setLoading] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
@@ -53,15 +53,20 @@ export default function CreateProductPost() {
     if (!form.name.trim()) e.name = "Product name is required";
     if (!form.description.trim()) e.description = "Description is required";
     if (!form.price.trim() || isNaN(Number(form.price))) e.price = "Valid price required";
-    if (uploading) e.name = "Please wait for image upload to finish";
+    if (imageUrls.length === 0 && localPreviews.length === 0) e.images = "At least 1 image is required";
+    if (uploading) e.images = "Please wait for image upload to finish";
     if (Object.keys(e).length > 0) { setErrors(e); return; }
     setLoading(true);
     try {
+      // Encode Product Code as a detail entry so it's searchable in channel search
+      const allDetails = form.productCode.trim()
+        ? [{ name: "Code", value: form.productCode.trim() }, ...details]
+        : details;
       await createProduct(params.channelId, {
         name: form.name.trim(),
         description: form.description.trim(),
         price: Number(form.price),
-        details,
+        details: allDetails,
         image: imageUrls[0] || undefined,
         images: imageUrls,
         videoUrl: videoUrl || undefined,
@@ -174,10 +179,12 @@ export default function CreateProductPost() {
             {uploading && <ActivityIndicator style={{ marginTop: 8 }} color={colors.primary} />}
           </TouchableOpacity>
         </View>
+        {!!errors.images && <Text style={{ color: colors.destructive, fontSize: 12, marginBottom: 8 }}>{errors.images}</Text>}
 
-        <AppInput label="Product Name" value={form.name} onChangeText={set("name")} placeholder="Enter product name" error={errors.name} />
-        <AppInput label="Product Description" value={form.description} onChangeText={set("description")} placeholder="Describe your product" multiline style={{ height: 90, textAlignVertical: "top", paddingTop: 10 }} error={errors.description} />
-        <AppInput label="Product Price (₹)" value={form.price} onChangeText={set("price")} placeholder="Enter price" keyboardType="numeric" error={errors.price} />
+        <AppInput label="Product Code" value={form.productCode} onChangeText={set("productCode")} placeholder="e.g. SKU-001 (optional)" />
+        <AppInput label="Product Name *" value={form.name} onChangeText={set("name")} placeholder="Enter product name" error={errors.name} />
+        <AppInput label="Product Description *" value={form.description} onChangeText={set("description")} placeholder="Describe your product" multiline style={{ height: 90, textAlignVertical: "top", paddingTop: 10 }} error={errors.description} />
+        <AppInput label="Product Price (₹) *" value={form.price} onChangeText={set("price")} placeholder="Enter price" keyboardType="numeric" error={errors.price} />
 
         {/* Product Details */}
         <Text style={[styles.detailsLabel, { color: colors.foreground }]}>Product Details</Text>

@@ -1,5 +1,10 @@
+/**
+ * FEATURE 1 — Unified conversation list
+ * Single FlatList of chats, groups, and channels sorted by latest activity (WhatsApp-style).
+ * Each row shows avatar, name, last message preview, timestamp, unread badge.
+ */
 import { router } from "@/compat/router";
-import React, { useState } from "react";
+import React, { useMemo, useState } from "react";
 import {
   ActionSheetIOS,
   Alert,
@@ -17,24 +22,38 @@ import { useAuth } from "@/context/AuthContext";
 import { useData } from "@/context/DataContext";
 import { useFriends } from "@/context/FriendsContext";
 import { useColors } from "@/hooks/useColors";
+import type { Chat, Group, Channel } from "@/types";
 
-function formatTime(ts: string) {
+type ConvoType = "chat" | "group" | "channel";
+
+interface ConvoItem {
+  id: string;
+  type: ConvoType;
+  name: string;
+  lastMessage?: string;
+  lastTs: number;       // epoch ms for sort
+  unread: number;
+  raw: Chat | Group | Channel;
+}
+
+function formatTime(ts: number) {
   const d = new Date(ts);
   const now = new Date();
-  const diff = now.getTime() - d.getTime();
-  if (diff < 86400000) return d.toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit" });
+  const diff = now.getTime() - ts;
+  if (diff < 86_400_000) return d.toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit" });
+  if (diff < 7 * 86_400_000) return d.toLocaleDateString("en-US", { weekday: "short" });
   return d.toLocaleDateString();
 }
 
-function previewText(last: any): string {
-  if (!last) return "No messages yet";
-  if (last.type === "image") return "📷 Photo";
-  if (last.type === "video") return "🎬 Video";
-  if (last.type === "audio") return "🎵 Voice message";
-  if (last.type === "file") return `📎 ${last.metadata?.fileName ?? "Document"}`;
-  if (last.type === "location") return "📍 Location";
-  if (last.type === "poll") return `📊 ${last.text}`;
-  return last.text ?? "No messages yet";
+function previewText(msg: any): string {
+  if (!msg) return "No messages yet";
+  if (msg.type === "image") return "📷 Photo";
+  if (msg.type === "video") return "🎬 Video";
+  if (msg.type === "audio") return "🎵 Voice message";
+  if (msg.type === "file") return `📎 ${msg.metadata?.fileName ?? "Document"}`;
+  if (msg.type === "location") return "📍 Location";
+  if (msg.type === "poll") return `📊 ${msg.text}`;
+  return msg.text ?? "No messages yet";
 }
 
 export default function ChatTab() {
@@ -42,83 +61,130 @@ export default function ChatTab() {
   const insets = useSafeAreaInsets();
   const { user, getUserById } = useAuth();
   const { friends } = useFriends();
-  const { chats, deleteChat, clearChat } = useData();
+  const { chats, groups, channels, deleteChat, clearChat } = useData();
 
   if (!user) return null;
 
-  const myChats = chats
-    .filter((c) => c.participants.includes(user.id))
-    .sort((a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime());
+  // Build a unified sorted list
+  const items = useMemo<ConvoItem[]>(() => {
+    const result: ConvoItem[] = [];
 
-  const handleLongPress = (chatId: string, otherName: string) => {
+    // Personal chats
+    chats
+      .filter((c) => c.participants.includes(user.id))
+      .forEach((c) => {
+        const msgs = Array.isArray(c.messages) ? c.messages : [];
+        const last = msgs[msgs.length - 1];
+        const unread = msgs.filter(
+          (m) =>
+            m.senderId !== user.id &&
+            !((m.metadata?.readBy as string[] | undefined)?.includes(user.id))
+        ).length;
+        const otherId = c.participants.find((p) => p !== user.id) ?? "";
+        const other = otherId
+          ? friends.find((f) => f.id === otherId) || getUserById(otherId)
+          : undefined;
+        result.push({
+          id: c.id,
+          type: "chat",
+          name: other?.fullName ?? "Unknown",
+          lastMessage: last
+            ? (last.senderId === user.id ? `You: ${previewText(last)}` : previewText(last))
+            : undefined,
+          lastTs: last ? new Date(last.timestamp).getTime() : new Date(c.updatedAt).getTime(),
+          unread,
+          raw: c,
+        });
+      });
+
+    // Groups
+    groups
+      .filter((g) => g.members.includes(user.id))
+      .forEach((g) => {
+        const msgs = Array.isArray(g.messages) ? g.messages : [];
+        const last = msgs[msgs.length - 1];
+        const unread = msgs.filter(
+          (m) =>
+            m.senderId !== user.id &&
+            !((m.metadata?.readBy as string[] | undefined)?.includes(user.id))
+        ).length;
+        result.push({
+          id: g.id,
+          type: "group",
+          name: g.name,
+          lastMessage: last
+            ? (last.senderId === user.id ? `You: ${previewText(last)}` : previewText(last))
+            : undefined,
+          lastTs: last ? new Date(last.timestamp).getTime() : new Date(g.updatedAt).getTime(),
+          unread,
+          raw: g,
+        });
+      });
+
+    // Channels followed or owned
+    channels
+      .filter((ch) => ch.followers.includes(user.id) || ch.ownerId === user.id)
+      .forEach((ch) => {
+        const msgs = Array.isArray(ch.messages) ? ch.messages : [];
+        const last = msgs[msgs.length - 1];
+        result.push({
+          id: ch.id,
+          type: "channel",
+          name: ch.name,
+          lastMessage: last ? previewText(last) : undefined,
+          lastTs: last ? new Date(last.timestamp).getTime() : new Date(ch.createdAt).getTime(),
+          unread: 0, // channels are broadcast — no per-user unread
+          raw: ch,
+        });
+      });
+
+    // Sort by latest activity descending
+    return result.sort((a, b) => b.lastTs - a.lastTs);
+  }, [chats, groups, channels, user.id, friends, getUserById]);
+
+  const handleLongPress = (item: ConvoItem) => {
+    if (item.type !== "chat") return;
+    const otherName = item.name;
     const options = ["Delete Chat", "Clear Messages", "Cancel"];
-    const destructiveIndex = 0;
-    const cancelIndex = 2;
-
     if (Platform.OS === "ios") {
       ActionSheetIOS.showActionSheetWithOptions(
-        { options, destructiveButtonIndex: destructiveIndex, cancelButtonIndex: cancelIndex },
-        (buttonIndex) => {
-          if (buttonIndex === 0) confirmDelete(chatId, otherName);
-          if (buttonIndex === 1) confirmClear(chatId, otherName);
+        { options, destructiveButtonIndex: 0, cancelButtonIndex: 2 },
+        (i) => {
+          if (i === 0) confirmDeleteChat(item.id, otherName);
+          if (i === 1) confirmClearChat(item.id, otherName);
         }
       );
     } else {
       Alert.alert(otherName, "What would you like to do?", [
-        {
-          text: "Delete Chat",
-          style: "destructive",
-          onPress: () => confirmDelete(chatId, otherName),
-        },
-        {
-          text: "Clear Messages",
-          onPress: () => confirmClear(chatId, otherName),
-        },
+        { text: "Delete Chat", style: "destructive", onPress: () => confirmDeleteChat(item.id, otherName) },
+        { text: "Clear Messages", onPress: () => confirmClearChat(item.id, otherName) },
         { text: "Cancel", style: "cancel" },
       ]);
     }
   };
 
-  const confirmDelete = (chatId: string, otherName: string) => {
-    Alert.alert(
-      "Delete Chat",
-      `Delete your conversation with ${otherName}? This cannot be undone.`,
-      [
-        { text: "Cancel", style: "cancel" },
-        {
-          text: "Delete",
-          style: "destructive",
-          onPress: async () => {
-            try {
-              await deleteChat(chatId);
-            } catch {
-              Alert.alert("Error", "Could not delete chat. Please try again.");
-            }
-          },
-        },
-      ]
-    );
+  const confirmDeleteChat = (chatId: string, name: string) =>
+    Alert.alert("Delete Chat", `Delete your conversation with ${name}? This cannot be undone.`, [
+      { text: "Cancel", style: "cancel" },
+      { text: "Delete", style: "destructive", onPress: async () => { try { await deleteChat(chatId); } catch { Alert.alert("Error", "Could not delete chat."); } } },
+    ]);
+
+  const confirmClearChat = (chatId: string, name: string) =>
+    Alert.alert("Clear Messages", `Clear all messages with ${name}?`, [
+      { text: "Cancel", style: "cancel" },
+      { text: "Clear", style: "destructive", onPress: async () => { try { await clearChat(chatId); } catch { Alert.alert("Error", "Could not clear messages."); } } },
+    ]);
+
+  const navigate = (item: ConvoItem) => {
+    if (item.type === "chat") router.push({ pathname: "/chat/[id]", params: { id: item.id } });
+    else if (item.type === "group") router.push({ pathname: "/group/[id]", params: { id: item.id } });
+    else router.push({ pathname: "/channel/[id]", params: { id: item.id } });
   };
 
-  const confirmClear = (chatId: string, otherName: string) => {
-    Alert.alert(
-      "Clear Messages",
-      `Clear all messages in your conversation with ${otherName}?`,
-      [
-        { text: "Cancel", style: "cancel" },
-        {
-          text: "Clear",
-          style: "destructive",
-          onPress: async () => {
-            try {
-              await clearChat(chatId);
-            } catch {
-              Alert.alert("Error", "Could not clear messages. Please try again.");
-            }
-          },
-        },
-      ]
-    );
+  const typeIcon = (type: ConvoType) => {
+    if (type === "group") return "users";
+    if (type === "channel") return "radio";
+    return null;
   };
 
   return (
@@ -126,14 +192,10 @@ export default function ChatTab() {
       <View
         style={[
           styles.header,
-          {
-            backgroundColor: colors.card,
-            borderBottomColor: colors.border,
-            paddingTop: insets.top + 8,
-          },
+          { backgroundColor: colors.card, borderBottomColor: colors.border, paddingTop: insets.top + 8 },
         ]}
       >
-        <Text style={[styles.title, { color: colors.foreground }]}>Chats</Text>
+        <Text style={[styles.title, { color: colors.foreground }]}>Messages</Text>
         <TouchableOpacity
           style={[styles.newBtn, { backgroundColor: colors.primary }]}
           onPress={() => router.push("/new-chat")}
@@ -143,78 +205,77 @@ export default function ChatTab() {
       </View>
 
       <FlatList
-        data={myChats}
-        keyExtractor={(item) => item.id}
+        data={items}
+        keyExtractor={(item) => `${item.type}:${item.id}`}
         contentContainerStyle={[styles.list, { paddingBottom: 90 }]}
         ListEmptyComponent={
           <View style={styles.empty}>
             <Feather name="message-circle" size={48} color={colors.border} />
             <Text style={[styles.emptyText, { color: colors.mutedForeground }]}>
-              No chats yet. Start a conversation!
+              No conversations yet. Start chatting!
             </Text>
           </View>
         }
         renderItem={({ item }) => {
-          const otherId = item.participants.find((p) => p !== user.id) ?? "";
-          const other = otherId
-            ? friends.find((f) => f.id === otherId) || getUserById(otherId)
-            : undefined;
-          const messages = Array.isArray(item.messages) ? item.messages : [];
-          const last = messages[messages.length - 1];
-
-          // Unread count: messages not sent by me and not in readBy
-          const unread = messages.filter(
-            (m) =>
-              m.senderId !== user.id &&
-              !((m.metadata?.readBy as string[] | undefined)?.includes(user.id))
-          ).length;
-
-          const otherName = other?.fullName ?? "Unknown";
-
+          const icon = typeIcon(item.type);
           return (
             <TouchableOpacity
-              style={[
-                styles.chatRow,
-                { backgroundColor: colors.card, borderBottomColor: colors.border },
-              ]}
-              onPress={() =>
-                router.push({ pathname: "/chat/[id]", params: { id: item.id } })
-              }
-              onLongPress={() => handleLongPress(item.id, otherName)}
+              style={[styles.row, { backgroundColor: colors.card, borderBottomColor: colors.border }]}
+              onPress={() => navigate(item)}
+              onLongPress={() => handleLongPress(item)}
               delayLongPress={350}
             >
-              <Avatar name={otherName} size={50} />
-              <View style={styles.chatContent}>
-                <View style={styles.chatTop}>
+              {/* Avatar */}
+              {icon ? (
+                <View style={[styles.iconAvatar, {
+                  backgroundColor: item.type === "channel" ? "#EFF6FF" : colors.accent,
+                }]}>
+                  <Feather name={icon as any} size={22} color={colors.primary} />
+                </View>
+              ) : (
+                <Avatar name={item.name} size={50} />
+              )}
+
+              <View style={styles.content}>
+                <View style={styles.top}>
                   <Text
                     style={[
-                      styles.chatName,
-                      { color: colors.foreground, fontWeight: unread > 0 ? "800" : "700" },
+                      styles.name,
+                      { color: colors.foreground, fontWeight: item.unread > 0 ? "800" : "700" },
                     ]}
+                    numberOfLines={1}
                   >
-                    {otherName}
+                    {item.name}
                   </Text>
-                  <View style={styles.chatTopRight}>
-                    {last && (
-                      <Text style={[styles.chatTime, { color: unread > 0 ? colors.primary : colors.mutedForeground }]}>
-                        {formatTime(last.timestamp)}
+                  <View style={styles.topRight}>
+                    {item.lastTs > 0 && (
+                      <Text
+                        style={[
+                          styles.time,
+                          { color: item.unread > 0 ? colors.primary : colors.mutedForeground },
+                        ]}
+                      >
+                        {formatTime(item.lastTs)}
                       </Text>
                     )}
-                    {unread > 0 && (
+                    {item.unread > 0 && (
                       <View style={[styles.badge, { backgroundColor: colors.primary }]}>
-                        <Text style={styles.badgeText}>{unread > 99 ? "99+" : unread}</Text>
+                        <Text style={styles.badgeText}>{item.unread > 99 ? "99+" : item.unread}</Text>
                       </View>
                     )}
                   </View>
                 </View>
                 <Text
                   style={[
-                    styles.chatPreview,
-                    { color: unread > 0 ? colors.foreground : colors.mutedForeground, fontWeight: unread > 0 ? "600" : "400" },
+                    styles.preview,
+                    {
+                      color: item.unread > 0 ? colors.foreground : colors.mutedForeground,
+                      fontWeight: item.unread > 0 ? "600" : "400",
+                    },
                   ]}
                   numberOfLines={1}
                 >
-                  {last?.senderId === user.id ? `You: ${previewText(last)}` : previewText(last)}
+                  {item.lastMessage ?? "No messages yet"}
                 </Text>
               </View>
             </TouchableOpacity>
@@ -240,20 +301,27 @@ const styles = StyleSheet.create({
   list: { flexGrow: 1 },
   empty: { alignItems: "center", justifyContent: "center", paddingTop: 80, gap: 12 },
   emptyText: { fontSize: 14, textAlign: "center", paddingHorizontal: 32 },
-  chatRow: {
+  row: {
     flexDirection: "row",
     alignItems: "center",
     paddingHorizontal: 16,
-    paddingVertical: 14,
+    paddingVertical: 13,
     borderBottomWidth: 1,
     gap: 12,
   },
-  chatContent: { flex: 1 },
-  chatTop: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginBottom: 4 },
-  chatTopRight: { flexDirection: "row", alignItems: "center", gap: 6 },
-  chatName: { fontSize: 15 },
-  chatTime: { fontSize: 12 },
-  chatPreview: { fontSize: 13 },
+  iconAvatar: {
+    width: 50,
+    height: 50,
+    borderRadius: 25,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  content: { flex: 1 },
+  top: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginBottom: 4 },
+  topRight: { flexDirection: "row", alignItems: "center", gap: 6 },
+  name: { fontSize: 15, flex: 1 },
+  time: { fontSize: 12 },
+  preview: { fontSize: 13 },
   badge: {
     minWidth: 20,
     height: 20,

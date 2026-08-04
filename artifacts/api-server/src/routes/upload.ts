@@ -107,7 +107,7 @@ const upload = multer({
 
 function uploadToCloudinary(
   filePath: string,
-  options: { resource_type: "image" | "video" | "auto"; folder: string; original_filename?: string },
+  options: { resource_type: "image" | "video" | "raw"; folder: string; original_filename?: string },
 ): Promise<{ secure_url: string; public_id: string }> {
   return new Promise((resolve, reject) => {
     const stream = cloudinary.uploader.upload_stream(
@@ -133,11 +133,13 @@ function cleanupTempFile(filePath: string) {
   fs.unlink(filePath, () => {});
 }
 
-function getCloudinaryResourceType(mime: string): "image" | "video" | "auto" {
+function getCloudinaryResourceType(mime: string): "image" | "video" | "raw" {
   if (mime.startsWith("image/")) return "image";
   if (mime.startsWith("video/")) return "video";
   if (mime.startsWith("audio/")) return "video"; // Cloudinary stores audio under "video"
-  return "auto"; // for documents, uses "raw" but "auto" works too
+  // PDFs, docs, zips and all other binary files → "raw" so the URL stays
+  // directly accessible and is never transformed/transcoded by Cloudinary.
+  return "raw";
 }
 
 router.post("/", upload.single("file"), async (req: AuthRequest, res) => {

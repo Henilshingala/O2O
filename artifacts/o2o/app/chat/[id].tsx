@@ -15,6 +15,11 @@ import {
   View,
   BackHandler,
 } from "react-native";
+import Animated, {
+  useAnimatedStyle,
+  useSharedValue,
+  withTiming,
+} from "react-native-reanimated";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Feather } from "@/compat/vector-icons";
 import * as Haptics from "@/compat/haptics";
@@ -63,6 +68,53 @@ export default function ChatScreen() {
     Map<string, { progress: any; failed: boolean; cancelled: boolean }>
   >(new Map());
 
+  // ── FEATURE 12: in-chat search ───────────────────────────────────────────
+  const [searchOpen, setSearchOpen] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [searchResultIdx, setSearchResultIdx] = useState(0);
+  const searchInputRef = useRef<TextInput>(null);
+  const flatListRef = useRef<FlatList>(null);
+  const searchBarHeight = useSharedValue(0);
+  const searchBarAnim = useAnimatedStyle(() => ({
+    height: searchBarHeight.value,
+    overflow: "hidden",
+  }));
+
+  const openSearch = () => {
+    setSearchOpen(true);
+    setSearchQuery("");
+    setSearchResultIdx(0);
+    searchBarHeight.value = withTiming(50, { duration: 220 });
+    setTimeout(() => searchInputRef.current?.focus(), 250);
+  };
+
+  const closeSearch = () => {
+    Keyboard.dismiss();
+    searchBarHeight.value = withTiming(0, { duration: 180 });
+    setSearchOpen(false);
+    setSearchQuery("");
+    setSearchResultIdx(0);
+  };
+
+  // searchMatchIndices is computed after displayMessages is available (see below)
+  // These callbacks are safe to define here; they close over the mutable ref
+  const searchMatchIndicesRef = React.useRef<number[]>([]);
+
+  const scrollToSearchResult = useCallback((idx: number) => {
+    const matches = searchMatchIndicesRef.current;
+    if (matches.length === 0) return;
+    const safeIdx = Math.max(0, Math.min(idx, matches.length - 1));
+    setSearchResultIdx(safeIdx);
+    flatListRef.current?.scrollToIndex({
+      index: matches[safeIdx],
+      animated: true,
+      viewPosition: 0.5,
+    });
+  }, []);
+
+  const handleSearchNext = () => scrollToSearchResult(searchResultIdx + 1);
+  const handleSearchPrev = () => scrollToSearchResult(searchResultIdx - 1);
+
   const existingChat = getChat(params.id) || chats.find((c) => c.id === params.id);
   chatRef.current = chat;
 
@@ -75,10 +127,14 @@ export default function ChatScreen() {
         setShowEmojiPicker(false);
         return true;
       }
+      if (searchOpen) {
+        closeSearch();
+        return true;
+      }
       return false;
     });
     return () => backHandler.remove();
-  }, [showEmojiPicker]);
+  }, [showEmojiPicker, searchOpen]);
 
   const toggleEmojiPicker = () => {
     if (showEmojiPicker) {
@@ -131,6 +187,22 @@ export default function ChatScreen() {
         return Promise.reject(new Error("No active chat"));
       },
     });
+
+  // FEATURE 12 — Compute search matches now that displayMessages is available
+  const searchMatchIndices = useMemo(() => {
+    if (!searchQuery.trim()) return [];
+    const q = searchQuery.toLowerCase();
+    const matches: number[] = [];
+    displayMessages.forEach((m, i) => {
+      const msgText = (m.text ?? "").toLowerCase();
+      const fileName = (m.metadata?.fileName as string | undefined ?? "").toLowerCase();
+      if (msgText.includes(q) || fileName.includes(q)) matches.push(i);
+    });
+    return matches;
+  }, [displayMessages, searchQuery]);
+
+  // Keep the ref in sync so scrollToSearchResult always has the latest matches
+  searchMatchIndicesRef.current = searchMatchIndices;
 
   // Mark as read when chat opens / when messages arrive
   useEffect(() => {
@@ -420,10 +492,43 @@ export default function ChatScreen() {
               {other?.fullName ?? "Unknown"}
             </Text>
           </View>
+          {/* FEATURE 12 — search toggle */}
+          <TouchableOpacity onPress={searchOpen ? closeSearch : openSearch} style={styles.searchIconBtn}>
+            <Feather name={searchOpen ? "x" : "search"} size={20} color={colors.foreground} />
+          </TouchableOpacity>
         </View>
       )}
 
+      {/* FEATURE 12 — animated search bar */}
+      <Animated.View style={[{ backgroundColor: colors.card, borderBottomWidth: searchOpen ? 1 : 0, borderBottomColor: colors.border }, searchBarAnim]}>
+        <View style={[styles.chatSearchRow, { backgroundColor: colors.muted }]}>
+          <Feather name="search" size={14} color={colors.mutedForeground} />
+          <TextInput
+            ref={searchInputRef}
+            style={[styles.chatSearchInput, { color: colors.foreground }]}
+            value={searchQuery}
+            onChangeText={(q) => { setSearchQuery(q); setSearchResultIdx(0); }}
+            placeholder="Search messages..."
+            placeholderTextColor={colors.mutedForeground}
+            returnKeyType="search"
+            onSubmitEditing={handleSearchNext}
+          />
+          {searchQuery.length > 0 && (
+            <Text style={[styles.searchCount, { color: colors.mutedForeground }]}>
+              {searchMatchIndices.length > 0 ? `${searchResultIdx + 1}/${searchMatchIndices.length}` : "0"}
+            </Text>
+          )}
+          <TouchableOpacity onPress={handleSearchPrev} disabled={searchMatchIndices.length === 0}>
+            <Feather name="chevron-up" size={18} color={searchMatchIndices.length > 0 ? colors.primary : colors.border} />
+          </TouchableOpacity>
+          <TouchableOpacity onPress={handleSearchNext} disabled={searchMatchIndices.length === 0}>
+            <Feather name="chevron-down" size={18} color={searchMatchIndices.length > 0 ? colors.primary : colors.border} />
+          </TouchableOpacity>
+        </View>
+      </Animated.View>
+
       <FlatList
+        ref={flatListRef}
         data={displayMessages}
         inverted
         keyExtractor={(item) => item.id}
@@ -435,23 +540,29 @@ export default function ChatScreen() {
             <ActivityIndicator color={colors.primary} style={{ padding: 12 }} />
           ) : null
         }
-        renderItem={({ item }) => {
+        renderItem={({ item, index }) => {
           // Hide "delete for me" messages
           if (item.metadata?.deletedForMe === true) return null;
-          
+
+          // FEATURE 12 — highlight background flash for search match
+          const isSearchMatch =
+            searchQuery.trim().length > 0 &&
+            searchMatchIndices[searchResultIdx] === index;
 
           return (
-            <MessageContent
-              item={item}
-              isMine={item.senderId === user.id}
-              senderName={item.senderId !== user.id ? other?.fullName : undefined}
-              onRetryUpload={handleRetryUpload}
-              onPollVote={handlePollVote}
-              onLongPress={() => handleLongPress(item.id)}
-              onPress={() => handleToggleSelect(item.id)}
-              selected={selectedIds.has(item.id)}
-              selectionMode={selectionMode}
-            />
+            <Animated.View style={isSearchMatch ? styles.searchHighlight : undefined}>
+              <MessageContent
+                item={item}
+                isMine={item.senderId === user.id}
+                senderName={item.senderId !== user.id ? other?.fullName : undefined}
+                onRetryUpload={handleRetryUpload}
+                onPollVote={handlePollVote}
+                onLongPress={() => handleLongPress(item.id)}
+                onPress={() => handleToggleSelect(item.id)}
+                selected={selectedIds.has(item.id)}
+                selectionMode={selectionMode}
+              />
+            </Animated.View>
           );
         }}
       />
@@ -714,4 +825,19 @@ const styles = StyleSheet.create({
     paddingVertical: 16,
     borderBottomWidth: StyleSheet.hairlineWidth,
   },
+  // FEATURE 12 — chat search
+  searchIconBtn: { padding: 6 },
+  chatSearchRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+    marginHorizontal: 12,
+    marginVertical: 7,
+    paddingHorizontal: 12,
+    height: 36,
+    borderRadius: 20,
+  },
+  chatSearchInput: { flex: 1, fontSize: 13 },
+  searchCount: { fontSize: 12, fontWeight: "600", minWidth: 36, textAlign: "center" },
+  searchHighlight: { backgroundColor: "rgba(46,125,50,0.12)", borderRadius: 8 },
 });

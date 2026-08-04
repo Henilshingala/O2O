@@ -242,6 +242,37 @@ export function SocketProvider({ children }: { children: React.ReactNode }) {
         queryClient.invalidateQueries({ queryKey: ["channels"] });
       };
 
+      // ── product:stats:update (FEATURE 7) ─────────────────────────────────
+      const handleProductStats = (data: { productId: string; wishlistCount?: number; bidCount?: number; viewCount?: number }) => {
+        // Update the product inside the cached channels array
+        queryClient.setQueryData<any[]>(["channels"], (old) =>
+          old?.map((ch) => ({
+            ...ch,
+            products: ch.products?.map((p: any) =>
+              p.id === data.productId
+                ? {
+                    ...p,
+                    wishlistCount: data.wishlistCount ?? p.wishlistCount,
+                    bidCount: data.bidCount ?? p.bidCount,
+                    views: data.viewCount ?? p.views,
+                  }
+                : p
+            ) ?? ch.products,
+          })) ?? old
+        );
+      };
+
+      // ── channel:subscriber:update (FEATURE 8) ─────────────────────────────
+      const handleChannelSubscriberUpdate = (data: { channelId: string; count: number }) => {
+        queryClient.setQueryData<any[]>(["channels"], (old) =>
+          old?.map((ch) =>
+            ch.id === data.channelId
+              ? { ...ch, followers: Array.from({ length: data.count }, (_, i) => `_${i}`) }
+              : ch
+          ) ?? old
+        );
+      };
+
       // ── reconnect: re-sync all data when socket reconnects after a drop ────
       const handleReconnect = () => {
         queryClient.invalidateQueries({ queryKey: ["chats"] });
@@ -272,6 +303,8 @@ export function SocketProvider({ children }: { children: React.ReactNode }) {
       sock.on("chat:deleted", handleChatDeleted);
       sock.on("chat:cleared", handleChatCleared);
       sock.on("channel:update", handleChannelUpdate);
+      sock.on("product:stats:update", handleProductStats);
+      sock.on("channel:subscriber:update", handleChannelSubscriberUpdate);
       sock.on("connect", handleReconnect);
 
       cleanupRef.current = () => {
@@ -292,6 +325,8 @@ export function SocketProvider({ children }: { children: React.ReactNode }) {
         sock.off("chat:deleted", handleChatDeleted);
         sock.off("chat:cleared", handleChatCleared);
         sock.off("channel:update", handleChannelUpdate);
+        sock.off("product:stats:update", handleProductStats);
+        sock.off("channel:subscriber:update", handleChannelSubscriberUpdate);
         sock.off("connect", handleReconnect);
       };
     });

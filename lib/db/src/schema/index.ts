@@ -174,6 +174,7 @@ export const bids = pgTable("bids", {
   productName: text("product_name").notNull(),
   productImage: text("product_image"),
   quantity: integer("quantity").notNull(),
+  unitType: text("unit_type", { enum: ["carton", "loose"] }).default("carton").notNull(),
   budget: integer("budget").notNull(),
   description: text("description").notNull(),
   selectedSellers: jsonb("selected_sellers").default([]).notNull(), // array of channelIds

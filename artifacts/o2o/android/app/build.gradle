@@ -164,3 +164,4 @@ project.afterEvaluate {
     }
 }
 
+tasks.register("prepareKotlinBuildScriptModel") {}

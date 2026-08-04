@@ -63,6 +63,7 @@ import SellerBidsScreen from "./seller-bids";
 import NewChatScreen from "./new-chat";
 import PeopleSearchScreen from "./people-search";
 import NotificationsScreen from "./notifications";
+import SearchScreen from "./search";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -116,6 +117,7 @@ function RootLayoutNav() {
       <Stack.Screen name="new-chat"          component={NewChatScreen} />
       <Stack.Screen name="people-search"     component={PeopleSearchScreen} />
       <Stack.Screen name="notifications"     component={NotificationsScreen} />
+      <Stack.Screen name="search"            component={SearchScreen} />
     </Stack>
   );
 }

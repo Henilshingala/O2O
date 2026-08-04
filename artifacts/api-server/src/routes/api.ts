@@ -180,6 +180,9 @@ router.post("/channels/:id/follow", async (req: AuthRequest, res) => {
     } else {
       await db.insert(schema.channelFollowers).values({ channelId, userId });
     }
+    // FEATURE 8 — emit live subscriber count
+    const [subCount] = await db.select({ count: count() }).from(schema.channelFollowers).where(eq(schema.channelFollowers.channelId, channelId));
+    getIo()?.emit("channel:subscriber:update", { channelId, count: subCount?.count ?? 0 });
     return res.json({ success: true });
   } catch (error) { return res.status(500).json({ error: "Server error" }); }
 });
@@ -461,6 +464,9 @@ router.post("/wishlist", validateBody(wishlistSchema), async (req: AuthRequest, 
     } else {
       await db.insert(schema.wishlist).values({ productId, userId });
     }
+    // FEATURE 7 — emit live wishlist count to all connected clients
+    const [wlCount] = await db.select({ count: count() }).from(schema.wishlist).where(eq(schema.wishlist.productId, productId));
+    getIo()?.emit("product:stats:update", { productId, wishlistCount: wlCount?.count ?? 0 });
     return res.json({ success: true });
   } catch (error) { return res.status(500).json({ error: "Server error" }); }
 });
@@ -1427,6 +1433,8 @@ router.post("/bids/:id/accept", async (req: AuthRequest, res) => {
       status: "pending" as const,
     };
     await db.insert(schema.orders).values(orderRow);
+    // BUG 7 backend: mark bid as accepted in DB so fetches return correct status
+    await db.update(schema.bids).set({ status: "accepted" }).where(eq(schema.bids.id, bidId));
     const order = { ...orderRow, sellerName, messages: [] };
 
     await createNotification(
@@ -1447,6 +1455,8 @@ router.post("/bids/:id/accept", async (req: AuthRequest, res) => {
     emitToUser(bid.buyerId, "notification:new", { type: "order_created", orderId });
 
     emitToBid(bidId, "bid:accepted", { bidId, order });
+    // BUG 7 backend: broadcast status change so all seller clients update their UI without refresh
+    getIo()?.emit("bid_updated", { bidId, status: "accepted" });
     return res.json({ success: true, order });
   } catch (error) { return res.status(500).json({ error: "Server error" }); }
 });

@@ -3,6 +3,7 @@ import {
   ActivityIndicator,
   Alert,
   Dimensions,
+  Linking,
   Platform,
   StyleSheet,
   Text,
@@ -85,26 +86,32 @@ let _downloadingMap: Record<string, boolean> = {};
 
 /**
  * Download a remote file to the device Downloads folder then open it
- * with the Android native app chooser. Never falls back to Cloudinary.
+ * with the Android native app chooser. For Cloudinary raw files (PDFs, docs)
+ * the URL is directly accessible — try Linking first, fall back to blob download.
  */
 async function openDocument(url: string, fileName: string): Promise<void> {
-  // Prevent duplicate simultaneous downloads of the same file
   if (_downloadingMap[url]) return;
   _downloadingMap[url] = true;
 
   try {
     let nameToUse = fileName;
-    // If file name has no extension, try to infer from URL
     if (!nameToUse.includes(".")) {
       const urlExt = url.split("?")[0].split(".").pop();
-      if (urlExt && urlExt.length <= 5) {
-        nameToUse = `${nameToUse}.${urlExt}`;
-      }
+      if (urlExt && urlExt.length <= 5) nameToUse = `${nameToUse}.${urlExt}`;
     }
 
+    // For Cloudinary URLs and any HTTPS URL, try Linking.openURL first.
+    // This handles PDFs uploaded as resource_type:"raw" correctly — the browser
+    // or a PDF viewer handles it natively without needing a local download.
+    const canOpen = await Linking.canOpenURL(url).catch(() => false);
+    if (canOpen && (url.startsWith("https://") || url.startsWith("http://"))) {
+      await Linking.openURL(url);
+      return;
+    }
+
+    // Fallback: download locally and open with system viewer (Android only)
     const mimeType = getMimeType(nameToUse);
     const safeFileName = nameToUse.replace(/[^a-zA-Z0-9._\-]/g, "_");
-    // CacheDir is always writable (no scoped storage restrictions on Android 10+)
     const destDir = ReactNativeBlobUtil.fs.dirs.CacheDir;
     const destPath = `${destDir}/${Date.now()}_${safeFileName}`;
 
@@ -115,21 +122,16 @@ async function openDocument(url: string, fileName: string): Promise<void> {
     } else if (url.startsWith("/")) {
       finalPath = url;
     } else {
-      // Route Cloudinary URLs through our backend proxy to bypass
-      // access_mode restrictions on old private uploads (avoids 401).
       let fetchUrl = url;
       if (url.includes("cloudinary.com")) {
         const base = getBaseUrl();
         fetchUrl = `${base}/api/proxy/download?url=${encodeURIComponent(url)}`;
       }
 
-      // Download from remote using blob-util (handles CDN redirects correctly)
       const res = await ReactNativeBlobUtil.config({
         path: destPath,
         overwrite: true,
-      }).fetch("GET", fetchUrl, {
-        "Cache-Control": "no-store",
-      });
+      }).fetch("GET", fetchUrl, { "Cache-Control": "no-store" });
 
       const status = res.info().status;
       if (status !== 200) {
@@ -138,10 +140,9 @@ async function openDocument(url: string, fileName: string): Promise<void> {
 
       finalPath = res.path();
 
-      // Verify we got actual bytes
       const fileInfo = await ReactNativeBlobUtil.fs.stat(finalPath);
       if (!fileInfo || fileInfo.size === 0) {
-        throw new Error(`Downloaded file is empty. Please check your connection and try again.`);
+        throw new Error("Downloaded file is empty. Please check your connection and try again.");
       }
     }
 

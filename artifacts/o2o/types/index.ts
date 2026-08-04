@@ -116,6 +116,7 @@ export interface Bid {
   productName: string;
   productImage?: string;
   quantity: number;
+  unitType: "carton" | "loose";
   budget: number;
   description: string;
   selectedSellers: string[];

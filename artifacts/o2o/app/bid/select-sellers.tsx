@@ -22,7 +22,8 @@ export default function SelectSellersScreen() {
   const { user } = useAuth();
   const { channels, createBid } = useData();
   const params = useLocalSearchParams<{
-    productName: string; quantity: string; budget: string; description: string; sellerMode: string; productImage?: string;
+    productName: string; quantity: string; budget: string; description: string;
+    sellerMode: string; productImage?: string; unitType?: string; mediaUrls?: string;
   }>();
 
   const sellerChannels = channels.filter((c) => c.ownerId !== user?.id);
@@ -44,14 +45,15 @@ export default function SelectSellersScreen() {
         productName: params.productName,
         productImage: params.productImage || undefined,
         quantity: Number(params.quantity),
-        budget: Number(params.budget),
+        unitType: (params.unitType as "carton" | "loose") ?? "carton",
+        budget: Number(params.budget ?? "0"),
         description: params.description ?? "",
         selectedSellers: selected,
         allSellers: params.sellerMode === "all",
         status: "active",
         startTime: now.toISOString(),
         endTime: new Date(now.getTime() + 30 * 60 * 1000).toISOString(),
-      });
+      } as any);
       router.replace({ pathname: "/bid/live/[id]", params: { id: bid.id } });
     } finally {
       setLoading(false);

@@ -1,6 +1,6 @@
 import { router, useLocalSearchParams } from "@/compat/router";
 import React, { useEffect, useState } from "react";
-import { KeyboardAvoidingView, Platform, ScrollView, StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import { KeyboardAvoidingView, ScrollView, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Feather } from "@/compat/vector-icons";
 import * as Haptics from "@/compat/haptics";
@@ -38,7 +38,7 @@ export default function SellerOfferScreen() {
     if (myOffer) {
       setForm({
         price: String(myOffer.price),
-        deliveryTime: myOffer.deliveryTime,
+        deliveryTime: myOffer.deliveryTime ?? "",
         message: myOffer.message,
       });
     }
@@ -53,7 +53,7 @@ export default function SellerOfferScreen() {
   const handleSubmit = async () => {
     const e: Record<string, string> = {};
     if (!form.price || isNaN(Number(form.price))) e.price = "Valid price required";
-    if (!form.deliveryTime.trim()) e.deliveryTime = "Delivery time required";
+    if (!form.deliveryTime.trim()) e.deliveryTime = "Delivery time is required";
     if (Object.keys(e).length > 0) { setErrors(e); return; }
     setLoading(true);
     try {
@@ -86,15 +86,37 @@ export default function SellerOfferScreen() {
         <View style={[styles.bidSummary, { backgroundColor: colors.card, borderColor: colors.border }]}>
           <Text style={[styles.bidProduct, { color: colors.foreground }]}>Product: {bid.productName}</Text>
           <Text style={[styles.bidDetail, { color: colors.mutedForeground }]}>Qty: {bid.quantity} units</Text>
-          <Text style={[styles.bidDetail, { color: colors.mutedForeground }]}>Buyer Target: ₹{bid.budget}/unit</Text>
+          {(bid as any).unitType && (
+            <Text style={[styles.bidDetail, { color: colors.mutedForeground }]}>Unit: {(bid as any).unitType}</Text>
+          )}
           <View style={[styles.timerRow, { backgroundColor: colors.secondary }]}>
             <Feather name="clock" size={14} color={colors.primary} />
             <Text style={[styles.timerText, { color: colors.primary }]}>Time Left: {formatCountdown(msLeft)}</Text>
           </View>
         </View>
-        <AppInput label="Your Offer Price (₹)" value={form.price} onChangeText={set("price")} placeholder="Enter your price per unit" keyboardType="numeric" error={errors.price} />
-        <AppInput label="Delivery Time" value={form.deliveryTime} onChangeText={set("deliveryTime")} placeholder="e.g. 7 days, 2 weeks" error={errors.deliveryTime} />
-        <AppInput label="Message to Buyer" value={form.message} onChangeText={set("message")} placeholder="Any additional info..." multiline style={{ height: 80, textAlignVertical: "top", paddingTop: 10 }} />
+        <AppInput
+          label="Your Offer Price (₹)"
+          value={form.price}
+          onChangeText={set("price")}
+          placeholder="Enter your price per unit"
+          keyboardType="numeric"
+          error={errors.price}
+        />
+        <AppInput
+          label="Estimated Delivery Time"
+          value={form.deliveryTime}
+          onChangeText={set("deliveryTime")}
+          placeholder="e.g. 2 days, next week"
+          error={errors.deliveryTime}
+        />
+        <AppInput
+          label="Message to Buyer"
+          value={form.message}
+          onChangeText={set("message")}
+          placeholder="Any additional info..."
+          multiline
+          style={{ height: 80, textAlignVertical: "top", paddingTop: 10 }}
+        />
         <AppButton title={myOffer ? "UPDATE OFFER" : "SUBMIT OFFER"} onPress={handleSubmit} loading={loading} />
       </ScrollView>
     </KeyboardAvoidingView>
