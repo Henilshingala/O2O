@@ -35,7 +35,6 @@ import { SocketProvider } from "@/context/SocketContext";
 import { SafeKeyboardProvider } from "@/compat/keyboard-controller";
 import { setBaseUrl } from "@workspace/api-client-react";
 import { useFCM } from "@/hooks/useFCM";
-import { AnimatedSplash } from "@/components/AnimatedSplash";
 
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 
@@ -256,8 +255,6 @@ export default function RootLayout() {
     Inter_700Bold,
   });
 
-  const [splashFinished, setSplashFinished] = useState(false);
-
   return (
     <GestureHandlerRootView style={{ flex: 1, backgroundColor: "#044D2A" }}>
       {(fontsLoaded || fontError) ? (
@@ -288,10 +285,6 @@ export default function RootLayout() {
           </ErrorBoundary>
         </SafeAreaProvider>
       ) : null}
-
-      {!splashFinished && (
-        <AnimatedSplash onFinish={() => setSplashFinished(true)} />
-      )}
     </GestureHandlerRootView>
   );
 }

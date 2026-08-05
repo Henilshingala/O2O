@@ -1,122 +1,81 @@
 import { router, navigationRef } from "@/compat/router";
-import React, { useEffect, useRef } from "react";
-import {
-  Animated,
-  Dimensions,
-  StyleSheet,
-  Text,
-  View,
-} from "react-native";
+import React, { useEffect, useRef, useState } from "react";
+import { StyleSheet, View, StatusBar } from "react-native";
 import { useAuth } from "@/context/AuthContext";
-
-const { width } = Dimensions.get("window");
-const MIN_SPLASH_MS = 2000;
+import Video from "react-native-video";
 
 export default function SplashScreen() {
   const { user, isLoading } = useAuth();
-  const fadeAnim = useRef(new Animated.Value(0)).current;
-  const scaleAnim = useRef(new Animated.Value(0.8)).current;
-  const progressAnim = useRef(new Animated.Value(0)).current;
-  const mountedAt = useRef(Date.now());
   const navigated = useRef(false);
+  const [videoEnded, setVideoEnded] = useState(false);
+  const [videoError, setVideoError] = useState(false);
 
   useEffect(() => {
-    Animated.parallel([
-      Animated.timing(fadeAnim, { toValue: 1, duration: 800, useNativeDriver: true }),
-      Animated.spring(scaleAnim, { toValue: 1, friction: 6, useNativeDriver: true }),
-    ]).start();
-
-    Animated.timing(progressAnim, {
-      toValue: 1,
-      duration: 2200,
-      useNativeDriver: false,
-    }).start();
+    // Hide status bar for full screen splash experience
+    StatusBar.setHidden(true);
+    return () => {
+      StatusBar.setHidden(false);
+    };
   }, []);
 
   useEffect(() => {
+    // Only navigate when both auth state is known AND video has finished (or errored)
     if (isLoading) return;
+    if (!videoEnded && !videoError) return;
     if (navigated.current) return;
 
-    const elapsed = Date.now() - mountedAt.current;
-    const delay = Math.max(0, MIN_SPLASH_MS - elapsed);
-
-    const timer = setTimeout(() => {
+    const navigate = () => {
       if (navigated.current) return;
-      
-      const navigate = () => {
-        if (navigated.current) return;
-        navigated.current = true;
-        if (user) {
-          router.replace("/(tabs)");
-        } else {
-          router.replace("/welcome");
-        }
-      };
-
-      if (!navigationRef.isReady()) {
-        const interval = setInterval(() => {
-          if (navigationRef.isReady()) {
-            clearInterval(interval);
-            navigate();
-          }
-        }, 50);
+      navigated.current = true;
+      if (user) {
+        router.replace("/(tabs)");
       } else {
-        navigate();
+        router.replace("/welcome");
       }
-    }, delay);
+    };
 
-    return () => clearTimeout(timer);
-  }, [isLoading, user]);
+    if (!navigationRef.isReady()) {
+      const interval = setInterval(() => {
+        if (navigationRef.isReady()) {
+          clearInterval(interval);
+          navigate();
+        }
+      }, 50);
+    } else {
+      navigate();
+    }
+  }, [isLoading, user, videoEnded, videoError]);
 
   return (
-    <View style={[styles.container, { backgroundColor: "#1E3A8A" }]}>
-        <Animated.Image
-          source={require("../assets/images/logo.png")}
-          style={[styles.logoImage, { opacity: fadeAnim, transform: [{ scale: scaleAnim }] }]}
-          resizeMode="cover"
-        />
-        <Text style={styles.appName}>O2O</Text>
-        <Text style={styles.tagline}>Buy • Sell • Bid</Text>
-
-      <View style={styles.bottom}>
-        <View style={styles.progressTrack}>
-          <Animated.View
-            style={[
-              styles.progressBar,
-              {
-                width: progressAnim.interpolate({
-                  inputRange: [0, 1],
-                  outputRange: ["0%", "100%"],
-                }),
-              },
-            ]}
-          />
-        </View>
-        <Text style={styles.loadingText}>Loading...</Text>
-      </View>
+    <View style={[styles.container, { backgroundColor: "#044D2A" }]}>
+      <Video
+        source={require("../assets/images/splash.mp4")}
+        style={styles.video}
+        resizeMode="cover"
+        onEnd={() => setVideoEnded(true)}
+        onError={(err) => {
+          console.warn("Splash video error:", err);
+          setVideoError(true);
+        }}
+        controls={false}
+        repeat={false}
+        paused={false}
+        fullscreen={false}
+        ignoreSilentSwitch="obey"
+        playInBackground={false}
+        playWhenInactive={false}
+      />
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, alignItems: "center", justifyContent: "center" },
-  content: { alignItems: "center" },
-  logoImage: {
-    width: 110,
-    height: 110,
-    borderRadius: 24,
-    marginBottom: 20,
+  container: { 
+    flex: 1,
+    backgroundColor: "#044D2A" // Brand green matching native splash
   },
-  appName: { fontSize: 42, fontWeight: "900", color: "#fff", letterSpacing: 4 },
-  tagline: { fontSize: 16, color: "rgba(255,255,255,0.8)", marginTop: 8, letterSpacing: 3 },
-  bottom: { position: "absolute", bottom: 80, width: width * 0.6, alignItems: "center", gap: 12 },
-  progressTrack: {
+  video: {
     width: "100%",
-    height: 3,
-    backgroundColor: "rgba(255,255,255,0.25)",
-    borderRadius: 2,
-    overflow: "hidden",
-  },
-  progressBar: { height: "100%", backgroundColor: "#fff", borderRadius: 2 },
-  loadingText: { color: "rgba(255,255,255,0.6)", fontSize: 13 },
+    height: "100%"
+  }
 });
