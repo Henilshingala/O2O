@@ -150,7 +150,7 @@ const styles = StyleSheet.create({
   },
   iconBadge: {
     width: 40, height: 40, borderRadius: 20, alignItems: "center", justifyContent: "center",
-    backgroundColor: "#069752",
+    backgroundColor: "#069953",
     alignItems: "center",
     justifyContent: "center",
   },

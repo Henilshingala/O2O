@@ -94,7 +94,7 @@ public class MainApplication extends Application implements ReactApplication {
     chatCh.enableVibration(true);
     chatCh.setVibrationPattern(new long[]{0, 100, 80, 100});
     chatCh.enableLights(true);
-    chatCh.setLightColor(0xFF069752);           // brand green
+    chatCh.setLightColor(0xFF069953);           // brand green
     chatCh.setSound(android.provider.Settings.System.DEFAULT_NOTIFICATION_URI, messageAudio);
     nm.createNotificationChannel(chatCh);
 
@@ -175,7 +175,7 @@ public class MainApplication extends Application implements ReactApplication {
     defaultCh.enableVibration(true);
     defaultCh.setVibrationPattern(new long[]{0, 250, 250, 250});
     defaultCh.enableLights(true);
-    defaultCh.setLightColor(0xFF069752);        // brand green
+    defaultCh.setLightColor(0xFF069953);        // brand green
     defaultCh.setSound(                         // FIX: was missing entirely
         android.provider.Settings.System.DEFAULT_NOTIFICATION_URI,
         alertAudio

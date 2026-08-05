@@ -1,8 +1,8 @@
 <resources>
   <color name="splashscreen_background">#044D2A</color>
   <color name="iconBackground">#ffffff</color>
-  <color name="colorPrimary">#069752</color>
+  <color name="colorPrimary">#069953</color>
   <color name="colorPrimaryDark">#05703D</color>
   <!-- FCM notification accent colour (status-bar icon tint, LED on supported hardware) -->
-  <color name="fcm_notification_color">#069752</color>
+  <color name="fcm_notification_color">#069953</color>
 </resources>

@@ -6,7 +6,21 @@ import {
   useFonts,
 } from "@/compat/fonts";
 import { Stack, navigationRef } from "@/compat/router";
-import { NavigationContainer } from "@react-navigation/native";
+import { NavigationContainer, DefaultTheme } from "@react-navigation/native";
+import colors from "@/constants/colors";
+
+const AppTheme = {
+  ...DefaultTheme,
+  colors: {
+    ...DefaultTheme.colors,
+    primary: colors.light.primary,
+    background: colors.light.background,
+    card: colors.light.card,
+    text: colors.light.text,
+    border: colors.light.border,
+    notification: colors.light.destructive,
+  },
+};
 import React, { useState, useCallback } from "react";
 import { ActivityIndicator, View } from "react-native";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
@@ -260,7 +274,7 @@ export default function RootLayout() {
                           navigationRef.isReady() is true when FCM quit-state
                           taps call getInitialNotification() → navigateFromFCM().
                         */}
-                        <NavigationContainer ref={navigationRef}>
+                        <NavigationContainer ref={navigationRef} theme={AppTheme}>
                           <FCMProvider>
                             <RootLayoutNav />
                           </FCMProvider>
