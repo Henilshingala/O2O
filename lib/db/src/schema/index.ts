@@ -175,7 +175,7 @@ export const bids = pgTable("bids", {
   productImage: text("product_image"),
   quantity: integer("quantity").notNull(),
   unitType: text("unit_type", { enum: ["carton", "loose"] }).default("carton").notNull(),
-  budget: integer("budget").notNull(),
+  budget: integer("budget").default(0),
   description: text("description").notNull(),
   selectedSellers: jsonb("selected_sellers").default([]).notNull(), // array of channelIds
   allSellers: boolean("all_sellers").default(false).notNull(),
@@ -186,6 +186,8 @@ export const bids = pgTable("bids", {
   winnerChannelId: text("winner_channel_id"),
   seenBy: jsonb("seen_by").default([]).notNull(),
   readBy: jsonb("read_by").default([]).notNull(),
+  mediaImages: jsonb("media_images").default([]),  // array of Cloudinary image URLs
+  mediaVideos: jsonb("media_videos").default([]),  // array of Cloudinary video URLs
   createdAt: timestamp("created_at").defaultNow().notNull(),
 }, (t) => ({
   statusIdx: index("idx_bids_status").on(t.status),
@@ -198,7 +200,7 @@ export const bidOffers = pgTable("bid_offers", {
   sellerId: text("seller_id").references(() => users.id).notNull(),
   channelId: text("channel_id").references(() => channels.id).notNull(),
   price: integer("price").notNull(),
-  deliveryTime: text("delivery_time").notNull(),
+  deliveryTime: text("delivery_time").default(""),
   message: text("message").notNull(),
   status: text("status", { enum: ["pending", "accepted", "rejected"] }).default("pending").notNull(),
   seenBy: jsonb("seen_by").default([]).notNull(),

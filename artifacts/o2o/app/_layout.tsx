@@ -21,6 +21,7 @@ import { SocketProvider } from "@/context/SocketContext";
 import { SafeKeyboardProvider } from "@/compat/keyboard-controller";
 import { setBaseUrl } from "@workspace/api-client-react";
 import { useFCM } from "@/hooks/useFCM";
+import { AnimatedSplash } from "@/components/AnimatedSplash";
 
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 
@@ -241,42 +242,42 @@ export default function RootLayout() {
     Inter_700Bold,
   });
 
-  if (!fontsLoaded && !fontError) {
-    return (
-      <View style={{ flex: 1, justifyContent: "center", alignItems: "center", backgroundColor: "#0F172A" }}>
-        <ActivityIndicator size="large" color="#3B82F6" />
-      </View>
-    );
-  }
+  const [splashFinished, setSplashFinished] = useState(false);
 
   return (
-    <GestureHandlerRootView style={{ flex: 1 }}>
-      <SafeAreaProvider>
-        <ErrorBoundary>
-          <QueryClientProvider client={queryClient}>
-            <SafeKeyboardProvider statusBarTranslucent>
-              <AuthProvider>
-                <SocketProvider>
-                  <DataProvider>
-                    <FriendsProvider>
-                      {/*
-                        NavigationContainer MUST wrap FCMProvider so that
-                        navigationRef.isReady() is true when FCM quit-state
-                        taps call getInitialNotification() → navigateFromFCM().
-                      */}
-                      <NavigationContainer ref={navigationRef}>
-                        <FCMProvider>
-                          <RootLayoutNav />
-                        </FCMProvider>
-                      </NavigationContainer>
-                    </FriendsProvider>
-                  </DataProvider>
-                </SocketProvider>
-              </AuthProvider>
-            </SafeKeyboardProvider>
-          </QueryClientProvider>
-        </ErrorBoundary>
-      </SafeAreaProvider>
+    <GestureHandlerRootView style={{ flex: 1, backgroundColor: "#044D2A" }}>
+      {(fontsLoaded || fontError) ? (
+        <SafeAreaProvider>
+          <ErrorBoundary>
+            <QueryClientProvider client={queryClient}>
+              <SafeKeyboardProvider statusBarTranslucent>
+                <AuthProvider>
+                  <SocketProvider>
+                    <DataProvider>
+                      <FriendsProvider>
+                        {/*
+                          NavigationContainer MUST wrap FCMProvider so that
+                          navigationRef.isReady() is true when FCM quit-state
+                          taps call getInitialNotification() → navigateFromFCM().
+                        */}
+                        <NavigationContainer ref={navigationRef}>
+                          <FCMProvider>
+                            <RootLayoutNav />
+                          </FCMProvider>
+                        </NavigationContainer>
+                      </FriendsProvider>
+                    </DataProvider>
+                  </SocketProvider>
+                </AuthProvider>
+              </SafeKeyboardProvider>
+            </QueryClientProvider>
+          </ErrorBoundary>
+        </SafeAreaProvider>
+      ) : null}
+
+      {!splashFinished && (
+        <AnimatedSplash onFinish={() => setSplashFinished(true)} />
+      )}
     </GestureHandlerRootView>
   );
 }

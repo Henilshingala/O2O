@@ -104,6 +104,8 @@ export const createBidSchema = z.object({
   selectedSellers: z.array(z.string()).optional(),
   allSellers: z.boolean().optional(),
   endTime: z.string().datetime().optional(),
+  mediaImages: z.array(z.string()).optional(),
+  mediaVideos: z.array(z.string()).optional(),
 });
 
 export const createReviewSchema = z.object({

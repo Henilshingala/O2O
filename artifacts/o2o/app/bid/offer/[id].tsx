@@ -21,7 +21,7 @@ export default function SellerOfferScreen() {
   const { user } = useAuth();
   const { getBid, submitOffer, channels } = useData();
   const params = useLocalSearchParams<{ id: string; channelId: string }>();
-  const [form, setForm] = useState({ price: "", deliveryTime: "", message: "" });
+  const [form, setForm] = useState({ price: "", message: "" });
   const [loading, setLoading] = useState(false);
   const [tick, setTick] = useState(0);
   const [errors, setErrors] = useState<Record<string, string>>({});
@@ -38,7 +38,6 @@ export default function SellerOfferScreen() {
     if (myOffer) {
       setForm({
         price: String(myOffer.price),
-        deliveryTime: myOffer.deliveryTime ?? "",
         message: myOffer.message,
       });
     }
@@ -53,7 +52,6 @@ export default function SellerOfferScreen() {
   const handleSubmit = async () => {
     const e: Record<string, string> = {};
     if (!form.price || isNaN(Number(form.price))) e.price = "Valid price required";
-    if (!form.deliveryTime.trim()) e.deliveryTime = "Delivery time is required";
     if (Object.keys(e).length > 0) { setErrors(e); return; }
     setLoading(true);
     try {
@@ -62,7 +60,6 @@ export default function SellerOfferScreen() {
         sellerName: myChannel?.name ?? user.fullName,
         channelId: params.channelId,
         price: Number(form.price),
-        deliveryTime: form.deliveryTime.trim(),
         message: form.message.trim(),
         rating: 4.5,
       });
@@ -102,13 +99,7 @@ export default function SellerOfferScreen() {
           keyboardType="numeric"
           error={errors.price}
         />
-        <AppInput
-          label="Estimated Delivery Time"
-          value={form.deliveryTime}
-          onChangeText={set("deliveryTime")}
-          placeholder="e.g. 2 days, next week"
-          error={errors.deliveryTime}
-        />
+
         <AppInput
           label="Message to Buyer"
           value={form.message}

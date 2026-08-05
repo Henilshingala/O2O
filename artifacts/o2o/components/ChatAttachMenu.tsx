@@ -419,7 +419,7 @@ export const ChatAttachMenu = forwardRef<ChatAttachMenuHandle, ChatAttachMenuPro
       </TouchableOpacity>
 
       <TouchableOpacity style={styles.item} onPress={handleDocument}>
-        <View style={[styles.iconBg, { backgroundColor: "#3B82F6" }]}>
+        <View style={[styles.iconBg, { backgroundColor: "#069752" }]}>
           <Feather name="file-text" size={24} color="#fff" />
         </View>
         <Text style={[styles.label, { color: colors.foreground }]}>Document</Text>

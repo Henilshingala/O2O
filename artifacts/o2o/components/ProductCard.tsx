@@ -5,7 +5,7 @@
  */
 import React, { useEffect, useState } from "react";
 import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
-import { Image } from "expo-image";
+import { Image } from "@/compat/image";
 import { Feather } from "@/compat/vector-icons";
 import { router } from "@/compat/router";
 import { useColors } from "@/hooks/useColors";

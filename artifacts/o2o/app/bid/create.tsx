@@ -21,10 +21,10 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
-import { Image } from "expo-image";
+import { Image } from "@/compat/image";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Feather } from "@/compat/vector-icons";
-import * as ImagePicker from "expo-image-picker";
+import { launchImageLibrary } from "react-native-image-picker";
 import * as Haptics from "@/compat/haptics";
 import { useAuth } from "@/context/AuthContext";
 import { uploadFile, uploadFiles } from "@/lib/uploadMedia";
@@ -134,21 +134,21 @@ export default function CreateBidScreen() {
       return;
     }
 
-    const result = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: ImagePicker.MediaTypeOptions.All,
-      allowsMultipleSelection: true,
-      quality: 0.7,
+    const result = await launchImageLibrary({
+      mediaType: "mixed",
       selectionLimit: Math.min(remainingImages + remainingVideos, 10),
+      quality: 0.7,
     });
 
-    if (result.canceled || !result.assets?.length) return;
+    if (result.didCancel || !result.assets?.length) return;
 
     const newItems: MediaItem[] = [];
     let imgCount = images.length;
     let vidCount = videos.length;
 
     for (const asset of result.assets) {
-      const isVideo = asset.type === "video" || (asset.mimeType ?? "").startsWith("video/");
+      if (!asset.uri) continue;
+      const isVideo = asset.type?.startsWith("video");
       if (isVideo) {
         if (vidCount >= MAX_VIDEOS) continue;
         vidCount++;

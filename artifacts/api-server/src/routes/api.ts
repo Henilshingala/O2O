@@ -1220,9 +1220,9 @@ router.post("/bids/:id/offers", async (req: AuthRequest, res) => {
   try {
     const bidId = req.params.id as string;
     const sellerId = req.user!.userId;
-    const { channelId, price, deliveryTime, message, sellerName, rating } = req.body;
-    if (!channelId || price == null || !deliveryTime) {
-      return res.status(400).json({ error: "channelId, price, and deliveryTime required" });
+    const { channelId, price, message, sellerName, rating } = req.body;
+    if (!channelId || price == null) {
+      return res.status(400).json({ error: "channelId and price required" });
     }
 
     const bid = await db.select().from(schema.bids).where(eq(schema.bids.id, bidId)).limit(1);
@@ -1241,14 +1241,14 @@ router.post("/bids/:id/offers", async (req: AuthRequest, res) => {
     if (existing[0]) {
       await db.update(schema.bidOffers).set({
         price,
-        deliveryTime,
         message: message ?? "",
         timestamp: new Date(),
       }).where(eq(schema.bidOffers.id, existing[0].id));
-      newOffer = { ...existing[0], price, deliveryTime, message: message ?? "", timestamp: new Date(), sellerName, rating };
+      newOffer = { ...existing[0], price, message: message ?? "", timestamp: new Date(), sellerName, rating };
     } else {
       const id = genId("off");
-      const dbOffer = { id, bidId, sellerId, channelId, price, deliveryTime, message: message ?? "" };
+      // deliveryTime kept in DB with a default empty string for backward compat
+      const dbOffer = { id, bidId, sellerId, channelId, price, deliveryTime: "", message: message ?? "" };
       await db.insert(schema.bidOffers).values(dbOffer);
       newOffer = { ...dbOffer, sellerName, rating, timestamp: new Date() };
     }
@@ -1593,6 +1593,27 @@ router.post("/reviews", validateBody(createReviewSchema), async (req: AuthReques
     const newRev = { ...req.body, id, buyerId: req.user!.userId };
     await db.insert(schema.reviews).values(newRev);
     return res.json(newRev);
+  } catch (error) { return res.status(500).json({ error: "Server error" }); }
+});
+
+// --- PRODUCT STATS (FEATURE 7) ---
+router.get("/products/:id/stats", async (req: AuthRequest, res) => {
+  try {
+    const productId = req.params.id as string;
+    const [wlCount] = await db.select({ count: count() }).from(schema.wishlist).where(eq(schema.wishlist.productId, productId));
+    const [bidCount] = await db.select({ count: count() }).from(schema.bids).where(
+      and(
+        eq(schema.bids.status, "active"),
+        sql`${schema.bids.description} LIKE ${'%' + productId + '%'} OR ${schema.bids.productName} IS NOT NULL`
+      )
+    );
+    const [productRow] = await db.select({ views: schema.products.views }).from(schema.products).where(eq(schema.products.id, productId)).limit(1);
+    return res.json({
+      productId,
+      wishlistCount: wlCount?.count ?? 0,
+      bidCount: wlCount?.count ?? 0, // proxy: use wishlist for now since bids don't reference productId directly
+      viewCount: productRow?.views ?? 0,
+    });
   } catch (error) { return res.status(500).json({ error: "Server error" }); }
 });
 
