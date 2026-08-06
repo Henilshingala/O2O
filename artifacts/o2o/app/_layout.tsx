@@ -22,7 +22,7 @@ const AppTheme = {
   },
 };
 import React, { useState, useCallback } from "react";
-import { ActivityIndicator, View } from "react-native";
+import { StyleSheet, View, StatusBar } from "react-native";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 
@@ -35,6 +35,7 @@ import { SocketProvider } from "@/context/SocketContext";
 import { SafeKeyboardProvider } from "@/compat/keyboard-controller";
 import { setBaseUrl } from "@workspace/api-client-react";
 import { useFCM } from "@/hooks/useFCM";
+import Video from "react-native-video";
 
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 
@@ -255,8 +256,11 @@ export default function RootLayout() {
     Inter_700Bold,
   });
 
+  const [splashDone, setSplashDone] = useState(false);
+
   return (
     <GestureHandlerRootView style={{ flex: 1, backgroundColor: "#044D2A" }}>
+      {/* ── App (only mount once fonts are ready) ────────────────────────── */}
       {(fontsLoaded || fontError) ? (
         <SafeAreaProvider>
           <ErrorBoundary>
@@ -266,11 +270,6 @@ export default function RootLayout() {
                   <SocketProvider>
                     <DataProvider>
                       <FriendsProvider>
-                        {/*
-                          NavigationContainer MUST wrap FCMProvider so that
-                          navigationRef.isReady() is true when FCM quit-state
-                          taps call getInitialNotification() → navigateFromFCM().
-                        */}
                         <NavigationContainer ref={navigationRef} theme={AppTheme}>
                           <FCMProvider>
                             <RootLayoutNav />
@@ -285,6 +284,55 @@ export default function RootLayout() {
           </ErrorBoundary>
         </SafeAreaProvider>
       ) : null}
+
+      {/* ── Splash video — absolutely on top of EVERYTHING ───────────────── */}
+      {!splashDone && (
+        <View style={splashStyles.overlay} pointerEvents="none">
+          <StatusBar hidden />
+          <Video
+            source={require("../assets/images/splash.mp4")}
+            style={splashStyles.video}
+            resizeMode="cover"
+            onEnd={() => setSplashDone(true)}
+            onError={(err) => {
+              console.warn("[Splash] video error:", err);
+              setSplashDone(true);
+            }}
+            onLoad={() => {
+              // Ensure status bar stays hidden when video is playing
+              StatusBar.setHidden(true);
+            }}
+            controls={false}
+            repeat={false}
+            paused={false}
+            fullscreen={false}
+            ignoreSilentSwitch="obey"
+            playInBackground={false}
+            playWhenInactive={false}
+            muted={false}
+          />
+        </View>
+      )}
     </GestureHandlerRootView>
   );
 }
+
+const splashStyles = StyleSheet.create({
+  overlay: {
+    position: "absolute",
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: "#044D2A",
+    zIndex: 9999,
+    elevation: 9999,
+  },
+  video: {
+    position: "absolute",
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+  },
+});

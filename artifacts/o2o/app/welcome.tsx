@@ -21,7 +21,7 @@ export default function WelcomeScreen() {
   return (
     <View style={[styles.container, { backgroundColor: colors.background }]}>
       <LinearGradient
-        colors={["#1E3A8A", "#2563EB"]}
+        colors={["#044D2A", "#069953"]}
         style={[styles.header, { paddingTop: insets.top + 40 }]}
       >
         <Image

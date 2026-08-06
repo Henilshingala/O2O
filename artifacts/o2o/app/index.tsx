@@ -1,81 +1,28 @@
-import { router, navigationRef } from "@/compat/router";
-import React, { useEffect, useRef, useState } from "react";
-import { StyleSheet, View, StatusBar } from "react-native";
+/**
+ * index.tsx — Minimal redirect screen.
+ *
+ * The video splash is handled entirely in _layout.tsx (outside the Stack),
+ * so by the time this screen is navigated to, splash is already done.
+ * This screen is a safety net: it immediately replaces itself with the correct
+ * destination based on auth state.
+ */
+import { router } from "@/compat/router";
+import React, { useEffect } from "react";
+import { View } from "react-native";
 import { useAuth } from "@/context/AuthContext";
-import Video from "react-native-video";
 
-export default function SplashScreen() {
+export default function IndexScreen() {
   const { user, isLoading } = useAuth();
-  const navigated = useRef(false);
-  const [videoEnded, setVideoEnded] = useState(false);
-  const [videoError, setVideoError] = useState(false);
 
   useEffect(() => {
-    // Hide status bar for full screen splash experience
-    StatusBar.setHidden(true);
-    return () => {
-      StatusBar.setHidden(false);
-    };
-  }, []);
-
-  useEffect(() => {
-    // Only navigate when both auth state is known AND video has finished (or errored)
     if (isLoading) return;
-    if (!videoEnded && !videoError) return;
-    if (navigated.current) return;
-
-    const navigate = () => {
-      if (navigated.current) return;
-      navigated.current = true;
-      if (user) {
-        router.replace("/(tabs)");
-      } else {
-        router.replace("/welcome");
-      }
-    };
-
-    if (!navigationRef.isReady()) {
-      const interval = setInterval(() => {
-        if (navigationRef.isReady()) {
-          clearInterval(interval);
-          navigate();
-        }
-      }, 50);
+    if (user) {
+      router.replace("/(tabs)");
     } else {
-      navigate();
+      router.replace("/welcome");
     }
-  }, [isLoading, user, videoEnded, videoError]);
+  }, [isLoading, user]);
 
-  return (
-    <View style={[styles.container, { backgroundColor: "#044D2A" }]}>
-      <Video
-        source={require("../assets/images/splash.mp4")}
-        style={styles.video}
-        resizeMode="cover"
-        onEnd={() => setVideoEnded(true)}
-        onError={(err) => {
-          console.warn("Splash video error:", err);
-          setVideoError(true);
-        }}
-        controls={false}
-        repeat={false}
-        paused={false}
-        fullscreen={false}
-        ignoreSilentSwitch="obey"
-        playInBackground={false}
-        playWhenInactive={false}
-      />
-    </View>
-  );
+  // Transparent while auth resolves (splash video is covering it anyway)
+  return <View style={{ flex: 1, backgroundColor: "#044D2A" }} />;
 }
-
-const styles = StyleSheet.create({
-  container: { 
-    flex: 1,
-    backgroundColor: "#044D2A" // Brand green matching native splash
-  },
-  video: {
-    width: "100%",
-    height: "100%"
-  }
-});
