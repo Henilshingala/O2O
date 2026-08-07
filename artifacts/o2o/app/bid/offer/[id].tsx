@@ -62,6 +62,7 @@ export default function SellerOfferScreen() {
         price: Number(form.price),
         message: form.message.trim(),
         rating: 4.5,
+        deliveryTime: "24-48 hours",
       });
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
       router.back();

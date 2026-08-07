@@ -1,0 +1,26 @@
+diff --git a/lib/module/views/NativeStackView.native.js b/lib/module/views/NativeStackView.native.js
+index c342e90bffde9ad5044b6167bdde2e19be219270..2228551a077d404987a014932fe4ebffa3430be3 100644
+--- a/lib/module/views/NativeStackView.native.js
++++ b/lib/module/views/NativeStackView.native.js
+@@ -144,7 +144,7 @@ const SceneView = ({
+   // Debounce the header height updates to avoid excessive re-renders
+   debounce(setHeaderHeight, 100), []);
+   const hasCustomHeader = header != null;
+-  const usesNewAndroidHeaderHeightImplementation = 'usesNewAndroidHeaderHeightImplementation' in compatibilityFlags && compatibilityFlags['usesNewAndroidHeaderHeightImplementation'] === true;
++  const usesNewAndroidHeaderHeightImplementation = compatibilityFlags && 'usesNewAndroidHeaderHeightImplementation' in compatibilityFlags && compatibilityFlags['usesNewAndroidHeaderHeightImplementation'] === true;
+   let headerHeightCorrectionOffset = 0;
+   if (Platform.OS === 'android' && !hasCustomHeader && !usesNewAndroidHeaderHeightImplementation) {
+     const statusBarHeight = StatusBar.currentHeight ?? 0;
+diff --git a/src/views/NativeStackView.native.tsx b/src/views/NativeStackView.native.tsx
+index 416cd90057cea362371a4308dd9985b086c5ccaa..d84d228a9fd390b57cdba6e349eaea75943c8e19 100644
+--- a/src/views/NativeStackView.native.tsx
++++ b/src/views/NativeStackView.native.tsx
+@@ -219,7 +219,7 @@ const SceneView = ({
+   const hasCustomHeader = header != null;
+ 
+   const usesNewAndroidHeaderHeightImplementation =
+-    'usesNewAndroidHeaderHeightImplementation' in compatibilityFlags &&
++    compatibilityFlags && 'usesNewAndroidHeaderHeightImplementation' in compatibilityFlags &&
+     compatibilityFlags['usesNewAndroidHeaderHeightImplementation'] === true;
+ 
+   let headerHeightCorrectionOffset = 0;

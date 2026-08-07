@@ -69,6 +69,7 @@ import BidLiveScreen from "./bid/live/[id]";
 import BidWinnerScreen from "./bid/winner/[id]";
 import BidOfferScreen from "./bid/offer/[id]";
 import BidRejectScreen from "./bid/reject/[id]";
+import BidDetailsScreen from "./bid/details/[id]";
 import OrderDetailScreen from "./order/[id]";
 import ReviewScreen from "./review/[id]";
 import AnalyticsScreen from "./analytics";
@@ -123,6 +124,7 @@ function RootLayoutNav() {
       <Stack.Screen name="bid/winner/[id]"   component={BidWinnerScreen} />
       <Stack.Screen name="bid/offer/[id]"    component={BidOfferScreen} />
       <Stack.Screen name="bid/reject/[id]"   component={BidRejectScreen} />
+      <Stack.Screen name="bid/details/[id]"  component={BidDetailsScreen} />
       <Stack.Screen name="order/[id]"        component={OrderDetailScreen} />
       <Stack.Screen name="review/[id]"       component={ReviewScreen} />
       <Stack.Screen name="analytics"         component={AnalyticsScreen} />
@@ -172,6 +174,9 @@ function navigateFromFCM(
     } else if (screen.startsWith("bid/winner/")) {
       // @ts-ignore
       navigationRef.navigate("bid/winner/[id]" as never, { id: params?.id ?? params?.bidId } as never);
+    } else if (screen.startsWith("bid/details/")) {
+      // @ts-ignore
+      navigationRef.navigate("bid/details/[id]" as never, { id: params?.id ?? params?.bidId } as never);
     } else if (screen.startsWith("order/")) {
       // @ts-ignore
       navigationRef.navigate("order/[id]" as never, { id: params?.id ?? params?.orderId } as never);
@@ -290,7 +295,7 @@ export default function RootLayout() {
         <View style={splashStyles.overlay} pointerEvents="none">
           <StatusBar hidden />
           <Video
-            source={require("../assets/images/splash.mp4")}
+            source={require("../assets/images/splashscreen.mp4")}
             style={splashStyles.video}
             resizeMode="cover"
             onEnd={() => setSplashDone(true)}

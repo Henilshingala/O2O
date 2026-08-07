@@ -1,16 +1,16 @@
 import { router, useLocalSearchParams } from "@/compat/router";
-import React, { useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import {
   ActivityIndicator,
+  Alert,
+  Image,
   KeyboardAvoidingView,
-  Platform,
+  Modal,
   ScrollView,
   StyleSheet,
   Text,
   TouchableOpacity,
   View,
-  Modal,
-  Image,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Feather } from "@/compat/vector-icons";
@@ -21,8 +21,11 @@ import { useAuth } from "@/context/AuthContext";
 import { useData } from "@/context/DataContext";
 import { useColors } from "@/hooks/useColors";
 import { launchImageLibrary } from "react-native-image-picker";
-import { uploadFile, uploadFiles } from "@/lib/uploadMedia";
+import { uploadFiles } from "@/lib/uploadMedia";
 import type { ProductDetail } from "@/types";
+
+const MAX_IMAGES = 5;
+const MAX_VIDEOS = 3;
 
 export default function CreateProductPost() {
   const colors = useColors();
@@ -31,6 +34,11 @@ export default function CreateProductPost() {
   const { createProduct } = useData();
   const params = useLocalSearchParams<{ channelId: string }>();
 
+  const mounted = useRef(true);
+  useEffect(() => {
+    return () => { mounted.current = false; };
+  }, []);
+
   const [form, setForm] = useState({ name: "", description: "", price: "", productCode: "" });
   const [details, setDetails] = useState<ProductDetail[]>([]);
   const [loading, setLoading] = useState(false);
@@ -38,81 +46,163 @@ export default function CreateProductPost() {
   const [showDetailModal, setShowDetailModal] = useState(false);
   const [detailName, setDetailName] = useState("");
   const [detailValue, setDetailValue] = useState("");
+
+  // Images
   const [imageUrls, setImageUrls] = useState<string[]>([]);
   const [localPreviews, setLocalPreviews] = useState<string[]>([]);
-  const [videoUrl, setVideoUrl] = useState("");
-  const [localVideoUri, setLocalVideoUri] = useState("");
+
+  // Videos
+  const [videoUrls, setVideoUrls] = useState<string[]>([]);
+  const [localVideoUris, setLocalVideoUris] = useState<string[]>([]);
+
   const [uploading, setUploading] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState("");
 
   if (!user) return null;
 
   const set = (k: keyof typeof form) => (v: string) => setForm((f) => ({ ...f, [k]: v }));
+
+  const handlePickImages = async () => {
+    const remaining = MAX_IMAGES - localPreviews.length;
+    if (remaining <= 0) {
+      Alert.alert("Limit Reached", `Maximum ${MAX_IMAGES} images allowed.`);
+      return;
+    }
+    try {
+      const response = await launchImageLibrary({
+        mediaType: "photo",
+        quality: 0.8,
+        selectionLimit: remaining,
+      });
+      if (response.didCancel || !response.assets?.length) return;
+
+      const newAssets = response.assets.filter((a) => a.uri);
+      if (!mounted.current) return;
+
+      const newPreviews = newAssets.map((a) => a.uri!);
+      setLocalPreviews((prev) => [...prev, ...newPreviews]);
+      setUploading(true);
+      setUploadProgress("Uploading images…");
+
+      const uploadAssets = newAssets.map((a) => ({ uri: a.uri!, type: a.type, fileName: a.fileName }));
+      const urls = await uploadFiles(uploadAssets, {
+        concurrency: 3,
+        onProgress: (i, p) => {
+          if (mounted.current) setUploadProgress(`Image ${i + 1}: ${p.percent}%`);
+        },
+      });
+
+      if (!mounted.current) return;
+      setImageUrls((prev) => [...prev, ...urls]);
+      setUploadProgress("");
+    } catch (e: any) {
+      if (mounted.current) {
+        Alert.alert("Upload Failed", e?.message ?? "Could not upload images. Please try again.");
+        setUploadProgress("");
+      }
+    } finally {
+      if (mounted.current) setUploading(false);
+    }
+  };
+
+  const handlePickVideos = async () => {
+    const remaining = MAX_VIDEOS - localVideoUris.length;
+    if (remaining <= 0) {
+      Alert.alert("Limit Reached", `Maximum ${MAX_VIDEOS} videos allowed.`);
+      return;
+    }
+    try {
+      const response = await launchImageLibrary({
+        mediaType: "video",
+        quality: 0.8,
+        selectionLimit: remaining,
+      });
+      if (response.didCancel || !response.assets?.length) return;
+
+      const newAssets = response.assets.filter((a) => a.uri);
+      if (!mounted.current) return;
+
+      const newUris = newAssets.map((a) => a.uri!);
+      setLocalVideoUris((prev) => [...prev, ...newUris]);
+      setUploading(true);
+      setUploadProgress("Uploading videos…");
+
+      const uploadAssets = newAssets.map((a) => ({ uri: a.uri!, type: a.type ?? "video/mp4", fileName: a.fileName ?? "video.mp4" }));
+      const urls = await uploadFiles(uploadAssets, {
+        concurrency: 2,
+        onProgress: (i, p) => {
+          if (mounted.current) setUploadProgress(`Video ${i + 1}: ${p.percent}%`);
+        },
+      });
+
+      if (!mounted.current) return;
+      setVideoUrls((prev) => [...prev, ...urls]);
+      setUploadProgress("");
+    } catch (e: any) {
+      if (mounted.current) {
+        Alert.alert("Upload Failed", e?.message ?? "Could not upload videos. Please try again.");
+        setUploadProgress("");
+      }
+    } finally {
+      if (mounted.current) setUploading(false);
+    }
+  };
+
+  const removeImage = (idx: number) => {
+    setLocalPreviews((prev) => prev.filter((_, i) => i !== idx));
+    setImageUrls((prev) => prev.filter((_, i) => i !== idx));
+  };
+
+  const removeVideo = (idx: number) => {
+    setLocalVideoUris((prev) => prev.filter((_, i) => i !== idx));
+    setVideoUrls((prev) => prev.filter((_, i) => i !== idx));
+  };
 
   const handlePost = async () => {
     const e: Record<string, string> = {};
     if (!form.name.trim()) e.name = "Product name is required";
     if (!form.description.trim()) e.description = "Description is required";
     if (!form.price.trim() || isNaN(Number(form.price))) e.price = "Valid price required";
-    if (imageUrls.length === 0 && localPreviews.length === 0) e.images = "At least 1 image is required";
-    if (uploading) e.images = "Please wait for image upload to finish";
+    if (localPreviews.length === 0 && localVideoUris.length === 0) e.media = "At least 1 image or video is required";
+    if (uploading) e.media = "Please wait for uploads to finish";
+    if (imageUrls.length < localPreviews.length) e.media = "Some images are still uploading, please wait";
+    if (videoUrls.length < localVideoUris.length) e.media = "Some videos are still uploading, please wait";
     if (Object.keys(e).length > 0) { setErrors(e); return; }
+
     setLoading(true);
+    setErrors({});
     try {
-      // Encode Product Code as a detail entry so it's searchable in channel search
       const allDetails = form.productCode.trim()
         ? [{ name: "Code", value: form.productCode.trim() }, ...details]
         : details;
-      await createProduct(params.channelId, {
+
+      const payload = {
         name: form.name.trim(),
         description: form.description.trim(),
         price: Number(form.price),
         details: allDetails,
-        image: imageUrls[0] || undefined,
+        image: imageUrls[0] ?? undefined,
         images: imageUrls,
-        videoUrl: videoUrl || undefined,
-      } as any);
+        videoUrl: videoUrls[0] ?? undefined,
+      };
+
+      console.log("[CreateProduct] Request Payload:", JSON.stringify(payload, null, 2));
+
+      await createProduct(params.channelId, payload as any);
+
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-      router.back();
-    } finally {
-      setLoading(false);
+      if (mounted.current) router.back();
+    } catch (err: any) {
+      console.log("[CreateProduct] Request Failed - Error:", err, err?.message);
+      if (err?.cause) console.log("[CreateProduct] Error Cause:", err.cause);
+      if (err?.response) console.log("[CreateProduct] Error Response:", err.response);
+
+      if (mounted.current) {
+        Alert.alert("Post Failed", err?.message ?? "Could not create product. Please try again.");
+        setLoading(false);
+      }
     }
   };
-
-  const handlePickImages = async () => {
-    try {
-      const response = await launchImageLibrary({ mediaType: "photo", quality: 0.7, selectionLimit: 10 });
-      if (response.didCancel || !response.assets?.length) return;
-      setUploading(true);
-      const previews = response.assets.map((a) => a.uri!).filter(Boolean);
-      setLocalPreviews((prev) => [...prev, ...previews]);
-      const urls = await uploadFiles(response.assets.map((a) => ({ uri: a.uri!, type: a.type, fileName: a.fileName })));
-      setImageUrls((prev) => [...prev, ...urls]);
-    } catch (e) {
-      console.error("Upload error", e);
-    } finally {
-      setUploading(false);
-    }
-  };
-
-  const handlePickVideo = async () => {
-    try {
-      const response = await launchImageLibrary({ mediaType: "video", quality: 0.8 });
-      if (response.didCancel || !response.assets?.[0]?.uri) return;
-      const asset = response.assets[0];
-      setLocalVideoUri(asset.uri!);
-      setUploading(true);
-      const url = await uploadFile(asset, "product_video.mp4");
-      setVideoUrl(url);
-    } catch (e) {
-      console.error("Product video upload error:", e);
-      setVideoUrl("");
-    } finally {
-      setUploading(false);
-    }
-  };
-
-  const previews = imageUrls.length > 0 ? imageUrls : localPreviews;
-  const videoPreview = videoUrl || localVideoUri;
 
   const addDetail = () => {
     if (!detailName.trim() || !detailValue.trim()) return;
@@ -124,21 +214,13 @@ export default function CreateProductPost() {
 
   const removeDetail = (idx: number) => setDetails((d) => d.filter((_, i) => i !== idx));
 
+  const imagePreviews = localPreviews;
+  const videoPreviews = localVideoUris;
+  const allUploaded = imageUrls.length >= localPreviews.length && videoUrls.length >= localVideoUris.length;
+
   return (
-    <KeyboardAvoidingView
-      style={{ flex: 1, backgroundColor: colors.background }}
-      behavior="height"
-    >
-      <View
-        style={[
-          styles.header,
-          {
-            backgroundColor: colors.card,
-            borderBottomColor: colors.border,
-            paddingTop: insets.top + 8,
-          },
-        ]}
-      >
+    <KeyboardAvoidingView style={{ flex: 1, backgroundColor: colors.background }} behavior="height">
+      <View style={[styles.header, { backgroundColor: colors.card, borderBottomColor: colors.border, paddingTop: insets.top + 8 }]}>
         <TouchableOpacity onPress={() => router.back()}>
           <Feather name="arrow-left" size={22} color={colors.foreground} />
         </TouchableOpacity>
@@ -147,39 +229,98 @@ export default function CreateProductPost() {
       </View>
 
       <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
-        <View style={styles.imageContainer}>
-          <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginBottom: 12 }}>
-            {previews.map((uri, idx) => (
-              <Image key={idx} source={{ uri }} style={styles.thumbImage} resizeMode="cover" />
-            ))}
-            <TouchableOpacity
-              style={[styles.addImageBtn, { borderColor: colors.primary, backgroundColor: colors.card }]}
-              onPress={handlePickImages}
-            >
-              <Feather name="plus" size={28} color={colors.primary} />
-              <Text style={{ color: colors.primary, fontSize: 11, marginTop: 4 }}>Add Images</Text>
-            </TouchableOpacity>
-          </ScrollView>
 
-          <TouchableOpacity
-            style={[styles.videoPicker, { backgroundColor: colors.card, borderColor: videoPreview ? colors.primary : colors.border }]}
-            onPress={handlePickVideo}
-          >
-            {videoPreview ? (
-              <View style={styles.videoPreview}>
-                <Feather name="play-circle" size={40} color={colors.primary} />
-                <Text style={{ color: colors.foreground, marginTop: 8 }}>Video selected</Text>
-              </View>
-            ) : (
-              <>
-                <Feather name="video" size={28} color={colors.primary} />
-                <Text style={[styles.imageLabel, { color: colors.foreground }]}>Add Product Video (optional)</Text>
-              </>
+        {/* ── Images ── */}
+        <View>
+          <View style={styles.sectionRow}>
+            <Text style={[styles.sectionLabel, { color: colors.foreground }]}>
+              Images ({imagePreviews.length}/{MAX_IMAGES})
+            </Text>
+            {imagePreviews.length < MAX_IMAGES && (
+              <TouchableOpacity onPress={handlePickImages} disabled={uploading}>
+                <Text style={[styles.addLink, { color: colors.primary }]}>+ Add</Text>
+              </TouchableOpacity>
             )}
-            {uploading && <ActivityIndicator style={{ marginTop: 8 }} color={colors.primary} />}
-          </TouchableOpacity>
+          </View>
+          <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginBottom: 8 }}>
+            {imagePreviews.map((uri, idx) => (
+              <View key={idx} style={styles.thumbWrap}>
+                <Image source={{ uri }} style={styles.thumbImage} resizeMode="cover" />
+                {imageUrls[idx] == null && (
+                  <View style={styles.thumbOverlay}>
+                    <ActivityIndicator color="#fff" size="small" />
+                  </View>
+                )}
+                <TouchableOpacity style={styles.thumbRemove} onPress={() => removeImage(idx)}>
+                  <Feather name="x" size={12} color="#fff" />
+                </TouchableOpacity>
+              </View>
+            ))}
+            {imagePreviews.length < MAX_IMAGES && (
+              <TouchableOpacity
+                style={[styles.addImageBtn, { borderColor: colors.primary, backgroundColor: colors.card }]}
+                onPress={handlePickImages}
+                disabled={uploading}
+              >
+                <Feather name="image" size={24} color={colors.primary} />
+                <Text style={{ color: colors.primary, fontSize: 11, marginTop: 4 }}>Add Images</Text>
+              </TouchableOpacity>
+            )}
+          </ScrollView>
         </View>
-        {!!errors.images && <Text style={{ color: colors.destructive, fontSize: 12, marginBottom: 8 }}>{errors.images}</Text>}
+
+        {/* ── Videos ── */}
+        <View>
+          <View style={styles.sectionRow}>
+            <Text style={[styles.sectionLabel, { color: colors.foreground }]}>
+              Videos ({videoPreviews.length}/{MAX_VIDEOS})
+            </Text>
+            {videoPreviews.length < MAX_VIDEOS && (
+              <TouchableOpacity onPress={handlePickVideos} disabled={uploading}>
+                <Text style={[styles.addLink, { color: colors.primary }]}>+ Add</Text>
+              </TouchableOpacity>
+            )}
+          </View>
+          <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginBottom: 8 }}>
+            {videoPreviews.map((_, idx) => (
+              <View key={idx} style={styles.thumbWrap}>
+                <View style={[styles.thumbImage, { backgroundColor: colors.muted, alignItems: "center", justifyContent: "center" }]}>
+                  <Feather name="play-circle" size={32} color={colors.primary} />
+                  <Text style={{ color: colors.mutedForeground, fontSize: 10, marginTop: 4 }}>Video {idx + 1}</Text>
+                </View>
+                {videoUrls[idx] == null && (
+                  <View style={styles.thumbOverlay}>
+                    <ActivityIndicator color="#fff" size="small" />
+                  </View>
+                )}
+                <TouchableOpacity style={styles.thumbRemove} onPress={() => removeVideo(idx)}>
+                  <Feather name="x" size={12} color="#fff" />
+                </TouchableOpacity>
+              </View>
+            ))}
+            {videoPreviews.length < MAX_VIDEOS && (
+              <TouchableOpacity
+                style={[styles.addImageBtn, { borderColor: colors.primary, backgroundColor: colors.card }]}
+                onPress={handlePickVideos}
+                disabled={uploading}
+              >
+                <Feather name="video" size={24} color={colors.primary} />
+                <Text style={{ color: colors.primary, fontSize: 11, marginTop: 4 }}>Add Video</Text>
+              </TouchableOpacity>
+            )}
+          </ScrollView>
+        </View>
+
+        {/* Upload progress */}
+        {uploading && (
+          <View style={[styles.progressRow, { backgroundColor: colors.muted }]}>
+            <ActivityIndicator color={colors.primary} size="small" />
+            <Text style={{ color: colors.mutedForeground, fontSize: 13, marginLeft: 10 }}>
+              {uploadProgress || "Uploading…"}
+            </Text>
+          </View>
+        )}
+        {!!errors.media && <Text style={{ color: colors.destructive, fontSize: 12, marginBottom: 8 }}>{errors.media}</Text>}
 
         <AppInput label="Product Code" value={form.productCode} onChangeText={set("productCode")} placeholder="e.g. SKU-001 (optional)" />
         <AppInput label="Product Name *" value={form.name} onChangeText={set("name")} placeholder="Enter product name" error={errors.name} />
@@ -199,15 +340,18 @@ export default function CreateProductPost() {
           </View>
         ))}
 
-        <TouchableOpacity
-          style={[styles.addDetailBtn, { borderColor: colors.primary }]}
-          onPress={() => setShowDetailModal(true)}
-        >
+        <TouchableOpacity style={[styles.addDetailBtn, { borderColor: colors.primary }]} onPress={() => setShowDetailModal(true)}>
           <Feather name="plus" size={16} color={colors.primary} />
           <Text style={[styles.addDetailText, { color: colors.primary }]}>Add Detail</Text>
         </TouchableOpacity>
 
-        <AppButton title="POST PRODUCT" onPress={handlePost} loading={loading} style={styles.btn} />
+        <AppButton
+          title={uploading ? "UPLOADING…" : "POST PRODUCT"}
+          onPress={handlePost}
+          loading={loading}
+          disabled={uploading || (!allUploaded && (localPreviews.length > 0 || localVideoUris.length > 0))}
+          style={styles.btn}
+        />
       </ScrollView>
 
       {/* Add Detail Modal */}
@@ -232,12 +376,15 @@ const styles = StyleSheet.create({
   header: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", paddingHorizontal: 16, paddingBottom: 12, borderBottomWidth: 1 },
   title: { fontSize: 17, fontWeight: "700" },
   content: { padding: 20, gap: 16 },
-  imageContainer: { marginBottom: 4 },
-  thumbImage: { width: 100, height: 100, borderRadius: 10, marginRight: 10 },
+  sectionRow: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginBottom: 8 },
+  sectionLabel: { fontSize: 13, fontWeight: "700" },
+  addLink: { fontSize: 13, fontWeight: "600" },
+  thumbWrap: { position: "relative", marginRight: 10 },
+  thumbImage: { width: 100, height: 100, borderRadius: 10 },
+  thumbOverlay: { ...StyleSheet.absoluteFillObject, backgroundColor: "rgba(0,0,0,0.5)", borderRadius: 10, alignItems: "center", justifyContent: "center" },
+  thumbRemove: { position: "absolute", top: 4, right: 4, backgroundColor: "rgba(0,0,0,0.7)", borderRadius: 8, width: 18, height: 18, alignItems: "center", justifyContent: "center" },
   addImageBtn: { width: 100, height: 100, borderRadius: 10, borderWidth: 2, borderStyle: "dashed", alignItems: "center", justifyContent: "center" },
-  videoPicker: { width: "100%", height: 100, borderRadius: 12, borderWidth: 2, borderStyle: "dashed", alignItems: "center", justifyContent: "center" },
-  videoPreview: { alignItems: "center", justifyContent: "center" },
-  imageLabel: { fontSize: 13, fontWeight: "600" },
+  progressRow: { flexDirection: "row", alignItems: "center", padding: 12, borderRadius: 10, marginBottom: 4 },
   detailsLabel: { fontSize: 13, fontWeight: "700", marginBottom: 4 },
   detailRow: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", padding: 12, borderRadius: 10, borderWidth: 1, marginBottom: 8 },
   detailText: { fontSize: 13, flex: 1 },

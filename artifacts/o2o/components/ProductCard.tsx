@@ -5,11 +5,10 @@
  */
 import React, { useEffect, useState } from "react";
 import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
-import { Image } from "@/compat/image";
 import { Feather } from "@/compat/vector-icons";
 import { router } from "@/compat/router";
 import { useColors } from "@/hooks/useColors";
-import { getProductPrimaryImage } from "@/lib/productMedia";
+import { ProductMediaView } from "@/components/ProductMediaView";
 import { getSocket } from "@/lib/socket";
 import { useQueryClient } from "@tanstack/react-query";
 import type { Channel, Product } from "@/types";
@@ -86,8 +85,6 @@ export function ProductCard({
     });
   }, [product.wishlisted?.length, product.views]);
 
-  const imgUri = getProductPrimaryImage(product);
-
   return (
     <TouchableOpacity
       activeOpacity={0.92}
@@ -96,15 +93,9 @@ export function ProductCard({
         router.push({ pathname: "/product/[id]", params: { id: product.id, channelId: channel.id } })
       }
     >
-      {/* Image */}
+      {/* Media: shows multi-image grid or video via ProductMediaView */}
       <View style={styles.imageContainer}>
-        {imgUri ? (
-          <Image source={{ uri: imgUri }} style={styles.image} contentFit="cover" transition={200} />
-        ) : (
-          <View style={[styles.imagePlaceholder, { backgroundColor: colors.muted }]}>
-            <Feather name="image" size={40} color={colors.mutedForeground} />
-          </View>
-        )}
+        <ProductMediaView product={product} height={200} showVideo fullWidth />
         <TouchableOpacity
           style={[styles.heartBtn, { backgroundColor: isWishlisted ? "#FFF0F0" : "rgba(255,255,255,0.9)" }]}
           onPress={onWishlist}
@@ -157,8 +148,6 @@ export function ProductCard({
 const styles = StyleSheet.create({
   card: { borderRadius: 14, borderWidth: 1, overflow: "hidden", marginBottom: 14 },
   imageContainer: { position: "relative" },
-  image: { width: "100%", height: 200 },
-  imagePlaceholder: { width: "100%", height: 200, alignItems: "center", justifyContent: "center" },
   heartBtn: {
     position: "absolute", top: 10, right: 10, width: 36, height: 36,
     borderRadius: 18, alignItems: "center", justifyContent: "center",

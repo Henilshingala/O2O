@@ -2,10 +2,12 @@ import { router } from "@/compat/router";
 import React from "react";
 import {
   Alert,
+  Animated,
   ScrollView,
   StyleSheet,
   Text,
   TouchableOpacity,
+  TouchableWithoutFeedback,
   View,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -31,25 +33,53 @@ export default function HomeScreen() {
   const insets = useSafeAreaInsets();
   const { user, getUserById } = useAuth();
   const { chats, groups, channels, counts } = useData();
-  const { friends, incoming: friendRequests, acceptRequest, rejectRequest } = useFriends();
 
   const unreadNotifs = counts.notifications;
 
   if (!user) return null;
 
-  const myChats = chats
-    .filter((c) => c.participants.includes(user.id))
-    .sort((a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime())
-    .slice(0, 3);
-
-  const myGroups = groups
-    .filter((g) => g.members.includes(user.id))
-    .sort((a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime())
-    .slice(0, 3);
-
-  const myChannels = channels
-    .filter((c) => c.followers.includes(user.id) || c.ownerId === user.id)
-    .slice(0, 3);
+  const unifiedList = ( [
+    ...chats.filter((c) => c.participants.includes(user.id)).map((chat) => {
+      const otherId = chat.participants.find((p) => p !== user.id) ?? "";
+      const other = otherId ? getUserById(otherId) : undefined;
+      const chatMsgs = Array.isArray(chat.messages) ? chat.messages : [];
+      const last = chatMsgs[chatMsgs.length - 1];
+      return {
+        id: chat.id,
+        type: "chat",
+        title: other?.fullName ?? "Unknown",
+        subtitle: last?.text ?? "No messages yet",
+        timestamp: last?.timestamp ?? chat.updatedAt,
+        avatarName: other?.fullName ?? "?",
+        onPress: () => router.push({ pathname: "/chat/[id]", params: { id: chat.id } }),
+      };
+    }),
+    ...groups.filter((g) => g.members.includes(user.id)).map((grp) => {
+      const grpMessages = Array.isArray(grp.messages) ? grp.messages : [];
+      const last = grpMessages[grpMessages.length - 1];
+      return {
+        id: grp.id,
+        type: "group",
+        title: grp.name,
+        subtitle: last ? `${(last.text ?? "").slice(0, 30)}` : `${grp.members.length} members`,
+        timestamp: last?.timestamp ?? grp.updatedAt,
+        icon: "users",
+        onPress: () => router.push({ pathname: "/group/[id]", params: { id: grp.id } }),
+      };
+    }),
+    ...channels.filter((c) => c.followers.includes(user.id) || c.ownerId === user.id).map((ch) => {
+      return {
+        id: ch.id,
+        type: "channel",
+        title: ch.name,
+        subtitle: `${ch.followers.length} followers • ${ch.products.length} products`,
+        timestamp: (ch as any).updatedAt || ch.createdAt,
+        icon: "radio",
+        isOwner: ch.ownerId === user.id,
+        onPress: () => router.push({ pathname: "/channel/[id]", params: { id: ch.id } }),
+      };
+    })
+  ] as any[] ).sort((a: any, b: any) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
 
   const paddingBottom = 90;
 
@@ -95,165 +125,138 @@ export default function HomeScreen() {
 
       <ScrollView
         showsVerticalScrollIndicator={false}
-        contentContainerStyle={{ paddingBottom }}
-        >
-          {/* Greeting */}
-        <View style={styles.greetingBox}>
-          <Text style={[styles.greeting, { color: colors.foreground }]}>
-            Hello, {user.fullName.split(" ")[0]}
-          </Text>
-          <View style={[styles.roleBadge, { backgroundColor: user.role === "seller" ? colors.accent : "#D1FAE5" }]}>
-            <Text style={[styles.roleText, { color: user.role === "seller" ? colors.accentForeground : "#065F46" }]}>
-              {user.role.toUpperCase()}
-            </Text>
-          </View>
-        </View>
-
-        {/* Friend Requests */}
-        {friendRequests.length > 0 && (
-          <>
-            <SectionHeader title="Pending Requests" onView={() => router.push("/(tabs)/friends")} colors={colors} />
-            <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ paddingHorizontal: 16, gap: 12 }}>
-              {friendRequests.map((req) => (
-                <View key={req.id} style={[styles.friendCard, { backgroundColor: colors.card, borderColor: colors.border }]}>
-                  <Avatar name={req.fullName} size={48} />
-                  <Text style={[styles.friendName, { color: colors.foreground }]} numberOfLines={1}>{req.fullName}</Text>
-                  <TouchableOpacity
-                    style={[styles.acceptBtn, { backgroundColor: colors.primary }]}
-                    onPress={() => {
-                      acceptRequest(req.id).catch(() =>
-                        Alert.alert("Error", "Could not accept friend request. Try again.")
-                      );
-                    }}
-                  >
-                    <Text style={styles.acceptText}>Accept</Text>
-                  </TouchableOpacity>
-                </View>
-              ))}
-            </ScrollView>
-          </>
-        )}
-
-        {/* Accepted Friends */}
-        {friends.length > 0 && (
-          <>
-            <SectionHeader title="Recently Accepted" onView={() => router.push("/(tabs)/people-search")} colors={colors} />
-            <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ paddingHorizontal: 16, gap: 12, paddingBottom: 16 }}>
-              {friends.slice(0, 5).map((friend) => (
-                <TouchableOpacity key={friend.id} style={{ alignItems: "center", width: 64 }} onPress={() => router.push({ pathname: "/chat/[id]", params: { otherId: friend.id } })}>
-                  <Avatar name={friend.fullName} size={56} />
-                  <Text style={[styles.friendListText, { color: colors.foreground }]} numberOfLines={1}>{friend.fullName.split(" ")[0]}</Text>
-                </TouchableOpacity>
-              ))}
-            </ScrollView>
-          </>
-        )}
-
-        {/* Recent Chats */}
-        <SectionHeader title="Recent Chats" onView={() => router.push("/(tabs)/chat")} colors={colors} />
-        {myChats.length === 0 ? (
-          <EmptyRow label="No recent chats" colors={colors} />
+        contentContainerStyle={{ paddingBottom, paddingTop: 12 }}
+      >
+        {unifiedList.length === 0 ? (
+          <EmptyRow label="No conversations yet" colors={colors} />
         ) : (
-          myChats.map((chat) => {
-            const otherId = chat.participants.find((p) => p !== user.id) ?? "";
-            const other = otherId ? getUserById(otherId) : undefined;
-            const chatMsgs = Array.isArray(chat.messages) ? chat.messages : [];
-            const last = chatMsgs[chatMsgs.length - 1];
-            return (
-              <TouchableOpacity
-                key={chat.id}
-                style={[styles.card, { backgroundColor: colors.card, borderColor: colors.border }]}
-                onPress={() => router.push({ pathname: "/chat/[id]", params: { id: chat.id } })}
-              >
-                <Avatar name={other?.fullName ?? "?"} size={44} />
-                <View style={styles.cardContent}>
-                  <Text style={[styles.cardTitle, { color: colors.foreground }]}>
-                    {other?.fullName ?? "Unknown"}
-                  </Text>
-                  <Text style={[styles.cardSub, { color: colors.mutedForeground }]} numberOfLines={1}>
-                    {last?.text ?? "No messages yet"}
-                  </Text>
-                </View>
-                {last && (
-                  <Text style={[styles.cardTime, { color: colors.mutedForeground }]}>
-                    {formatTime(last.timestamp)}
-                  </Text>
-                )}
-              </TouchableOpacity>
-            );
-          })
-        )}
-
-        {/* Recent Groups */}
-        <SectionHeader title="Recent Groups" onView={() => router.push("/(tabs)/groups")} colors={colors} />
-        {myGroups.length === 0 ? (
-          <EmptyRow label="No groups yet" colors={colors} />
-        ) : (
-          myGroups.map((grp) => {
-            const grpMessages = Array.isArray(grp.messages) ? grp.messages : [];
-            const last = grpMessages[grpMessages.length - 1];
-            return (
-              <TouchableOpacity
-                key={grp.id}
-                style={[styles.card, { backgroundColor: colors.card, borderColor: colors.border }]}
-                onPress={() => router.push({ pathname: "/group/[id]", params: { id: grp.id } })}
-              >
-                <View style={[styles.groupAvatar, { backgroundColor: colors.accent }]}>
-                  <Feather name="users" size={20} color={colors.primary} />
-                </View>
-                <View style={styles.cardContent}>
-                  <Text style={[styles.cardTitle, { color: colors.foreground }]}>{grp.name}</Text>
-                  <Text style={[styles.cardSub, { color: colors.mutedForeground }]}>
-                    {grp.members.length} members
-                    {last ? ` • ${(last.text ?? "").slice(0, 30)}` : ""}
-                  </Text>
-                </View>
-              </TouchableOpacity>
-            );
-          })
-        )}
-
-        {/* Recent Channels */}
-        <SectionHeader title="Recent Channels" onView={() => router.push("/(tabs)/channels")} colors={colors} />
-        {myChannels.length === 0 ? (
-          <EmptyRow label="No channels followed" colors={colors} />
-        ) : (
-          myChannels.map((ch) => (
+          unifiedList.map((item) => (
             <TouchableOpacity
-              key={ch.id}
+              key={`${item.type}-${item.id}`}
               style={[styles.card, { backgroundColor: colors.card, borderColor: colors.border }]}
-              onPress={() => router.push({ pathname: "/channel/[id]", params: { id: ch.id } })}
+              onPress={item.onPress}
             >
-              <View style={[styles.groupAvatar, { backgroundColor: "#EFF6FF" }]}>
-                <Feather name="radio" size={20} color={colors.primary} />
-              </View>
-              <View style={styles.cardContent}>
-                <Text style={[styles.cardTitle, { color: colors.foreground }]}>{ch.name}</Text>
-                <Text style={[styles.cardSub, { color: colors.mutedForeground }]}>
-                  {ch.followers.length} followers • {ch.products.length} products
-                </Text>
-              </View>
-              {ch.ownerId === user.id && (
-                <View style={[styles.ownerBadge, { backgroundColor: colors.primary }]}>
-                  <Text style={styles.ownerText}>Owner</Text>
+              {item.type === "chat" ? (
+                <Avatar name={item.avatarName} size={48} />
+              ) : (
+                <View style={[styles.groupAvatar, { backgroundColor: item.type === "group" ? colors.accent : "#EFF6FF" }]}>
+                  <Feather name={item.icon as any} size={22} color={colors.primary} />
                 </View>
               )}
+              
+              <View style={styles.cardContent}>
+                <Text style={[styles.cardTitle, { color: colors.foreground }]}>{item.title}</Text>
+                <Text style={[styles.cardSub, { color: colors.mutedForeground }]} numberOfLines={1}>
+                  {item.subtitle}
+                </Text>
+              </View>
+              
+              <View style={{ alignItems: "flex-end", gap: 4 }}>
+                <Text style={[styles.cardTime, { color: colors.mutedForeground }]}>
+                  {formatTime(item.timestamp)}
+                </Text>
+                {item.isOwner && (
+                  <View style={[styles.ownerBadge, { backgroundColor: colors.primary }]}>
+                    <Text style={styles.ownerText}>Owner</Text>
+                  </View>
+                )}
+              </View>
             </TouchableOpacity>
           ))
         )}
       </ScrollView>
+
+      <FabMenu role={user.role} colors={colors} />
     </View>
   );
 }
 
-function SectionHeader({ title, onView, colors }: { title: string; onView: () => void; colors: any }) {
+function FabMenu({ role, colors }: { role: string; colors: any }) {
+  const [isOpen, setIsOpen] = React.useState(false);
+  const animation = React.useRef(new Animated.Value(0)).current;
+
+  const toggleMenu = () => {
+    const toValue = isOpen ? 0 : 1;
+    Animated.spring(animation, {
+      toValue,
+      useNativeDriver: true,
+      friction: 6,
+      tension: 60,
+    }).start();
+    setIsOpen(!isOpen);
+  };
+
+  const closeMenu = () => {
+    if (isOpen) toggleMenu();
+  };
+
+  const rotation = animation.interpolate({
+    inputRange: [0, 1],
+    outputRange: ["0deg", "45deg"],
+  });
+
+  const bgOpacity = animation.interpolate({
+    inputRange: [0, 1],
+    outputRange: [0, 0.4],
+  });
+
+  const options = [
+    { label: "Add New Friend", icon: "user-plus", route: "/people-search" },
+    { label: "Create Group", icon: "users", route: "/group/create" },
+  ];
+  if (role === "seller") {
+    options.push({ label: "Create Channel", icon: "radio", route: "/channel/create" });
+  }
+
   return (
-    <View style={shStyles.row}>
-      <Text style={[shStyles.title, { color: colors.foreground }]}>{title}</Text>
-      <TouchableOpacity onPress={onView}>
-        <Text style={[shStyles.view, { color: colors.primary }]}>View all</Text>
-      </TouchableOpacity>
-    </View>
+    <>
+      {isOpen && (
+        <TouchableWithoutFeedback onPress={closeMenu}>
+          <Animated.View style={[StyleSheet.absoluteFill, { backgroundColor: "#000", opacity: bgOpacity, zIndex: 10 }]} />
+        </TouchableWithoutFeedback>
+      )}
+
+      <View style={styles.fabContainer}>
+        <View style={styles.fabOptions}>
+          {options.map((opt, i) => {
+            const translateY = animation.interpolate({
+              inputRange: [0, 1],
+              outputRange: [20 * (options.length - i), 0],
+            });
+            return (
+              <Animated.View
+                key={opt.label}
+                style={[
+                  styles.fabOptionRow,
+                  { opacity: animation, transform: [{ translateY }] },
+                ]}
+                pointerEvents={isOpen ? "auto" : "none"}
+              >
+                <Text style={[styles.fabOptionLabel, { color: colors.foreground, backgroundColor: colors.card }]}>
+                  {opt.label}
+                </Text>
+                <TouchableOpacity
+                  style={[styles.fabOptionBtn, { backgroundColor: colors.card }]}
+                  onPress={() => {
+                    closeMenu();
+                    router.push(opt.route as any);
+                  }}
+                  activeOpacity={0.8}
+                >
+                  <Feather name={opt.icon as any} size={20} color={colors.primary} />
+                </TouchableOpacity>
+              </Animated.View>
+            );
+          })}
+        </View>
+
+        <TouchableOpacity activeOpacity={0.8} onPress={toggleMenu} style={[styles.fabMain, { backgroundColor: colors.primary }]}>
+          <Animated.View style={{ transform: [{ rotate: rotation }] }}>
+            <Feather name="plus" size={26} color="#fff" />
+          </Animated.View>
+        </TouchableOpacity>
+      </View>
+    </>
   );
 }
 
@@ -322,6 +325,60 @@ const styles = StyleSheet.create({
   acceptBtn: { paddingHorizontal: 16, paddingVertical: 6, borderRadius: 16 },
   acceptText: { color: "#fff", fontSize: 12, fontWeight: "600" },
   friendListText: { fontSize: 12, fontWeight: "600", marginTop: 6, textAlign: "center" },
+  fabContainer: {
+    position: "absolute",
+    bottom: 24,
+    right: 20,
+    alignItems: "flex-end",
+    zIndex: 11,
+  },
+  fabOptions: {
+    alignItems: "flex-end",
+    marginBottom: 16,
+    gap: 16,
+  },
+  fabOptionRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 12,
+  },
+  fabOptionLabel: {
+    fontSize: 14,
+    fontWeight: "600",
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 8,
+    overflow: "hidden",
+    elevation: 2,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.1,
+    shadowRadius: 2,
+  },
+  fabOptionBtn: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    alignItems: "center",
+    justifyContent: "center",
+    elevation: 3,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.15,
+    shadowRadius: 4,
+  },
+  fabMain: {
+    width: 56,
+    height: 56,
+    borderRadius: 28,
+    alignItems: "center",
+    justifyContent: "center",
+    elevation: 5,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.25,
+    shadowRadius: 8,
+  },
 });
 
 const shStyles = StyleSheet.create({

@@ -41,7 +41,7 @@ onlyBuiltDependencies:
 overrides:
   '@esbuild-kit/esm-loader': npm:tsx@^4.21.0
   esbuild: 0.27.3
-  # Force @types/react to 18.3.x everywhere to stop @types/react-native from
-  # pulling in @types/react@19 (nested dep), which causes the
-  # "bigint is not assignable to ReactNode" TS2786 error in every RN file.
   '@types/react-native>@types/react': ~18.3.12
+
+patchedDependencies:
+  '@react-navigation/native-stack': patches/@react-navigation__native-stack.patch

@@ -2,7 +2,7 @@ import React from "react";
 import { Image, StyleSheet, Text, View } from "react-native";
 
 interface AvatarProps {
-  name: string;
+  name?: string | null;
   size?: number;
   color?: string;
   uri?: string | null;
@@ -22,13 +22,15 @@ function hashColor(str: string): string {
 }
 
 export function Avatar({ name, size = 40, color, uri }: AvatarProps) {
-  const initials = name
+  const safeName = name?.trim() ? name.trim() : "Unknown";
+  const initials = safeName
     .split(" ")
     .map((w) => w[0])
+    .filter(Boolean)
     .join("")
     .toUpperCase()
     .slice(0, 2);
-  const bg = color ?? hashColor(name);
+  const bg = color ?? hashColor(safeName);
   const fontSize = size * 0.38;
 
   if (uri) {

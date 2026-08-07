@@ -155,17 +155,16 @@ export default function ChannelScreen() {
     setCursorPosition((pos) => pos + emoji.length);
   };
 
-  if (!user) return null;
   const channel = getChannel(params.id);
-  if (!channel) return null;
 
-  const isOwner = channel.ownerId === user.id;
-  const isFollowing = channel.followers.includes(user.id);
-  const displayCount = subscriberCount ?? channel.followers.length;
+  const isOwner = channel?.ownerId === user?.id;
+  const isFollowing = user ? (channel?.followers.includes(user.id) ?? false) : false;
+  const displayCount = subscriberCount ?? (channel?.followers.length ?? 0);
 
 
   // FEATURE 5 — build unified chronological feed (products + messages)
   const unifiedFeed = useMemo<FeedItem[]>(() => {
+    if (!channel) return [];
     const items: FeedItem[] = [];
     channel.products.forEach((p) => {
       // Exclude reposted items from timeline (they go to Updates tab)
@@ -188,7 +187,7 @@ export default function ChannelScreen() {
       return tb - ta; // newest first (FlatList not inverted for channel)
     });
     return items;
-  }, [channel.products, channel.messages]);
+  }, [channel?.products, channel?.messages]);
 
   // FEATURE 11 — filter unified feed by search query
   const filteredFeed = useMemo<FeedItem[]>(() => {
@@ -211,6 +210,7 @@ export default function ChannelScreen() {
 
   // FEATURE 6 — Updates tab: reposted products only, filtered by search
   const repostedProducts = useMemo(() => {
+    if (!channel) return [];
     const q = debouncedUpdates.toLowerCase().trim();
     return channel.products
       .filter((p) => (p as any).isRepost === true)
@@ -219,10 +219,10 @@ export default function ChannelScreen() {
         p.name.toLowerCase().includes(q) ||
         p.details?.some((d) => d.name.toLowerCase() === "code" && d.value.toLowerCase().includes(q))
       );
-  }, [channel.products, debouncedUpdates]);
+  }, [channel?.products, debouncedUpdates]);
 
   const sendPost = () => {
-    if (!postText.trim()) return;
+    if (!channel || !user || !postText.trim()) return;
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     sendChannelMessage(channel.id, {
       senderId: user.id,
@@ -237,6 +237,7 @@ export default function ChannelScreen() {
 
   // ── render feed item (product card or message bubble) ──────────────────
   const renderFeedItem = useCallback(({ item }: { item: FeedItem }) => {
+    if (!user || !channel) return null;
     if (item.kind === "product") {
       const p = item.data as Product;
       return (
@@ -280,8 +281,10 @@ export default function ChannelScreen() {
   }, [channel, user, isOwner, isWishlisted, toggleWishlist, colors]);
 
   // ── render reposted product (Updates tab) ──────────────────────────────
-  const renderRepost = useCallback(({ item }: { item: Product }) => (
-    <View style={{ marginBottom: 4 }}>
+  const renderRepost = useCallback(({ item }: { item: Product }) => {
+    if (!user || !channel) return null;
+    return (
+      <View style={{ marginBottom: 4 }}>
       <ProductCard
         product={item}
         channel={channel}
@@ -299,8 +302,10 @@ export default function ChannelScreen() {
         {formatPostDate(item.createdAt)}
       </Text>
     </View>
-  ), [channel, user, isOwner, isWishlisted, toggleWishlist, colors]);
+  );
+  }, [channel, user, isOwner, isWishlisted, toggleWishlist, colors]);
 
+  if (!user || !channel) return null;
 
   return (
     <KeyboardAvoidingView style={[st.root, { backgroundColor: colors.background }]}>
