@@ -264,7 +264,7 @@ export default function RootLayout() {
   const [splashDone, setSplashDone] = useState(false);
 
   return (
-    <GestureHandlerRootView style={{ flex: 1, backgroundColor: "#044D2A" }}>
+    <GestureHandlerRootView style={{ flex: 1, backgroundColor: "#000" }}>
       {/* ── App (only mount once fonts are ready) ────────────────────────── */}
       {(fontsLoaded || fontError) ? (
         <SafeAreaProvider>
@@ -290,7 +290,7 @@ export default function RootLayout() {
         </SafeAreaProvider>
       ) : null}
 
-      {/* ── Splash video — absolutely on top of EVERYTHING ───────────────── */}
+      {/* ── Splash video — rendered IMMEDIATELY on app start, before fonts ── */}
       {!splashDone && (
         <View style={splashStyles.overlay} pointerEvents="none">
           <StatusBar hidden />
@@ -302,10 +302,6 @@ export default function RootLayout() {
             onError={(err) => {
               console.warn("[Splash] video error:", err);
               setSplashDone(true);
-            }}
-            onLoad={() => {
-              // Ensure status bar stays hidden when video is playing
-              StatusBar.setHidden(true);
             }}
             controls={false}
             repeat={false}

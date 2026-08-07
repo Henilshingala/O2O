@@ -1,6 +1,7 @@
 import { router, useLocalSearchParams } from "@/compat/router";
 import React, { useState } from "react";
 import {
+  Alert,
   FlatList,
   Platform,
   StyleSheet,
@@ -40,6 +41,17 @@ export default function SelectSellersScreen() {
     try {
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
       const now = new Date();
+
+      // Parse media URLs and split into images vs videos
+      let mediaImages: string[] = [];
+      let mediaVideos: string[] = [];
+      try {
+        const allUrls: string[] = JSON.parse(params.mediaUrls ?? "[]");
+        // Heuristic: if URL contains "video" treat as video, else image
+        mediaImages = allUrls.filter((u) => !u.includes("video"));
+        mediaVideos = allUrls.filter((u) => u.includes("video"));
+      } catch (_) {}
+
       const bid = await createBid({
         buyerId: user.id,
         productName: params.productName,
@@ -53,8 +65,22 @@ export default function SelectSellersScreen() {
         status: "active",
         startTime: now.toISOString(),
         endTime: new Date(now.getTime() + 30 * 60 * 1000).toISOString(),
+        mediaImages: mediaImages.length > 0 ? mediaImages : undefined,
+        mediaVideos: mediaVideos.length > 0 ? mediaVideos : undefined,
       } as any);
       router.replace({ pathname: "/bid/live/[id]", params: { id: bid.id } });
+    } catch (err: any) {
+      console.log("[CreateBid] error:", err);
+      // Surface backend validation details if available
+      const errData = (err as any)?.data;
+      let msg = err?.message ?? "Could not create bid. Please try again.";
+      if (errData?.details) {
+        const fields = Object.entries(errData.details as Record<string, string[]>)
+          .map(([k, v]) => `${k}: ${Array.isArray(v) ? v.join(", ") : v}`)
+          .join("\n");
+        msg = `Validation failed:\n${fields}`;
+      }
+      Alert.alert("Bid Creation Failed", msg);
     } finally {
       setLoading(false);
     }

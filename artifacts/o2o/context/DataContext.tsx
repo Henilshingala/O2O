@@ -256,6 +256,7 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
     const product = await customFetch<Product>(`/api/data/channels/${channelId}/products`, {
       method: "POST",
       body: JSON.stringify(p),
+      timeoutMs: 30000,
     });
     invalidate.channels();
     return product;

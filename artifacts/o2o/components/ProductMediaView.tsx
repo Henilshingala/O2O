@@ -52,6 +52,17 @@ export function ProductMediaView({
 
   const images = getProductImages(product as Product);
   const videoUrl = showVideo ? getProductVideoUrl(product as Product) : undefined;
+  // Build all video URLs: first from the details __videoUrl, rest from any stored videoUrls array
+  const allVideoUrls: string[] = showVideo
+    ? (
+        videoUrl
+          ? Array.from(new Set([
+              videoUrl,
+              ...((product as any).videoUrls ?? []),
+            ]))
+          : []
+      )
+    : [];
 
   const containerWidth = fullWidth ? SCREEN_WIDTH - 32 : 280;
 
@@ -106,6 +117,42 @@ export function ProductMediaView({
     setViewerVisible(true);
   };
 
+  // Renders all video cards stacked below the image grid
+  const renderVideos = () => {
+    if (allVideoUrls.length === 0) return null;
+    return (
+      <View style={{ marginTop: 4, gap: 4 }}>
+        {allVideoUrls.map((vUrl, vi) => {
+          const resolved = resolveMediaUrl(vUrl) ?? vUrl;
+          return (
+            <TouchableOpacity
+              key={vi}
+              style={[styles.videoThumb, { height: 80, flexDirection: "row", alignItems: "center", paddingHorizontal: 16, gap: 12 }]}
+              onPress={() => setVideoVisible(true)}
+              activeOpacity={0.85}
+            >
+              <View style={[styles.playCircle, { width: 44, height: 44, borderRadius: 22, backgroundColor: colors.primary + "dd" }]}>
+                <Feather name="play" size={18} color="#fff" />
+              </View>
+              <Text style={[styles.videoLabel, { color: colors.foreground, flex: 1 }]} numberOfLines={1}>
+                Video {vi + 1}
+              </Text>
+              <Feather name="chevron-right" size={16} color={colors.mutedForeground} />
+              {videoVisible && vi === 0 && (
+                <VideoPlayer
+                  uri={resolved}
+                  fullscreen
+                  autoPlay
+                  onClose={() => setVideoVisible(false)}
+                />
+              )}
+            </TouchableOpacity>
+          );
+        })}
+      </View>
+    );
+  };
+
   const MAX_VISIBLE = 4;
   const displayImages = images.slice(0, MAX_VISIBLE);
   const extra = images.length - MAX_VISIBLE;
@@ -141,6 +188,7 @@ export function ProductMediaView({
             resizeMode="cover"
           />
         </TouchableOpacity>
+        {renderVideos()}
         <MediaViewer
           visible={viewerVisible}
           urls={viewerUrls}
@@ -185,6 +233,7 @@ export function ProductMediaView({
             onClose={() => setVideoVisible(false)}
           />
         )}
+        {renderVideos()}
         <MediaViewer
           visible={viewerVisible}
           urls={viewerUrls}
@@ -205,6 +254,7 @@ export function ProductMediaView({
           {renderImage(0, { ...styles.cell, width: half, marginRight: 4 })}
           {renderImage(1, { ...styles.cell, width: half })}
         </View>
+        {renderVideos()}
         <MediaViewer
           visible={viewerVisible}
           urls={viewerUrls}
@@ -230,6 +280,7 @@ export function ProductMediaView({
             {renderImage(2, { ...styles.cell, height: smallH })}
           </View>
         </View>
+        {renderVideos()}
         <MediaViewer
           visible={viewerVisible}
           urls={viewerUrls}
@@ -256,6 +307,7 @@ export function ProductMediaView({
           {renderImage(3, { ...styles.cell, width: half })}
         </View>
       </View>
+      {renderVideos()}
       <MediaViewer
         visible={viewerVisible}
         urls={viewerUrls}

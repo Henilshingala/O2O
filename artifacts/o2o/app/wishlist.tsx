@@ -24,6 +24,7 @@ import { useData } from "@/context/DataContext";
 import { useColors } from "@/hooks/useColors";
 import type { WishlistItem } from "@/types";
 import { useDebounce } from "@/hooks/useDebounce";
+import { resolveMediaUrl } from "@/lib/mediaUrl";
 
 export default function WishlistScreen() {
   const colors = useColors();
@@ -59,6 +60,12 @@ export default function WishlistScreen() {
   const renderItem = useCallback(
     ({ item }: { item: WishlistItem }) => {
       const channel = getChannel(item.channelId);
+      // Fallback: look up the actual product for its images in case API returned no image
+      const product = channel?.products?.find((p) => p.id === item.productId);
+      const primaryImgUrl =
+        resolveMediaUrl(item.image) ??
+        resolveMediaUrl(product?.images?.[0]?.url ?? product?.image) ??
+        undefined;
       return (
         <TouchableOpacity
           style={[styles.card, { backgroundColor: colors.card, borderColor: colors.border }]}
@@ -70,9 +77,9 @@ export default function WishlistScreen() {
         >
           {/* BUG 5: Render product image using Expo Image with fallback */}
           <View style={styles.imageWrapper}>
-            {item.image ? (
+            {primaryImgUrl ? (
               <Image
-                source={{ uri: item.image }}
+                source={{ uri: primaryImgUrl }}
                 style={styles.productImage}
                 contentFit="cover"
                 placeholder={{ color: colors.muted }}

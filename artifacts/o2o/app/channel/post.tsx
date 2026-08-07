@@ -195,10 +195,21 @@ export default function CreateProductPost() {
     } catch (err: any) {
       console.log("[CreateProduct] Request Failed - Error:", err, err?.message);
       if (err?.cause) console.log("[CreateProduct] Error Cause:", err.cause);
-      if (err?.response) console.log("[CreateProduct] Error Response:", err.response);
+      if (err?.data) console.log("[CreateProduct] Backend Error Data:", JSON.stringify(err.data, null, 2));
 
       if (mounted.current) {
-        Alert.alert("Post Failed", err?.message ?? "Could not create product. Please try again.");
+        // Surface field-level validation errors from 422
+        const errData = err?.data;
+        let alertMsg = err?.message ?? "Could not create product. Please try again.";
+        if (errData?.details) {
+          const fields = Object.entries(errData.details as Record<string, string[]>)
+            .map(([k, v]) => `• ${k}: ${Array.isArray(v) ? v.join(", ") : v}`)
+            .join("\n");
+          alertMsg = `Validation error:\n${fields}`;
+        } else if (errData?.error) {
+          alertMsg = errData.error;
+        }
+        Alert.alert("Post Failed", alertMsg);
         setLoading(false);
       }
     }
