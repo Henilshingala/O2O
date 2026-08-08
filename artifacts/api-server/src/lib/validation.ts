@@ -5,9 +5,13 @@ export function validateBody<T extends z.ZodType>(schema: T) {
   return (req: Request, res: Response, next: NextFunction) => {
     const result = schema.safeParse(req.body);
     if (!result.success) {
+      const fieldErrors = result.error.flatten().fieldErrors;
+      const errorStr = Object.entries(fieldErrors).map(([field, errors]) => `${field}: ${errors?.join(", ")}`).join("; ");
+      console.error("[VALIDATION_FAILED]", req.originalUrl, fieldErrors);
       return res.status(422).json({
         error: "Validation failed",
-        details: result.error.flatten().fieldErrors,
+        detail: errorStr,
+        details: fieldErrors,
       });
     }
     req.body = result.data;

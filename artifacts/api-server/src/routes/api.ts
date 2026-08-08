@@ -25,7 +25,7 @@ import {
 const router = Router();
 router.use(requireAuth);
 
-const genId = (prefix: string) => `${prefix}_${Date.now()}`;
+const genId = (prefix: string) => `${prefix}_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`;
 
 async function enrichOrdersWithSellerName<T extends { sellerId: string }>(rows: T[]) {
   const sellerIds = [...new Set(rows.map((o) => o.sellerId))];
@@ -62,7 +62,9 @@ async function loadProductsWithImages(channelIds: string[], productLimit = 50) {
     const prodImages = images
       .filter((img) => img.productId === prod.id)
       .map((img) => ({ id: img.id, url: img.url, isPrimary: img.isPrimary }));
-    const entry = { ...prod, images: prodImages, videoUrl: (prod.details as { name: string; value: string }[] | null)?.find((d) => d.name === "__videoUrl")?.value };
+    const prodDetails = (prod.details as { name: string; value: string }[] | null) ?? [];
+    const prodVideos = prodDetails.filter(d => d.name.startsWith("__videoUrl")).map(d => d.value);
+    const entry = { ...prod, images: prodImages, videoUrl: prodVideos[0], videos: prodVideos };
     const list = byChannel.get(prod.channelId) ?? [];
     list.push(entry);
     byChannel.set(prod.channelId, list);
@@ -160,37 +162,49 @@ router.post("/channels/:id/products", validateBody(createProductSchema), async (
         ? [imageUrl]
         : [];
 
-    if (imageUrls.length > 0) {
-      await db.insert(schema.productImages).values(
-        imageUrls.map((url: string, idx: number) => ({
-          id: genId("pimg"),
-          productId: id,
-          url,
-          isPrimary: idx === 0,
-        }))
-      );
+    let imagesInserted = false;
+    try {
+      if (imageUrls.length > 0) {
+        await db.insert(schema.productImages).values(
+          imageUrls.map((url: string, idx: number) => ({
+            id: genId("pimg"),
+            productId: id,
+            url,
+            isPrimary: idx === 0,
+          }))
+        );
+        imagesInserted = true;
+      }
+    } catch (imgError: any) {
+      console.error("[CREATE_PRODUCT_IMAGES_ERROR]", imgError?.message, imgError);
     }
 
     const responseProduct = {
       ...newProduct,
       videoUrl: allVideoUrls[0] || undefined,
       videos: allVideoUrls,
-      images: imageUrls.map((url: string, idx: number) => ({
+      images: imagesInserted ? imageUrls.map((url: string, idx: number) => ({
         id: `${id}_img_${idx}`,
         url,
         isPrimary: idx === 0,
-      })),
+      })) : [],
       wishlisted: [],
       views: 0,
     };
 
-    // Emit real-time socket event so channel screen updates immediately
-    getIo()?.to(`channel:${req.params.id}`).emit("product:new", responseProduct);
+    try {
+      // Emit real-time socket event so channel screen updates immediately
+      getIo()?.to(`channel:${req.params.id}`).emit("product:new", responseProduct);
+    } catch (socketError: any) {
+      console.error("[CREATE_PRODUCT_SOCKET_ERROR]", socketError?.message, socketError);
+    }
 
     return res.json(responseProduct);
   } catch (error: any) {
     console.error("[CREATE_PRODUCT_ERROR]", error?.message, error);
-    return res.status(500).json({ error: "Server error", detail: error?.message });
+    // Explicitly stringify the error to capture unexpected exception shapes
+    const errDetail = error?.stack || error?.message || String(error);
+    return res.status(500).json({ error: "Server error", detail: errDetail });
   }
 });
 

@@ -42,8 +42,8 @@ export function ProductMediaView({
   const videoUrls = showVideo ? getProductVideoUrls(product as Product) : [];
 
   const media: MediaItem[] = [
-    ...videoUrls.map((url) => ({ url, type: "video" as const })),
     ...images.map((img) => ({ url: img.url, type: "image" as const })),
+    ...videoUrls.map((url) => ({ url, type: "video" as const })),
   ];
 
   const containerWidth = fullWidth ? SCREEN_WIDTH - 32 : 280;
