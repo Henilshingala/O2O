@@ -117,7 +117,11 @@ export default function BidDetailsScreen() {
               product={{
                 id: bid.id,
                 image: bid.productImage ?? "",
-                images: bid.mediaImages?.map((url, i) => ({ id: `${bid.id}_img_${i}`, url, isPrimary: i === 0 })) ?? [],
+                images: bid.mediaImages?.length
+                  ? bid.mediaImages.map((url, i) => ({ id: `${bid.id}_img_${i}`, url, isPrimary: i === 0 }))
+                  : bid.productImage
+                    ? [{ id: `${bid.id}_primary`, url: bid.productImage, isPrimary: true }]
+                    : [],
                 videoUrl: bid.mediaVideos?.[0] ?? "",
                 videos: bid.mediaVideos ?? [],
                 details: [],

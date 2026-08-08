@@ -16,8 +16,10 @@ import { AppButton } from "@/components/ui/AppButton";
 import { useAuth } from "@/context/AuthContext";
 import { useData } from "@/context/DataContext";
 import { useColors } from "@/hooks/useColors";
+import { ProductMediaView } from "@/components/ProductMediaView";
 import { getSocket } from "@/lib/socket";
 import { resolveMediaUrl } from "@/lib/mediaUrl";
+import type { Product } from "@/types";
 import { useQueryClient } from "@tanstack/react-query";
 
 function formatCountdown(ms: number) {
@@ -102,9 +104,26 @@ export default function LiveBidScreen() {
       <ScrollView contentContainerStyle={[styles.content, { paddingBottom: 100 }]} showsVerticalScrollIndicator={false}>
         {/* Bid Info */}
         <View style={[styles.bidInfo, { backgroundColor: colors.card, borderColor: colors.border }]}>
-          {bid.productImage && (
-            <Image source={{ uri: resolveMediaUrl(bid.productImage) }} style={styles.bidImage} resizeMode="cover" />
-          )}
+          {(bid.mediaImages?.length || bid.mediaVideos?.length || bid.productImage) ? (
+            <View style={{ marginBottom: 12 }}>
+              <ProductMediaView
+                product={{
+                  id: bid.id,
+                  image: bid.productImage ?? "",
+                  images: bid.mediaImages?.length
+                    ? bid.mediaImages.map((url, i) => ({ id: `${bid.id}_img_${i}`, url, isPrimary: i === 0 }))
+                    : bid.productImage
+                      ? [{ id: `${bid.id}_primary`, url: bid.productImage, isPrimary: true }]
+                      : [],
+                  videoUrl: bid.mediaVideos?.[0] ?? "",
+                  videos: bid.mediaVideos ?? [],
+                  details: [],
+                } as unknown as Product}
+                height={220}
+                showVideo={true}
+              />
+            </View>
+          ) : null}
           <Text style={[styles.bidProduct, { color: colors.foreground }]}>Product: {bid.productName}</Text>
           <Text style={[styles.bidDetail, { color: colors.mutedForeground }]}>Quantity: {bid.quantity} ({bid.unitType ?? "carton"})</Text>
           {bid.budget && bid.budget > 0 ? (
