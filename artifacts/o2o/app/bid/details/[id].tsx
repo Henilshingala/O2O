@@ -151,10 +151,17 @@ export default function BidDetailsScreen() {
           <View style={styles.divider} />
           
           <View style={styles.grid}>
-            <View style={styles.gridItem}>
-              <Text style={[styles.gridLabel, { color: colors.mutedForeground }]}>Starting Price</Text>
-              <Text style={[styles.gridValue, { color: colors.foreground }]}>₹{bid.budget}</Text>
-            </View>
+            {bid.budget && bid.budget > 0 ? (
+              <View style={styles.gridItem}>
+                <Text style={[styles.gridLabel, { color: colors.mutedForeground }]}>Starting Price</Text>
+                <Text style={[styles.gridValue, { color: colors.foreground }]}>₹{bid.budget}</Text>
+              </View>
+            ) : (
+              <View style={styles.gridItem}>
+                <Text style={[styles.gridLabel, { color: colors.mutedForeground }]}>Unit Type</Text>
+                <Text style={[styles.gridValue, { color: colors.foreground, textTransform: 'capitalize' }]}>{bid.unitType ?? "carton"}</Text>
+              </View>
+            )}
             <View style={styles.gridItem}>
               <Text style={[styles.gridLabel, { color: colors.mutedForeground }]}>Winning Price</Text>
               <Text style={[styles.gridValue, { color: winnerOffer ? "#10B981" : colors.foreground }]}>

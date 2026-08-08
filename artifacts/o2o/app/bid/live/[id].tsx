@@ -106,8 +106,10 @@ export default function LiveBidScreen() {
             <Image source={{ uri: resolveMediaUrl(bid.productImage) }} style={styles.bidImage} resizeMode="cover" />
           )}
           <Text style={[styles.bidProduct, { color: colors.foreground }]}>Product: {bid.productName}</Text>
-          <Text style={[styles.bidDetail, { color: colors.mutedForeground }]}>Quantity: {bid.quantity}</Text>
-          <Text style={[styles.bidDetail, { color: colors.mutedForeground }]}>Budget: ₹{bid.budget}/unit</Text>
+          <Text style={[styles.bidDetail, { color: colors.mutedForeground }]}>Quantity: {bid.quantity} ({bid.unitType ?? "carton"})</Text>
+          {bid.budget && bid.budget > 0 ? (
+            <Text style={[styles.bidDetail, { color: colors.mutedForeground }]}>Budget: ₹{bid.budget}/unit</Text>
+          ) : null}
           <Text style={[styles.bidDetail, { color: colors.mutedForeground }]}>Selected Sellers: {bid.selectedSellers.length}</Text>
         </View>
 

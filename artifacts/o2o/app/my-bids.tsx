@@ -122,7 +122,7 @@ export default function MyBidsScreen() {
                 <Text style={[styles.productName, { color: colors.foreground }]}>{item.productName}</Text>
                 <Badge label={formatTimeLeft(item.endTime)} variant="warning" />
               </View>
-              <Text style={[styles.detail, { color: colors.mutedForeground }]}>Qty: {item.quantity} • Budget: ₹{item.budget}/unit</Text>
+              <Text style={[styles.detail, { color: colors.mutedForeground }]}>Qty: {item.quantity} ({item.unitType ?? "carton"}){item.budget && item.budget > 0 ? ` • Budget: ₹${item.budget}/unit` : ""}</Text>
               <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between" }}>
                 <Text style={[styles.detail, { color: colors.mutedForeground }]}>Offers: {item.offers.length} • Sellers: {item.selectedSellers.length}</Text>
                 {item.offers.length > 0 && (

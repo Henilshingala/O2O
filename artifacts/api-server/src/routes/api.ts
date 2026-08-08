@@ -1261,7 +1261,12 @@ router.post("/bids", validateBody(createBidSchema), async (req: AuthRequest, res
     return res.json({ ...newBid, offers: [], rejections: [] });
   } catch (error: any) { 
     console.error("BID ERROR:", error); 
-    const errDetail = error?.stack || error?.message || String(error);
+    let errDetail = error?.stack || error?.message || String(error);
+    if (error?.cause) {
+      errDetail += ` | CAUSE: ${error.cause?.message || String(error.cause)}`;
+      if (error.cause.detail) errDetail += ` | DETAIL: ${error.cause.detail}`;
+      if (error.cause.code) errDetail += ` | CODE: ${error.cause.code}`;
+    }
     return res.status(500).json({ error: "Server error", detail: errDetail }); 
   }
 });
