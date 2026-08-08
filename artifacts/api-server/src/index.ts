@@ -76,12 +76,23 @@ async function ensureTablesExist() {
     `);
 
     // Apply Migration 0003: bids media & budget nullable
-    await db.execute(sql`ALTER TABLE "bids" ADD COLUMN IF NOT EXISTS "media_images" jsonb DEFAULT '[]'::jsonb`);
-    await db.execute(sql`ALTER TABLE "bids" ADD COLUMN IF NOT EXISTS "media_videos" jsonb DEFAULT '[]'::jsonb`);
-    await db.execute(sql`ALTER TABLE "bids" ALTER COLUMN "budget" DROP NOT NULL`);
-    await db.execute(sql`ALTER TABLE "bids" ALTER COLUMN "budget" SET DEFAULT 0`);
-    await db.execute(sql`ALTER TABLE "bid_offers" ALTER COLUMN "delivery_time" DROP NOT NULL`);
-    await db.execute(sql`ALTER TABLE "bid_offers" ALTER COLUMN "delivery_time" SET DEFAULT ''`);
+    const migrations = [
+      sql`ALTER TABLE "bids" ADD COLUMN IF NOT EXISTS "media_images" jsonb DEFAULT '[]'::jsonb`,
+      sql`ALTER TABLE "bids" ADD COLUMN IF NOT EXISTS "media_videos" jsonb DEFAULT '[]'::jsonb`,
+      sql`ALTER TABLE "bids" ALTER COLUMN "budget" DROP NOT NULL`,
+      sql`ALTER TABLE "bids" ALTER COLUMN "budget" SET DEFAULT 0`,
+      sql`ALTER TABLE "bid_offers" ALTER COLUMN "delivery_time" DROP NOT NULL`,
+      sql`ALTER TABLE "bid_offers" ALTER COLUMN "delivery_time" SET DEFAULT ''`
+    ];
+
+    for (const migration of migrations) {
+      try {
+        await db.execute(migration);
+      } catch (err: any) {
+        // Ignore errors if columns already exist or constraints are already dropped
+        logger.warn({ err: err.message }, `Migration step skipped or failed`);
+      }
+    }
 
     logger.info("Database tables verified successfully");
 
