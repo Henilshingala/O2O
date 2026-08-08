@@ -84,10 +84,71 @@ function getMimeType(fileName: string): string {
 /** Shows a loading indicator state - tracks ongoing operations */
 let _downloadingMap: Record<string, boolean> = {};
 
+/** Download file to Android public Downloads folder */
+async function saveToDownloads(url: string, fileName: string): Promise<void> {
+  try {
+    let nameToUse = fileName;
+    if (!nameToUse.includes(".")) {
+      const urlExt = url.split("?")[0].split(".").pop();
+      if (urlExt && urlExt.length <= 5) nameToUse = `${nameToUse}.${urlExt}`;
+    }
+
+    const mimeType = getMimeType(nameToUse);
+    const safeFileName = nameToUse.replace(/[^a-zA-Z0-9._\-]/g, "_");
+    const downloadDir = ReactNativeBlobUtil.fs.dirs.DownloadDir || ReactNativeBlobUtil.fs.dirs.CacheDir;
+    const savePath = `${downloadDir}/${safeFileName}`;
+
+    let fetchUrl = url;
+    if (url.includes("cloudinary.com")) {
+      const base = getBaseUrl();
+      fetchUrl = `${base}/api/proxy/download?url=${encodeURIComponent(url)}`;
+    }
+
+    if (Platform.OS === "android") {
+      await ReactNativeBlobUtil.config({
+        path: savePath,
+        addAndroidDownloads: {
+          useDownloadManager: true,
+          notification: true,
+          title: safeFileName,
+          description: "Downloading file...",
+          path: savePath,
+          mime: mimeType,
+        },
+      }).fetch("GET", fetchUrl);
+    } else {
+      await ReactNativeBlobUtil.config({ path: savePath, overwrite: true }).fetch("GET", fetchUrl);
+    }
+
+    Alert.alert(
+      "File Downloaded",
+      `Saved "${nameToUse}" to your Downloads folder.`,
+      [{ text: "OK" }]
+    );
+  } catch (err: any) {
+    console.error("saveToDownloads error:", err);
+    Alert.alert("Download Failed", err?.message ?? "Could not download file.");
+  }
+}
+
+/** Show user-friendly dialog when no compatible app is installed */
+function showNoAppAlert(url: string, fileName: string) {
+  Alert.alert(
+    "No compatible app found",
+    "This file cannot be opened directly on this device.",
+    [
+      { text: "Cancel", style: "cancel" },
+      {
+        text: "Download File",
+        onPress: () => saveToDownloads(url, fileName),
+      },
+    ]
+  );
+}
+
 /**
- * Download a remote file to the device Downloads folder then open it
- * with the Android native app chooser. For Cloudinary raw files (PDFs, docs)
- * the URL is directly accessible — try Linking first, fall back to blob download.
+ * Download a remote file to cache then open it via Android actionViewIntent
+ * using the precise MIME type. If no compatible app exists, prompts to download.
  */
 async function openDocument(url: string, fileName: string): Promise<void> {
   if (_downloadingMap[url]) return;
@@ -100,6 +161,8 @@ async function openDocument(url: string, fileName: string): Promise<void> {
       if (urlExt && urlExt.length <= 5) nameToUse = `${nameToUse}.${urlExt}`;
     }
 
+    const ext = (nameToUse.split(".").pop() ?? "").toLowerCase();
+    const isPdf = ext === "pdf" || url.toLowerCase().includes(".pdf");
     const mimeType = getMimeType(nameToUse);
     const safeFileName = nameToUse.replace(/[^a-zA-Z0-9._\-]/g, "_");
     const destDir = ReactNativeBlobUtil.fs.dirs.CacheDir;
@@ -147,13 +210,16 @@ async function openDocument(url: string, fileName: string): Promise<void> {
       try {
         await ReactNativeBlobUtil.android.actionViewIntent(finalPath, mimeType);
       } catch (intentErr) {
-        // Fallback to Google Docs Viewer online if no native app installed
-        const gviewUrl = `https://docs.google.com/gview?embedded=true&url=${encodeURIComponent(url)}`;
-        const canOpen = await Linking.canOpenURL(gviewUrl).catch(() => false);
-        if (canOpen) {
-          await Linking.openURL(gviewUrl);
+        if (isPdf) {
+          const gviewUrl = `https://docs.google.com/gview?embedded=true&url=${encodeURIComponent(url)}`;
+          const canOpen = await Linking.canOpenURL(gviewUrl).catch(() => false);
+          if (canOpen) {
+            await Linking.openURL(gviewUrl);
+          } else {
+            showNoAppAlert(url, nameToUse);
+          }
         } else {
-          throw intentErr;
+          showNoAppAlert(url, nameToUse);
         }
       }
     } else {
