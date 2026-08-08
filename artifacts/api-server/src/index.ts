@@ -75,6 +75,14 @@ async function ensureTablesExist() {
       CREATE INDEX IF NOT EXISTS idx_fcm_tokens_device_id ON fcm_tokens(device_id)
     `);
 
+    // Apply Migration 0003: bids media & budget nullable
+    await db.execute(sql`ALTER TABLE "bids" ADD COLUMN IF NOT EXISTS "media_images" jsonb DEFAULT '[]'::jsonb`);
+    await db.execute(sql`ALTER TABLE "bids" ADD COLUMN IF NOT EXISTS "media_videos" jsonb DEFAULT '[]'::jsonb`);
+    await db.execute(sql`ALTER TABLE "bids" ALTER COLUMN "budget" DROP NOT NULL`);
+    await db.execute(sql`ALTER TABLE "bids" ALTER COLUMN "budget" SET DEFAULT 0`);
+    await db.execute(sql`ALTER TABLE "bid_offers" ALTER COLUMN "delivery_time" DROP NOT NULL`);
+    await db.execute(sql`ALTER TABLE "bid_offers" ALTER COLUMN "delivery_time" SET DEFAULT ''`);
+
     logger.info("Database tables verified successfully");
 
     // Warn early if FCM is unconfigured so the operator knows before first notification attempt

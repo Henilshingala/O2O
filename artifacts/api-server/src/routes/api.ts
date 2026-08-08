@@ -1259,7 +1259,11 @@ router.post("/bids", validateBody(createBidSchema), async (req: AuthRequest, res
     }
 
     return res.json({ ...newBid, offers: [], rejections: [] });
-  } catch (error: any) { console.error("BID ERROR:", error); return res.status(500).json({ error: "Server error", detail: error.message }); }
+  } catch (error: any) { 
+    console.error("BID ERROR:", error); 
+    const errDetail = error?.stack || error?.message || String(error);
+    return res.status(500).json({ error: "Server error", detail: errDetail }); 
+  }
 });
 
 router.post("/bids/:id/offers", async (req: AuthRequest, res) => {
