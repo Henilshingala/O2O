@@ -219,8 +219,9 @@ export default function CreateBidScreen() {
       return;
     }
 
-    const uploadedUrls = mediaItems.filter((m) => m.uploadedUrl).map((m) => m.uploadedUrl!);
-    const firstImageUrl = mediaItems.find((m) => m.type === "image" && m.uploadedUrl)?.uploadedUrl ?? "";
+    const uploadedImages = mediaItems.filter((m) => m.type === "image" && m.uploadedUrl).map((m) => m.uploadedUrl!);
+    const uploadedVideos = mediaItems.filter((m) => m.type === "video" && m.uploadedUrl).map((m) => m.uploadedUrl!);
+    const firstImageUrl = uploadedImages[0] ?? "";
 
     router.push({
       pathname: "/bid/select-sellers",
@@ -232,7 +233,8 @@ export default function CreateBidScreen() {
         description,
         sellerMode,
         productImage: firstImageUrl,
-        mediaUrls: JSON.stringify(uploadedUrls),
+        mediaImages: JSON.stringify(uploadedImages),
+        mediaVideos: JSON.stringify(uploadedVideos),
       },
     });
   };

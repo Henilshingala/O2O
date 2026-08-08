@@ -132,13 +132,26 @@ router.post("/channels", validateBody(createChannelSchema), async (req: AuthRequ
 router.post("/channels/:id/products", validateBody(createProductSchema), async (req: AuthRequest, res) => {
   try {
     const id = genId("prod");
-    const { images, videoUrl, ...body } = req.body;
+    const { images, videoUrl, videos, ...body } = req.body;
     const imageUrl = body.image || (Array.isArray(images) && images.length > 0 ? images[0] : null);
     const details = [...(body.details || [])];
-    if (videoUrl) {
-      details.push({ name: "__videoUrl", value: videoUrl });
+
+    // Store ALL video URLs in details (first as __videoUrl, rest as __videoUrl_1, __videoUrl_2, ...)
+    const allVideoUrls: string[] = [];
+    if (videoUrl) allVideoUrls.push(videoUrl);
+    if (Array.isArray(videos)) {
+      for (const v of videos) {
+        if (v && !allVideoUrls.includes(v)) allVideoUrls.push(v);
+      }
     }
-    const newProduct = { ...body, id, channelId: req.params.id as string, details, image: imageUrl };
+    if (allVideoUrls[0]) details.push({ name: "__videoUrl", value: allVideoUrls[0] });
+    for (let vi = 1; vi < allVideoUrls.length; vi++) {
+      details.push({ name: `__videoUrl_${vi}`, value: allVideoUrls[vi] });
+    }
+
+    // price comes as float from frontend — round to integer for DB
+    const priceInt = Math.round(Number(body.price));
+    const newProduct = { ...body, price: priceInt, id, channelId: req.params.id as string, details, image: imageUrl };
     await db.insert(schema.products).values(newProduct);
 
     const imageUrls: string[] = Array.isArray(images) && images.length > 0
@@ -158,16 +171,27 @@ router.post("/channels/:id/products", validateBody(createProductSchema), async (
       );
     }
 
-    return res.json({
+    const responseProduct = {
       ...newProduct,
-      videoUrl: videoUrl || undefined,
+      videoUrl: allVideoUrls[0] || undefined,
+      videos: allVideoUrls,
       images: imageUrls.map((url: string, idx: number) => ({
         id: `${id}_img_${idx}`,
         url,
         isPrimary: idx === 0,
       })),
-    });
-  } catch (error) { return res.status(500).json({ error: "Server error" }); }
+      wishlisted: [],
+      views: 0,
+    };
+
+    // Emit real-time socket event so channel screen updates immediately
+    getIo()?.to(`channel:${req.params.id}`).emit("product:new", responseProduct);
+
+    return res.json(responseProduct);
+  } catch (error: any) {
+    console.error("[CREATE_PRODUCT_ERROR]", error?.message, error);
+    return res.status(500).json({ error: "Server error", detail: error?.message });
+  }
 });
 
 router.post("/channels/:id/follow", async (req: AuthRequest, res) => {
@@ -192,7 +216,7 @@ router.get("/channels/:id/messages", async (req: AuthRequest, res) => {
     const channelId = req.params.id as string;
     const { limit, cursor } = parseCursorPagination(req.query as Record<string, unknown>, { limit: 50, maxLimit: 100 });
 
-    let whereClause = eq(schema.messages.channelId, channelId);
+    let whereClause: any = eq(schema.messages.channelId, channelId);
     if (cursor) {
       const cursorRow = await db.select({ ts: schema.messages.timestamp }).from(schema.messages).where(eq(schema.messages.id, cursor)).limit(1);
       if (cursorRow[0]) {
@@ -393,6 +417,14 @@ router.get("/wishlist", async (req: AuthRequest, res) => {
     const channelIds = products.map((p) => p.channelId);
     const channels = channelIds.length > 0 ? await db.select().from(schema.channels).where(inArray(schema.channels.id, channelIds)) : [];
 
+    const pImages = productIds.length > 0 ? await db.select().from(schema.productImages).where(inArray(schema.productImages.productId, productIds)) : [];
+    const imageMap: Record<string, string> = {};
+    pImages.forEach(img => {
+      if (img.isPrimary || !imageMap[img.productId]) {
+        imageMap[img.productId] = img.url;
+      }
+    });
+
     const productMap = Object.fromEntries(products.map((p) => [p.id, p]));
     const channelMap = Object.fromEntries(channels.map((c) => [c.id, c]));
     const list = rows.map((row) => {
@@ -404,7 +436,7 @@ router.get("/wishlist", async (req: AuthRequest, res) => {
         channelName: channel?.name ?? "Unknown",
         productName: product?.name ?? "Unknown",
         price: product?.price ?? 0,
-        image: product?.image ?? undefined,
+        image: product?.image ?? imageMap[row.productId] ?? undefined,
       };
     });
 
@@ -618,7 +650,7 @@ router.get("/chats/:id/messages", async (req: AuthRequest, res) => {
     }
     const { limit, cursor } = parseCursorPagination(req.query as Record<string, unknown>, { limit: 50, maxLimit: 100 });
 
-    let whereClause = eq(schema.messages.chatId, chatId);
+    let whereClause: any = eq(schema.messages.chatId, chatId);
     if (cursor) {
       const cursorRow = await db.select({ ts: schema.messages.timestamp }).from(schema.messages).where(eq(schema.messages.id, cursor)).limit(1);
       if (cursorRow[0]) {
@@ -1002,7 +1034,7 @@ router.get("/groups/:id/messages", async (req: AuthRequest, res) => {
     if (membership.length === 0) return res.status(403).json({ error: "Not a group member" });
 
     const { limit, cursor } = parseCursorPagination(req.query as Record<string, unknown>, { limit: 50, maxLimit: 100 });
-    let whereClause = eq(schema.messages.groupId, groupId);
+    let whereClause: any = eq(schema.messages.groupId, groupId);
     if (cursor) {
       const cursorRow = await db.select({ ts: schema.messages.timestamp }).from(schema.messages).where(eq(schema.messages.id, cursor)).limit(1);
       if (cursorRow[0]) {

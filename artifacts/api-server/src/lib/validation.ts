@@ -86,11 +86,12 @@ export const createChannelSchema = z.object({
 export const createProductSchema = z.object({
   name: z.string().min(1).max(200),
   description: z.string().max(5000),
-  price: z.number().int().positive(),
+  price: z.number().positive(),
   categoryId: z.string().optional(),
   image: z.string().optional(),
   images: z.array(z.string()).optional(),
   videoUrl: z.string().optional(),
+  videos: z.array(z.string()).optional(),
   details: z.array(z.object({ name: z.string(), value: z.string() })).optional(),
 });
 

@@ -256,11 +256,24 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
     const product = await customFetch<Product>(`/api/data/channels/${channelId}/products`, {
       method: "POST",
       body: JSON.stringify(p),
-      timeoutMs: 30000,
     });
+    // Optimistically insert product into the channel's products list immediately
+    queryClient.setQueryData<Channel[]>(["channels"], (old) =>
+      old?.map((c) =>
+        c.id === channelId
+          ? {
+              ...c,
+              products: c.products.some((pr) => pr.id === product.id)
+                ? c.products
+                : [...c.products, { ...product, views: 0, wishlisted: [], createdAt: product.createdAt ?? new Date().toISOString() }],
+            }
+          : c
+      ) ?? old
+    );
+    // Also trigger a full refetch to stay in sync
     invalidate.channels();
     return product;
-  }, []);
+  }, [queryClient]);
 
   const repostProduct = useCallback(async (channelId: string, productId: string, updates: Partial<Product>): Promise<Product> => {
     const product = await customFetch<Product>(`/api/data/channels/${channelId}/products/${productId}/repost`, {
@@ -354,9 +367,16 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
 
   const createBid = useCallback(async (b: Omit<Bid, "id" | "offers" | "rejections" | "createdAt">): Promise<Bid> => {
     const bid = await customFetch<Bid>("/api/data/bids", { method: "POST", body: JSON.stringify(b) });
+    // Optimistically insert so bids list updates immediately
+    queryClient.setQueryData<Bid[]>(["bids"], (old) => {
+      if (!old) return [bid];
+      if (old.some((existing) => existing.id === bid.id)) return old;
+      return [bid, ...old];
+    });
     invalidate.bids();
+    invalidate.counts();
     return bid;
-  }, []);
+  }, [queryClient]);
 
   const submitOffer = useCallback((bidId: string, offer: Omit<BidOffer, "id" | "timestamp">) => {
     return customFetch(`/api/data/bids/${bidId}/offers`, { method: "POST", body: JSON.stringify(offer) })

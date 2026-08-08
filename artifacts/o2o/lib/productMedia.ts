@@ -1,6 +1,6 @@
 import type { Product, ProductImage } from "@/types";
 
-const VIDEO_DETAIL_KEY = "__videoUrl";
+const VIDEO_DETAIL_PREFIX = "__videoUrl";
 
 export function getProductImages(product: Product): ProductImage[] {
   if (product.images?.length) return product.images;
@@ -8,10 +8,25 @@ export function getProductImages(product: Product): ProductImage[] {
   return [];
 }
 
+export function getProductVideoUrls(product: Product): string[] {
+  // Priority 1: use the clean `videos` array from API response
+  if (product.videos && product.videos.length > 0) {
+    return product.videos.filter(Boolean);
+  }
+  // Priority 2: read from videoUrl + __videoUrl_ detail entries (legacy/stored format)
+  const urls: string[] = [];
+  if (product.videoUrl) urls.push(product.videoUrl);
+  const hidden = product.details?.filter((d) => d.name.startsWith(VIDEO_DETAIL_PREFIX));
+  if (hidden) {
+    hidden.forEach(h => {
+      if (!urls.includes(h.value)) urls.push(h.value);
+    });
+  }
+  return urls;
+}
+
 export function getProductVideoUrl(product: Product): string | undefined {
-  if (product.videoUrl) return product.videoUrl;
-  const hidden = product.details?.find((d) => d.name === VIDEO_DETAIL_KEY);
-  return hidden?.value;
+  return getProductVideoUrls(product)[0];
 }
 
 export function getProductPrimaryImage(product: Product): string | undefined {
@@ -22,5 +37,5 @@ export function getProductPrimaryImage(product: Product): string | undefined {
 
 /** Strip internal media keys from details shown in UI. */
 export function getDisplayDetails(product: Product) {
-  return (product.details ?? []).filter((d) => d.name !== VIDEO_DETAIL_KEY);
+  return (product.details ?? []).filter((d) => !d.name.startsWith(VIDEO_DETAIL_PREFIX));
 }

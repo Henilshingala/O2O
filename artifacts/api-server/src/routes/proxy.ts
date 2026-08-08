@@ -52,21 +52,24 @@ router.get("/download", async (req: AuthRequest, res) => {
   const rawUrl = req.query.url as string | undefined;
 
   if (!rawUrl) {
-    return res.status(400).json({ error: "url query parameter is required" });
+    res.status(400).json({ error: "url query parameter is required" });
+    return;
   }
 
   let targetUrl: string;
   try {
     targetUrl = decodeURIComponent(rawUrl);
   } catch {
-    return res.status(400).json({ error: "Invalid url encoding" });
+    res.status(400).json({ error: "Invalid url encoding" });
+    return;
   }
 
   // Only allow Cloudinary or our own server URLs (security guard)
   const isCloudinary = targetUrl.includes("cloudinary.com");
   const isLocal = targetUrl.startsWith("/") || targetUrl.includes("localhost") || targetUrl.includes("onrender.com");
   if (!isCloudinary && !isLocal) {
-    return res.status(403).json({ error: "URL not allowed" });
+    res.status(403).json({ error: "URL not allowed" });
+    return;
   }
 
   // Generate a signed URL for Cloudinary resources

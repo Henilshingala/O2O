@@ -98,11 +98,11 @@ export default function HomeScreen() {
       >
         <TouchableOpacity
           style={[styles.searchBar, { backgroundColor: colors.muted }]}
-          onPress={() => router.push("/people-search")}
+          onPress={() => router.push("/search")}
         >
           <Feather name="search" size={16} color={colors.mutedForeground} />
           <Text style={[styles.searchPlaceholder, { color: colors.mutedForeground }]}>
-            Search users, friends...
+            Search chats, groups, channels...
           </Text>
         </TouchableOpacity>
         <View style={styles.headerRight}>

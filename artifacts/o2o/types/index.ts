@@ -70,6 +70,7 @@ export interface Product {
   image?: string;
   images?: ProductImage[];
   videoUrl?: string;
+  videos?: string[];  // all video URLs
   details: ProductDetail[];
   views: number;
   wishlisted: string[];
@@ -130,6 +131,8 @@ export interface Bid {
   winnerChannelId?: string;
   seenBy?: string[];
   readBy?: string[];
+  mediaImages?: string[];
+  mediaVideos?: string[];
   createdAt: string;
 }
 

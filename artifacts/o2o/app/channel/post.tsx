@@ -35,6 +35,7 @@ export default function CreateProductPost() {
   const params = useLocalSearchParams<{ channelId: string }>();
 
   const mounted = useRef(true);
+  const submittingRef = useRef(false);
   useEffect(() => {
     return () => { mounted.current = false; };
   }, []);
@@ -159,6 +160,7 @@ export default function CreateProductPost() {
   };
 
   const handlePost = async () => {
+    if (submittingRef.current) return; // prevent double-submit
     const e: Record<string, string> = {};
     if (!form.name.trim()) e.name = "Product name is required";
     if (!form.description.trim()) e.description = "Description is required";
@@ -169,12 +171,13 @@ export default function CreateProductPost() {
     if (videoUrls.length < localVideoUris.length) e.media = "Some videos are still uploading, please wait";
     if (Object.keys(e).length > 0) { setErrors(e); return; }
 
+    submittingRef.current = true;
     setLoading(true);
     setErrors({});
     try {
       const allDetails = form.productCode.trim()
         ? [{ name: "Code", value: form.productCode.trim() }, ...details]
-        : details;
+        : [...details];
 
       const payload = {
         name: form.name.trim(),
@@ -184,6 +187,7 @@ export default function CreateProductPost() {
         image: imageUrls[0] ?? undefined,
         images: imageUrls,
         videoUrl: videoUrls[0] ?? undefined,
+        videos: videoUrls,
       };
 
       console.log("[CreateProduct] Request Payload:", JSON.stringify(payload, null, 2));
@@ -191,27 +195,22 @@ export default function CreateProductPost() {
       await createProduct(params.channelId, payload as any);
 
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-      if (mounted.current) router.back();
-    } catch (err: any) {
-      console.log("[CreateProduct] Request Failed - Error:", err, err?.message);
-      if (err?.cause) console.log("[CreateProduct] Error Cause:", err.cause);
-      if (err?.data) console.log("[CreateProduct] Backend Error Data:", JSON.stringify(err.data, null, 2));
-
       if (mounted.current) {
-        // Surface field-level validation errors from 422
-        const errData = err?.data;
-        let alertMsg = err?.message ?? "Could not create product. Please try again.";
-        if (errData?.details) {
-          const fields = Object.entries(errData.details as Record<string, string[]>)
-            .map(([k, v]) => `• ${k}: ${Array.isArray(v) ? v.join(", ") : v}`)
-            .join("\n");
-          alertMsg = `Validation error:\n${fields}`;
-        } else if (errData?.error) {
-          alertMsg = errData.error;
-        }
-        Alert.alert("Post Failed", alertMsg);
+        Alert.alert(
+          "✅ Product Added Successfully",
+          "Your product has been posted to the channel.",
+          [{ text: "OK", onPress: () => router.back() }]
+        );
+      }
+    } catch (err: any) {
+      console.log("[CreateProduct] Error:", err?.message, err);
+      const msg = err?.detail ?? err?.message ?? "Could not create product. Please try again.";
+      if (mounted.current) {
+        Alert.alert("Post Failed", msg);
         setLoading(false);
       }
+    } finally {
+      submittingRef.current = false;
     }
   };
 

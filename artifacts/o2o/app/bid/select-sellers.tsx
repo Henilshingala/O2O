@@ -24,7 +24,7 @@ export default function SelectSellersScreen() {
   const { channels, createBid } = useData();
   const params = useLocalSearchParams<{
     productName: string; quantity: string; budget: string; description: string;
-    sellerMode: string; productImage?: string; unitType?: string; mediaUrls?: string;
+    sellerMode: string; productImage?: string; unitType?: string; mediaImages?: string; mediaVideos?: string;
   }>();
 
   const sellerChannels = channels.filter((c) => c.ownerId !== user?.id);
@@ -36,51 +36,37 @@ export default function SelectSellersScreen() {
   const toggle = (id: string) => setSelected((prev) => prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]);
 
   const handleSubmit = async () => {
-    if (selected.length === 0) return;
+    if (selected.length === 0) {
+      Alert.alert("Select Sellers", "Please select at least one seller.");
+      return;
+    }
     setLoading(true);
     try {
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
       const now = new Date();
-
-      // Parse media URLs and split into images vs videos
-      let mediaImages: string[] = [];
-      let mediaVideos: string[] = [];
-      try {
-        const allUrls: string[] = JSON.parse(params.mediaUrls ?? "[]");
-        // Heuristic: if URL contains "video" treat as video, else image
-        mediaImages = allUrls.filter((u) => !u.includes("video"));
-        mediaVideos = allUrls.filter((u) => u.includes("video"));
-      } catch (_) {}
-
+      const mediaImagesArr: string[] = params.mediaImages ? JSON.parse(params.mediaImages) : [];
+      const mediaVideosArr: string[] = params.mediaVideos ? JSON.parse(params.mediaVideos) : [];
       const bid = await createBid({
-        buyerId: user.id,
+        buyerId: user!.id,
         productName: params.productName,
         productImage: params.productImage || undefined,
         quantity: Number(params.quantity),
         unitType: (params.unitType as "carton" | "loose") ?? "carton",
         budget: Number(params.budget ?? "0"),
-        description: params.description ?? "",
+        description: params.description ?? "-",
         selectedSellers: selected,
         allSellers: params.sellerMode === "all",
+        mediaImages: mediaImagesArr.length > 0 ? mediaImagesArr : undefined,
+        mediaVideos: mediaVideosArr.length > 0 ? mediaVideosArr : undefined,
         status: "active",
         startTime: now.toISOString(),
         endTime: new Date(now.getTime() + 30 * 60 * 1000).toISOString(),
-        mediaImages: mediaImages.length > 0 ? mediaImages : undefined,
-        mediaVideos: mediaVideos.length > 0 ? mediaVideos : undefined,
       } as any);
       router.replace({ pathname: "/bid/live/[id]", params: { id: bid.id } });
     } catch (err: any) {
-      console.log("[CreateBid] error:", err);
-      // Surface backend validation details if available
-      const errData = (err as any)?.data;
-      let msg = err?.message ?? "Could not create bid. Please try again.";
-      if (errData?.details) {
-        const fields = Object.entries(errData.details as Record<string, string[]>)
-          .map(([k, v]) => `${k}: ${Array.isArray(v) ? v.join(", ") : v}`)
-          .join("\n");
-        msg = `Validation failed:\n${fields}`;
-      }
-      Alert.alert("Bid Creation Failed", msg);
+      console.error("[BID_CREATE_ERROR]", err?.message, err);
+      const msg = err?.detail ?? err?.message ?? "Could not create bid. Please try again.";
+      Alert.alert("Bid Failed", msg);
     } finally {
       setLoading(false);
     }

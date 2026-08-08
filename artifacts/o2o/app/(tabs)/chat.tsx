@@ -23,6 +23,7 @@ import { useData } from "@/context/DataContext";
 import { useFriends } from "@/context/FriendsContext";
 import { useColors } from "@/hooks/useColors";
 import type { Chat, Group, Channel } from "@/types";
+import Animated, { useAnimatedStyle, useSharedValue, withSpring, withTiming } from "react-native-reanimated";
 
 type ConvoType = "chat" | "group" | "channel";
 
@@ -63,7 +64,35 @@ export default function ChatTab() {
   const { friends } = useFriends();
   const { chats, groups, channels, deleteChat, clearChat } = useData();
 
+  const [fabOpen, setFabOpen] = useState(false);
+  const fabRotation = useSharedValue(0);
+  const menuOpacity = useSharedValue(0);
+  const menuTranslateY = useSharedValue(20);
+
   if (!user) return null;
+
+  const toggleFab = () => {
+    const next = !fabOpen;
+    setFabOpen(next);
+    fabRotation.value = withSpring(next ? 45 : 0);
+    menuOpacity.value = withTiming(next ? 1 : 0, { duration: 200 });
+    menuTranslateY.value = withSpring(next ? 0 : 20);
+  };
+
+  const fabIconStyle = useAnimatedStyle(() => ({
+    transform: [{ rotate: `${fabRotation.value}deg` }],
+  }));
+  const menuStyle = useAnimatedStyle(() => ({
+    opacity: menuOpacity.value,
+    transform: [{ translateY: menuTranslateY.value }],
+    pointerEvents: fabOpen ? "auto" : "none",
+  }));
+
+  const fabActions = [
+    { id: "friend", label: "Add New Friend", icon: "user-plus", route: "/new-chat" },
+    { id: "group", label: "Create Group", icon: "users", route: "/group/create" },
+    ...(user.role === "seller" ? [{ id: "channel", label: "Create Channel", icon: "radio", route: "/channel/create" }] : []),
+  ];
 
   // Build a unified sorted list
   const items = useMemo<ConvoItem[]>(() => {
@@ -196,12 +225,6 @@ export default function ChatTab() {
         ]}
       >
         <Text style={[styles.title, { color: colors.foreground }]}>Messages</Text>
-        <TouchableOpacity
-          style={[styles.newBtn, { backgroundColor: colors.primary }]}
-          onPress={() => router.push("/new-chat")}
-        >
-          <Feather name="edit-2" size={16} color="#fff" />
-        </TouchableOpacity>
       </View>
 
       <FlatList
@@ -282,6 +305,39 @@ export default function ChatTab() {
           );
         }}
       />
+
+      {/* FAB and Speed Dial */}
+      {fabOpen && (
+        <TouchableOpacity style={styles.fabOverlay} activeOpacity={1} onPress={toggleFab} />
+      )}
+      <View style={[styles.fabContainer, { bottom: 90 }]}>
+        <Animated.View style={[styles.fabMenu, menuStyle]}>
+          {fabActions.map((action) => (
+            <TouchableOpacity
+              key={action.id}
+              style={[styles.fabMenuItem, { backgroundColor: colors.card, shadowColor: colors.foreground }]}
+              onPress={() => {
+                toggleFab();
+                router.push(action.route as any);
+              }}
+            >
+              <Text style={[styles.fabMenuLabel, { color: colors.foreground }]}>{action.label}</Text>
+              <View style={[styles.fabMenuIcon, { backgroundColor: colors.primary }]}>
+                <Feather name={action.icon as any} size={18} color="#fff" />
+              </View>
+            </TouchableOpacity>
+          ))}
+        </Animated.View>
+        <TouchableOpacity
+          style={[styles.fab, { backgroundColor: colors.primary, shadowColor: colors.primary }]}
+          activeOpacity={0.8}
+          onPress={toggleFab}
+        >
+          <Animated.View style={fabIconStyle}>
+            <Feather name="plus" size={24} color="#fff" />
+          </Animated.View>
+        </TouchableOpacity>
+      </View>
     </View>
   );
 }
@@ -331,4 +387,11 @@ const styles = StyleSheet.create({
     justifyContent: "center",
   },
   badgeText: { color: "#fff", fontSize: 11, fontWeight: "700" },
+  fabOverlay: { position: "absolute", top: 0, left: 0, right: 0, bottom: 0, backgroundColor: "rgba(0,0,0,0.1)", zIndex: 10 },
+  fabContainer: { position: "absolute", right: 20, zIndex: 20, alignItems: "flex-end" },
+  fabMenu: { alignItems: "flex-end", paddingBottom: 16, gap: 12 },
+  fabMenuItem: { flexDirection: "row", alignItems: "center", gap: 12, borderRadius: 24, paddingVertical: 6, paddingLeft: 16, paddingRight: 6, elevation: 4, shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.15, shadowRadius: 4 },
+  fabMenuLabel: { fontSize: 14, fontWeight: "600" },
+  fabMenuIcon: { width: 36, height: 36, borderRadius: 18, alignItems: "center", justifyContent: "center" },
+  fab: { width: 56, height: 56, borderRadius: 28, alignItems: "center", justifyContent: "center", elevation: 6, shadowOffset: { width: 0, height: 3 }, shadowOpacity: 0.3, shadowRadius: 5 },
 });

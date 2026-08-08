@@ -1,18 +1,3 @@
-/**
- * ProductMediaView — WhatsApp-style product media grid
- *
- * Layout:
- *  0 images + video → in-app VideoPlayer
- *  1 image          → full-width single image
- *  2 images         → side-by-side 50/50
- *  3 images         → one large left + two stacked right
- *  4 images         → 2×2 grid
- *  5+ images        → 2×2 grid with +N overlay on last cell
- *
- * Tap any item:
- *  - Image → full-screen MediaViewer
- *  - Video → full-screen in-app VideoPlayer
- */
 import React, { useState } from "react";
 import {
   Dimensions,
@@ -24,20 +9,24 @@ import {
 } from "react-native";
 import { Feather } from "@/compat/vector-icons";
 import { MediaViewer } from "@/components/MediaViewer";
-import { VideoPlayer } from "@/components/VideoPlayer";
 import { useColors } from "@/hooks/useColors";
-import { getProductImages, getProductVideoUrl } from "@/lib/productMedia";
-import { resolveMediaUrl } from "@/lib/mediaUrl";
+import { getProductImages, getProductVideoUrls } from "@/lib/productMedia";
+import { resolveMediaUrl, getVideoThumbnailUrl } from "@/lib/mediaUrl";
 import type { Product } from "@/types";
 
 const { width: SCREEN_WIDTH } = Dimensions.get("window");
 
 interface ProductMediaViewProps {
-  product: Pick<Product, "image" | "images" | "videoUrl" | "details">;
+  product: Pick<Product, "image" | "images" | "videoUrl" | "videos" | "details"> & { id?: string };
   height?: number;
   showVideo?: boolean;
   fullWidth?: boolean;
 }
+
+type MediaItem = {
+  url: string;
+  type: "image" | "video";
+};
 
 export function ProductMediaView({
   product,
@@ -48,53 +37,19 @@ export function ProductMediaView({
   const colors = useColors();
   const [viewerVisible, setViewerVisible] = useState(false);
   const [viewerIndex, setViewerIndex] = useState(0);
-  const [videoVisible, setVideoVisible] = useState(false);
 
   const images = getProductImages(product as Product);
-  const videoUrl = showVideo ? getProductVideoUrl(product as Product) : undefined;
-  // Build all video URLs: first from the details __videoUrl, rest from any stored videoUrls array
-  const allVideoUrls: string[] = showVideo
-    ? (
-        videoUrl
-          ? Array.from(new Set([
-              videoUrl,
-              ...((product as any).videoUrls ?? []),
-            ]))
-          : []
-      )
-    : [];
+  const videoUrls = showVideo ? getProductVideoUrls(product as Product) : [];
+
+  const media: MediaItem[] = [
+    ...videoUrls.map((url) => ({ url, type: "video" as const })),
+    ...images.map((img) => ({ url: img.url, type: "image" as const })),
+  ];
 
   const containerWidth = fullWidth ? SCREEN_WIDTH - 32 : 280;
 
-  // ── Video-only product ────────────────────────────────────────────────────
-  if (videoUrl && showVideo && images.length === 0) {
-    const resolved = resolveMediaUrl(videoUrl) ?? videoUrl;
-    return (
-      <>
-        <TouchableOpacity
-          style={[styles.videoThumb, { height, backgroundColor: colors.muted }]}
-          onPress={() => setVideoVisible(true)}
-          activeOpacity={0.85}
-        >
-          <View style={[styles.playCircle, { backgroundColor: colors.primary + "dd" }]}>
-            <Feather name="play" size={28} color="#fff" />
-          </View>
-          <Text style={[styles.videoLabel, { color: colors.foreground }]}>Tap to play</Text>
-        </TouchableOpacity>
-        {videoVisible && (
-          <VideoPlayer
-            uri={resolved}
-            fullscreen
-            autoPlay
-            onClose={() => setVideoVisible(false)}
-          />
-        )}
-      </>
-    );
-  }
-
   // ── No media ──────────────────────────────────────────────────────────────
-  if (images.length === 0) {
+  if (media.length === 0) {
     return (
       <View style={[styles.placeholder, { height, backgroundColor: colors.muted }]}>
         <Feather name="image" size={40} color={colors.mutedForeground} />
@@ -102,72 +57,41 @@ export function ProductMediaView({
     );
   }
 
-  const imageUrls = images.map((img) => resolveMediaUrl(img.url));
-  // If there's a video, include it as first item in the viewer URLs
-  const viewerUrls = videoUrl
-    ? [resolveMediaUrl(videoUrl) ?? videoUrl, ...imageUrls]
-    : imageUrls;
-  const viewerTypes: ("image" | "video")[] = videoUrl
-    ? ["video", ...imageUrls.map(() => "image" as const)]
-    : imageUrls.map(() => "image" as const);
+  const viewerUrls = media.map((m) => resolveMediaUrl(m.url) ?? m.url);
+  const viewerTypes = media.map((m) => m.type);
 
   const openAt = (idx: number) => {
-    // idx is index in imageUrls; if there's a video, offset by 1 in viewer
-    setViewerIndex(videoUrl ? idx + 1 : idx);
+    setViewerIndex(idx);
     setViewerVisible(true);
   };
 
-  // Renders all video cards stacked below the image grid
-  const renderVideos = () => {
-    if (allVideoUrls.length === 0) return null;
-    return (
-      <View style={{ marginTop: 4, gap: 4 }}>
-        {allVideoUrls.map((vUrl, vi) => {
-          const resolved = resolveMediaUrl(vUrl) ?? vUrl;
-          return (
-            <TouchableOpacity
-              key={vi}
-              style={[styles.videoThumb, { height: 80, flexDirection: "row", alignItems: "center", paddingHorizontal: 16, gap: 12 }]}
-              onPress={() => setVideoVisible(true)}
-              activeOpacity={0.85}
-            >
-              <View style={[styles.playCircle, { width: 44, height: 44, borderRadius: 22, backgroundColor: colors.primary + "dd" }]}>
-                <Feather name="play" size={18} color="#fff" />
-              </View>
-              <Text style={[styles.videoLabel, { color: colors.foreground, flex: 1 }]} numberOfLines={1}>
-                Video {vi + 1}
-              </Text>
-              <Feather name="chevron-right" size={16} color={colors.mutedForeground} />
-              {videoVisible && vi === 0 && (
-                <VideoPlayer
-                  uri={resolved}
-                  fullscreen
-                  autoPlay
-                  onClose={() => setVideoVisible(false)}
-                />
-              )}
-            </TouchableOpacity>
-          );
-        })}
-      </View>
-    );
-  };
-
   const MAX_VISIBLE = 4;
-  const displayImages = images.slice(0, MAX_VISIBLE);
-  const extra = images.length - MAX_VISIBLE;
+  const displayMedia = media.slice(0, MAX_VISIBLE);
+  const extra = media.length - MAX_VISIBLE;
 
-  const renderImage = (idx: number, style: object) => {
-    const img = images[idx];
-    if (!img) return null;
+  const renderMediaCell = (idx: number, style: object) => {
+    const item = media[idx];
+    if (!item) return null;
     const isLast = idx === MAX_VISIBLE - 1 && extra > 0;
+    const thumbUri = item.type === "video" ? getVideoThumbnailUrl(item.url) : resolveMediaUrl(item.url);
+
     return (
       <TouchableOpacity key={idx} style={style} onPress={() => openAt(idx)} activeOpacity={0.85}>
         <Image
-          source={{ uri: resolveMediaUrl(img.url) }}
+          source={{ uri: thumbUri ?? "" }}
           style={StyleSheet.absoluteFillObject}
           resizeMode="cover"
         />
+        {item.type === "video" && !isLast && (
+          <View style={styles.videoOverlaySmall}>
+            <Feather name="play-circle" size={32} color="rgba(255,255,255,0.9)" />
+          </View>
+        )}
+        {item.type === "video" && isLast && (
+          <View style={styles.videoOverlaySmall}>
+            <Feather name="play-circle" size={24} color="rgba(255,255,255,0.5)" />
+          </View>
+        )}
         {isLast && (
           <View style={styles.extraOverlay}>
             <Text style={styles.extraText}>+{extra}</Text>
@@ -177,137 +101,55 @@ export function ProductMediaView({
     );
   };
 
-  // ── 1 image ───────────────────────────────────────────────────────────────
-  if (images.length === 1 && !videoUrl) {
-    return (
-      <>
-        <TouchableOpacity onPress={() => openAt(0)} activeOpacity={0.85}>
-          <Image
-            source={{ uri: resolveMediaUrl(images[0].url) }}
-            style={{ width: "100%", height, borderRadius: 12 }}
-            resizeMode="cover"
-          />
-        </TouchableOpacity>
-        {renderVideos()}
-        <MediaViewer
-          visible={viewerVisible}
-          urls={viewerUrls}
-          types={viewerTypes}
-          initialIndex={viewerIndex}
-          onClose={() => setViewerVisible(false)}
-        />
-      </>
-    );
-  }
+  const renderLayout = () => {
+    if (media.length === 1) {
+      return renderMediaCell(0, { width: "100%", height, borderRadius: 12, overflow: "hidden" });
+    }
 
-  // ── 1 image + video ───────────────────────────────────────────────────────
-  if (images.length === 1 && videoUrl) {
-    const resolved = resolveMediaUrl(videoUrl) ?? videoUrl;
-    const half = (containerWidth - 4) / 2;
-    return (
-      <>
+    if (media.length === 2) {
+      const half = (containerWidth - 4) / 2;
+      return (
         <View style={[styles.row, { height }]}>
-          {/* Video thumbnail */}
-          <TouchableOpacity
-            style={[styles.cell, { width: half, marginRight: 4 }]}
-            onPress={() => setVideoVisible(true)}
-            activeOpacity={0.85}
-          >
-            <Image
-              source={{ uri: resolveMediaUrl(images[0].url) }}
-              style={StyleSheet.absoluteFillObject}
-              resizeMode="cover"
-            />
-            <View style={styles.videoOverlaySmall}>
-              <Feather name="play-circle" size={32} color="rgba(255,255,255,0.9)" />
-            </View>
-          </TouchableOpacity>
-          {/* Image */}
-          {renderImage(0, { ...styles.cell, width: half })}
+          {renderMediaCell(0, { ...styles.cell, width: half, marginRight: 4 })}
+          {renderMediaCell(1, { ...styles.cell, width: half })}
         </View>
-        {videoVisible && (
-          <VideoPlayer
-            uri={resolved}
-            fullscreen
-            autoPlay
-            onClose={() => setVideoVisible(false)}
-          />
-        )}
-        {renderVideos()}
-        <MediaViewer
-          visible={viewerVisible}
-          urls={viewerUrls}
-          types={viewerTypes}
-          initialIndex={viewerIndex}
-          onClose={() => setViewerVisible(false)}
-        />
-      </>
-    );
-  }
+      );
+    }
 
-  // ── 2 images ──────────────────────────────────────────────────────────────
-  if (images.length === 2) {
-    const half = (containerWidth - 4) / 2;
-    return (
-      <>
+    if (media.length === 3) {
+      const mainW = (containerWidth * 0.66) - 2;
+      const subW = (containerWidth * 0.34) - 2;
+      return (
         <View style={[styles.row, { height }]}>
-          {renderImage(0, { ...styles.cell, width: half, marginRight: 4 })}
-          {renderImage(1, { ...styles.cell, width: half })}
-        </View>
-        {renderVideos()}
-        <MediaViewer
-          visible={viewerVisible}
-          urls={viewerUrls}
-          types={viewerTypes}
-          initialIndex={viewerIndex}
-          onClose={() => setViewerVisible(false)}
-        />
-      </>
-    );
-  }
-
-  // ── 3 images ──────────────────────────────────────────────────────────────
-  if (images.length === 3) {
-    const bigW = containerWidth * 0.6 - 2;
-    const smallW = containerWidth * 0.4 - 2;
-    const smallH = (height - 4) / 2;
-    return (
-      <>
-        <View style={[styles.row, { height }]}>
-          {renderImage(0, { ...styles.cell, width: bigW, marginRight: 4 })}
-          <View style={{ width: smallW, gap: 4 }}>
-            {renderImage(1, { ...styles.cell, height: smallH })}
-            {renderImage(2, { ...styles.cell, height: smallH })}
+          {renderMediaCell(0, { ...styles.cell, width: mainW, marginRight: 4 })}
+          <View style={{ width: subW, height, justifyContent: "space-between" }}>
+            {renderMediaCell(1, { ...styles.cell, width: subW, height: (height - 4) / 2 })}
+            {renderMediaCell(2, { ...styles.cell, width: subW, height: (height - 4) / 2 })}
           </View>
         </View>
-        {renderVideos()}
-        <MediaViewer
-          visible={viewerVisible}
-          urls={viewerUrls}
-          types={viewerTypes}
-          initialIndex={viewerIndex}
-          onClose={() => setViewerVisible(false)}
-        />
-      </>
-    );
-  }
+      );
+    }
 
-  // ── 4+ images: 2×2 grid ───────────────────────────────────────────────────
-  const half = (containerWidth - 4) / 2;
-  const cellH = (height - 4) / 2;
-  return (
-    <>
-      <View style={{ gap: 4 }}>
-        <View style={[styles.row, { height: cellH }]}>
-          {renderImage(0, { ...styles.cell, width: half, marginRight: 4 })}
-          {renderImage(1, { ...styles.cell, width: half })}
+    // 4 or more: 2x2 grid
+    const halfW = (containerWidth - 4) / 2;
+    const halfH = (height - 4) / 2;
+    return (
+      <View style={[{ height, justifyContent: "space-between" }]}>
+        <View style={[styles.row, { height: halfH, marginBottom: 4 }]}>
+          {renderMediaCell(0, { ...styles.cell, width: halfW, marginRight: 4 })}
+          {renderMediaCell(1, { ...styles.cell, width: halfW })}
         </View>
-        <View style={[styles.row, { height: cellH }]}>
-          {renderImage(2, { ...styles.cell, width: half, marginRight: 4 })}
-          {renderImage(3, { ...styles.cell, width: half })}
+        <View style={[styles.row, { height: halfH }]}>
+          {renderMediaCell(2, { ...styles.cell, width: halfW, marginRight: 4 })}
+          {renderMediaCell(3, { ...styles.cell, width: halfW })}
         </View>
       </View>
-      {renderVideos()}
+    );
+  };
+
+  return (
+    <>
+      {renderLayout()}
       <MediaViewer
         visible={viewerVisible}
         urls={viewerUrls}
@@ -321,55 +163,33 @@ export function ProductMediaView({
 
 const styles = StyleSheet.create({
   placeholder: {
-    width: "100%",
-    alignItems: "center",
-    justifyContent: "center",
     borderRadius: 12,
-  },
-  videoThumb: {
-    width: "100%",
-    borderRadius: 12,
-    overflow: "hidden",
     alignItems: "center",
     justifyContent: "center",
-    gap: 8,
-  },
-  playCircle: {
-    width: 64,
-    height: 64,
-    borderRadius: 32,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  videoLabel: {
-    fontSize: 13,
-    fontWeight: "600",
   },
   row: {
     flexDirection: "row",
-    overflow: "hidden",
-    borderRadius: 12,
   },
   cell: {
-    overflow: "hidden",
+    height: "100%",
     borderRadius: 8,
-    backgroundColor: "#1a1a1a",
+    overflow: "hidden",
     position: "relative",
   },
   extraOverlay: {
     ...StyleSheet.absoluteFillObject,
-    backgroundColor: "rgba(0,0,0,0.55)",
+    backgroundColor: "rgba(0,0,0,0.6)",
     alignItems: "center",
     justifyContent: "center",
   },
   extraText: {
     color: "#fff",
-    fontSize: 22,
-    fontWeight: "800",
+    fontSize: 24,
+    fontWeight: "700",
   },
   videoOverlaySmall: {
     ...StyleSheet.absoluteFillObject,
-    backgroundColor: "rgba(0,0,0,0.35)",
+    backgroundColor: "rgba(0,0,0,0.2)",
     alignItems: "center",
     justifyContent: "center",
   },

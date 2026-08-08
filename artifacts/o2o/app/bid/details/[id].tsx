@@ -15,7 +15,8 @@ import { useData } from "@/context/DataContext";
 import { useColors } from "@/hooks/useColors";
 import { Avatar } from "@/components/ui/Avatar";
 import { Badge } from "@/components/ui/Badge";
-import type { Bid } from "@/types";
+import { ProductMediaView } from "@/components/ProductMediaView";
+import type { Bid, Product } from "@/types";
 
 export default function BidDetailsScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -111,13 +112,20 @@ export default function BidDetailsScreen() {
         <View style={[styles.card, { backgroundColor: colors.card, borderColor: colors.border }]}>
           <Text style={[styles.sectionTitle, { color: colors.foreground }]}>Product Details</Text>
           <View style={styles.divider} />
-          {bid.productImage ? (
-            <Image source={{ uri: bid.productImage }} style={styles.productImage} />
-          ) : (
-            <View style={[styles.placeholderImage, { backgroundColor: colors.muted }]}>
-              <Feather name="image" size={32} color={colors.mutedForeground} />
-            </View>
-          )}
+          <View style={{ marginBottom: 12 }}>
+            <ProductMediaView 
+              product={{
+                id: bid.id,
+                image: bid.productImage ?? "",
+                images: bid.mediaImages?.map((url, i) => ({ id: `${bid.id}_img_${i}`, url, isPrimary: i === 0 })) ?? [],
+                videoUrl: bid.mediaVideos?.[0] ?? "",
+                videos: bid.mediaVideos ?? [],
+                details: [],
+              } as unknown as Product}
+              height={220}
+              showVideo={true}
+            />
+          </View>
           
           <View style={styles.grid}>
             <View style={styles.gridItem}>
