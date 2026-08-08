@@ -88,9 +88,14 @@ let _downloadingMap: Record<string, boolean> = {};
 async function saveToDownloads(url: string, fileName: string): Promise<void> {
   try {
     let nameToUse = fileName;
-    if (!nameToUse.includes(".")) {
-      const urlExt = url.split("?")[0].split(".").pop();
-      if (urlExt && urlExt.length <= 5) nameToUse = `${nameToUse}.${urlExt}`;
+    const cleanUrl = url.split("?")[0].split("#")[0];
+    const urlFilename = cleanUrl.split("/").pop() ?? "";
+    const urlExt = urlFilename.includes(".") ? urlFilename.split(".").pop()?.toLowerCase() : "";
+    const nameExt = nameToUse.includes(".") ? nameToUse.split(".").pop()?.toLowerCase() : "";
+    const ext = nameExt || urlExt || "";
+
+    if (ext && !nameToUse.toLowerCase().endsWith(`.${ext}`)) {
+      nameToUse = `${nameToUse}.${ext}`;
     }
 
     const mimeType = getMimeType(nameToUse);
@@ -132,10 +137,19 @@ async function saveToDownloads(url: string, fileName: string): Promise<void> {
 }
 
 /** Show user-friendly dialog when no compatible app is installed */
-function showNoAppAlert(url: string, fileName: string) {
+function showNoAppAlert(url: string, fileName: string, fileLabel: string = "file") {
+  const message =
+    fileLabel === "Excel"
+      ? "No spreadsheet application is installed to open this Excel file."
+      : fileLabel === "Word"
+      ? "No Word application is installed to open this document."
+      : fileLabel === "PowerPoint"
+      ? "No presentation application is installed to open this PowerPoint file."
+      : "This file cannot be opened directly on this device.";
+
   Alert.alert(
     "No compatible app found",
-    "This file cannot be opened directly on this device.",
+    message,
     [
       { text: "Cancel", style: "cancel" },
       {
@@ -156,13 +170,23 @@ async function openDocument(url: string, fileName: string): Promise<void> {
 
   try {
     let nameToUse = fileName;
-    if (!nameToUse.includes(".")) {
-      const urlExt = url.split("?")[0].split(".").pop();
-      if (urlExt && urlExt.length <= 5) nameToUse = `${nameToUse}.${urlExt}`;
+
+    // Robust extension resolution from fileName or URL
+    const cleanUrl = url.split("?")[0].split("#")[0];
+    const urlFilename = cleanUrl.split("/").pop() ?? "";
+    const urlExt = urlFilename.includes(".") ? urlFilename.split(".").pop()?.toLowerCase() : "";
+    const nameExt = nameToUse.includes(".") ? nameToUse.split(".").pop()?.toLowerCase() : "";
+    const ext = nameExt || (urlExt && urlExt.length <= 5 ? urlExt : "");
+
+    if (ext && !nameToUse.toLowerCase().endsWith(`.${ext}`)) {
+      nameToUse = `${nameToUse}.${ext}`;
     }
 
-    const ext = (nameToUse.split(".").pop() ?? "").toLowerCase();
+    const isExcel = ext === "xlsx" || ext === "xls" || url.toLowerCase().includes(".xls");
+    const isWord = ext === "docx" || ext === "doc" || url.toLowerCase().includes(".doc");
+    const isPpt = ext === "pptx" || ext === "ppt" || url.toLowerCase().includes(".ppt");
     const isPdf = ext === "pdf" || url.toLowerCase().includes(".pdf");
+
     const mimeType = getMimeType(nameToUse);
     const safeFileName = nameToUse.replace(/[^a-zA-Z0-9._\-]/g, "_");
     const destDir = ReactNativeBlobUtil.fs.dirs.CacheDir;
@@ -216,10 +240,16 @@ async function openDocument(url: string, fileName: string): Promise<void> {
           if (canOpen) {
             await Linking.openURL(gviewUrl);
           } else {
-            showNoAppAlert(url, nameToUse);
+            showNoAppAlert(url, nameToUse, "PDF");
           }
+        } else if (isExcel) {
+          showNoAppAlert(url, nameToUse, "Excel");
+        } else if (isWord) {
+          showNoAppAlert(url, nameToUse, "Word");
+        } else if (isPpt) {
+          showNoAppAlert(url, nameToUse, "PowerPoint");
         } else {
-          showNoAppAlert(url, nameToUse);
+          showNoAppAlert(url, nameToUse, "file");
         }
       }
     } else {
