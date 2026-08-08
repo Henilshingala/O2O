@@ -315,6 +315,7 @@ export function MessageContent({
         fileName={String(item.metadata?.fileName || item.text || "Uploading…")}
         progress={progress}
         state={uploadFailed ? "failed" : uploadCancelled ? "cancelled" : "uploading"}
+        fileType={item.type}
         onRetry={
           (uploadFailed || uploadCancelled) && onRetryUpload
             ? () => onRetryUpload(item.id)
@@ -331,6 +332,7 @@ export function MessageContent({
         fileName={String(item.metadata?.fileName || item.text || "Upload")}
         progress={null}
         state="failed"
+        fileType={item.type}
         onRetry={onRetryUpload ? () => onRetryUpload(item.id) : undefined}
       />
     );
