@@ -100,23 +100,7 @@ async function openDocument(url: string, fileName: string): Promise<void> {
       if (urlExt && urlExt.length <= 5) nameToUse = `${nameToUse}.${urlExt}`;
     }
 
-    const ext = (nameToUse.split(".").pop() ?? "").toLowerCase();
-    const isPdf = ext === "pdf" || url.toLowerCase().includes(".pdf") || getMimeType(nameToUse) === "application/pdf";
-    if (isPdf && !nameToUse.toLowerCase().endsWith(".pdf")) {
-      nameToUse = `${nameToUse}.pdf`;
-    }
-
-    // For non-PDF remote files, keep existing Linking.openURL behavior intact
-    if (!isPdf) {
-      const canOpen = await Linking.canOpenURL(url).catch(() => false);
-      if (canOpen && (url.startsWith("https://") || url.startsWith("http://"))) {
-        await Linking.openURL(url);
-        return;
-      }
-    }
-
-    // Download PDF (or file) locally and open with native system PDF viewer
-    const mimeType = isPdf ? "application/pdf" : getMimeType(nameToUse);
+    const mimeType = getMimeType(nameToUse);
     const safeFileName = nameToUse.replace(/[^a-zA-Z0-9._\-]/g, "_");
     const destDir = ReactNativeBlobUtil.fs.dirs.CacheDir;
     const destPath = `${destDir}/${Date.now()}_${safeFileName}`;
@@ -141,7 +125,7 @@ async function openDocument(url: string, fileName: string): Promise<void> {
 
       const status = res.info().status;
       if (status !== 200) {
-        // If proxy fails for PDF, try direct url download before throwing
+        // Fallback to direct URL if proxy fails
         const directRes = await ReactNativeBlobUtil.config({
           path: destPath,
           overwrite: true,
@@ -163,8 +147,10 @@ async function openDocument(url: string, fileName: string): Promise<void> {
       try {
         await ReactNativeBlobUtil.android.actionViewIntent(finalPath, mimeType);
       } catch (intentErr) {
-        if (isPdf) {
-          const gviewUrl = `https://docs.google.com/gview?embedded=true&url=${encodeURIComponent(url)}`;
+        // Fallback to Google Docs Viewer online if no native app installed
+        const gviewUrl = `https://docs.google.com/gview?embedded=true&url=${encodeURIComponent(url)}`;
+        const canOpen = await Linking.canOpenURL(gviewUrl).catch(() => false);
+        if (canOpen) {
           await Linking.openURL(gviewUrl);
         } else {
           throw intentErr;
