@@ -91,12 +91,26 @@ function getAdminApp(): App | null {
   logger.info("[FCM] Initialising Firebase Admin SDK...");
 
   try {
-    // JSON.parse handles both real \n (from a proper JSON string) and the
-    // literal two-char sequence \\n that some secret managers produce.
-    // We normalise the private_key field explicitly as a safety net.
     let parsed: Record<string, unknown>;
     try {
-      parsed = JSON.parse(raw) as Record<string, unknown>;
+      let rawStr = raw.trim();
+      if ((rawStr.startsWith('"') && rawStr.endsWith('"')) || (rawStr.startsWith("'") && rawStr.endsWith("'"))) {
+        rawStr = rawStr.slice(1, -1);
+      }
+      if (!rawStr.startsWith("{") && /^[A-Za-z0-9+/=]+$/.test(rawStr)) {
+        try {
+          rawStr = Buffer.from(rawStr, "base64").toString("utf-8");
+        } catch {}
+      }
+      try {
+        parsed = JSON.parse(rawStr) as Record<string, unknown>;
+      } catch {
+        const sanitized = rawStr
+          .replace(/\\n/g, "\n")
+          .replace(/\\"/g, '"')
+          .replace(/\\\\/g, "\\");
+        parsed = JSON.parse(sanitized) as Record<string, unknown>;
+      }
     } catch (parseErr: unknown) {
       const e = parseErr as Error;
       _initFailReason = `JSON.parse failed: ${e.message}`;

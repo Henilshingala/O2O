@@ -75,8 +75,9 @@ async function ensureTablesExist() {
       CREATE INDEX IF NOT EXISTS idx_fcm_tokens_device_id ON fcm_tokens(device_id)
     `);
 
-    // Apply Migration 0003: bids media & budget nullable
+    // Apply Migrations: bids unit_type, media & budget nullable
     const migrations = [
+      sql`ALTER TABLE "bids" ADD COLUMN IF NOT EXISTS "unit_type" text DEFAULT 'carton' NOT NULL`,
       sql`ALTER TABLE "bids" ADD COLUMN IF NOT EXISTS "media_images" jsonb DEFAULT '[]'::jsonb`,
       sql`ALTER TABLE "bids" ADD COLUMN IF NOT EXISTS "media_videos" jsonb DEFAULT '[]'::jsonb`,
       sql`ALTER TABLE "bids" ALTER COLUMN "budget" DROP NOT NULL`,
