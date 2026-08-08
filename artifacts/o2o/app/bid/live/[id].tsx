@@ -119,7 +119,7 @@ export default function LiveBidScreen() {
                   videos: bid.mediaVideos ?? [],
                   details: [],
                 } as unknown as Product}
-                height={220}
+                height={260}
                 showVideo={true}
               />
             </View>

@@ -30,7 +30,7 @@ type MediaItem = {
 
 export function ProductMediaView({
   product,
-  height = 220,
+  height = 260,
   showVideo = true,
   fullWidth = true,
 }: ProductMediaViewProps) {

@@ -209,7 +209,7 @@ export default function SellerBidsScreen() {
                         videos: item.mediaVideos ?? [],
                         details: [],
                       } as unknown as Product}
-                      height={180}
+                      height={240}
                       showVideo={true}
                     />
                   </View>
