@@ -17,10 +17,11 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Feather } from "@/compat/vector-icons";
 import { AppButton } from "@/components/ui/AppButton";
 import { Badge } from "@/components/ui/Badge";
+import { ProductMediaView } from "@/components/ProductMediaView";
 import { useAuth } from "@/context/AuthContext";
 import { useData } from "@/context/DataContext";
 import { useColors } from "@/hooks/useColors";
-import type { Bid } from "@/types";
+import type { Bid, Product } from "@/types";
 
 // Statuses that mean the bid is no longer actionable
 const TERMINAL_STATUSES: any[] = [
@@ -179,6 +180,8 @@ export default function SellerBidsScreen() {
               myChannels.find((c) => item.selectedSellers.includes(c.id) || item.allSellers)?.id ??
               myChannelIds[0];
 
+            const hasMedia = !!(item.mediaImages?.length || item.mediaVideos?.length || item.productImage);
+
             return (
               <View style={[styles.card, { backgroundColor: colors.card, borderColor: colors.border }]}>
                 <View style={styles.cardHeader}>
@@ -191,15 +194,31 @@ export default function SellerBidsScreen() {
                   />
                 </View>
 
+                {hasMedia && (
+                  <View style={{ marginVertical: 4 }}>
+                    <ProductMediaView
+                      product={{
+                        id: item.id,
+                        image: item.productImage ?? "",
+                        images: item.mediaImages?.length
+                          ? item.mediaImages.map((url, i) => ({ id: `${item.id}_img_${i}`, url, isPrimary: i === 0 }))
+                          : item.productImage
+                            ? [{ id: `${item.id}_primary`, url: item.productImage, isPrimary: true }]
+                            : [],
+                        videoUrl: item.mediaVideos?.[0] ?? "",
+                        videos: item.mediaVideos ?? [],
+                        details: [],
+                      } as unknown as Product}
+                      height={180}
+                      showVideo={true}
+                    />
+                  </View>
+                )}
+
                 <View style={styles.details}>
-                  <Text style={[styles.detailText, { color: colors.mutedForeground }]}>
-                    Qty: {item.quantity} units
+                  <Text style={[styles.detailText, { color: colors.mutedForeground, fontWeight: "600" }]}>
+                    Qty: {item.quantity} units {(item as any).unitType ? `(${(item as any).unitType})` : ""}
                   </Text>
-                  {(item as any).unitType && (
-                    <Text style={[styles.detailText, { color: colors.mutedForeground }]}>
-                      Unit: {(item as any).unitType}
-                    </Text>
-                  )}
                   {item.description ? (
                     <Text
                       style={[styles.detailText, { color: colors.mutedForeground }]}
