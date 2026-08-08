@@ -103,45 +103,44 @@ export function ProductMediaView({
 
   const renderLayout = () => {
     if (media.length === 1) {
-      return renderMediaCell(0, { width: "100%", height, borderRadius: 12, overflow: "hidden" });
+      return (
+        <View style={{ width: "100%", height, borderRadius: 10, overflow: "hidden" }}>
+          {renderMediaCell(0, { flex: 1, width: "100%", height: "100%" })}
+        </View>
+      );
     }
 
     if (media.length === 2) {
-      const half = (containerWidth - 4) / 2;
       return (
-        <View style={[styles.row, { height }]}>
-          {renderMediaCell(0, { ...styles.cell, width: half, marginRight: 4 })}
-          {renderMediaCell(1, { ...styles.cell, width: half })}
+        <View style={{ flexDirection: "row", gap: 4, width: "100%", height, borderRadius: 10, overflow: "hidden" }}>
+          {renderMediaCell(0, styles.flexCell)}
+          {renderMediaCell(1, styles.flexCell)}
         </View>
       );
     }
 
     if (media.length === 3) {
-      const mainW = (containerWidth * 0.66) - 2;
-      const subW = (containerWidth * 0.34) - 2;
       return (
-        <View style={[styles.row, { height }]}>
-          {renderMediaCell(0, { ...styles.cell, width: mainW, marginRight: 4 })}
-          <View style={{ width: subW, height, justifyContent: "space-between" }}>
-            {renderMediaCell(1, { ...styles.cell, width: subW, height: (height - 4) / 2 })}
-            {renderMediaCell(2, { ...styles.cell, width: subW, height: (height - 4) / 2 })}
+        <View style={{ flexDirection: "row", gap: 4, width: "100%", height, borderRadius: 10, overflow: "hidden" }}>
+          {renderMediaCell(0, { ...styles.flexCell, flex: 2 })}
+          <View style={{ flex: 1, gap: 4, height: "100%" }}>
+            {renderMediaCell(1, styles.flexCell)}
+            {renderMediaCell(2, styles.flexCell)}
           </View>
         </View>
       );
     }
 
     // 4 or more: 2x2 grid
-    const halfW = (containerWidth - 4) / 2;
-    const halfH = (height - 4) / 2;
     return (
-      <View style={[{ height, justifyContent: "space-between" }]}>
-        <View style={[styles.row, { height: halfH, marginBottom: 4 }]}>
-          {renderMediaCell(0, { ...styles.cell, width: halfW, marginRight: 4 })}
-          {renderMediaCell(1, { ...styles.cell, width: halfW })}
+      <View style={{ gap: 4, width: "100%", height, borderRadius: 10, overflow: "hidden" }}>
+        <View style={{ flexDirection: "row", gap: 4, flex: 1 }}>
+          {renderMediaCell(0, styles.flexCell)}
+          {renderMediaCell(1, styles.flexCell)}
         </View>
-        <View style={[styles.row, { height: halfH }]}>
-          {renderMediaCell(2, { ...styles.cell, width: halfW, marginRight: 4 })}
-          {renderMediaCell(3, { ...styles.cell, width: halfW })}
+        <View style={{ flexDirection: "row", gap: 4, flex: 1 }}>
+          {renderMediaCell(2, styles.flexCell)}
+          {renderMediaCell(3, styles.flexCell)}
         </View>
       </View>
     );
@@ -163,18 +162,17 @@ export function ProductMediaView({
 
 const styles = StyleSheet.create({
   placeholder: {
-    borderRadius: 12,
+    borderRadius: 10,
     alignItems: "center",
     justifyContent: "center",
   },
-  row: {
-    flexDirection: "row",
-  },
-  cell: {
+  flexCell: {
+    flex: 1,
     height: "100%",
-    borderRadius: 8,
+    borderRadius: 6,
     overflow: "hidden",
     position: "relative",
+    backgroundColor: "#000",
   },
   extraOverlay: {
     ...StyleSheet.absoluteFillObject,
@@ -184,12 +182,12 @@ const styles = StyleSheet.create({
   },
   extraText: {
     color: "#fff",
-    fontSize: 24,
+    fontSize: 22,
     fontWeight: "700",
   },
   videoOverlaySmall: {
     ...StyleSheet.absoluteFillObject,
-    backgroundColor: "rgba(0,0,0,0.2)",
+    backgroundColor: "rgba(0,0,0,0.25)",
     alignItems: "center",
     justifyContent: "center",
   },
