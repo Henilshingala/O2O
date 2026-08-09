@@ -68,6 +68,47 @@ let _app: App | null = null;
 let _initAttempted   = false; // guarantees exactly-once init even under concurrent calls
 let _initFailReason  = "not attempted yet"; // human-readable reason for the last failure
 
+function parseFirebaseServiceAccount(raw: string): Record<string, unknown> {
+  let rawStr = raw.trim();
+
+  // Strip wrapping single or double quotes if present
+  if ((rawStr.startsWith('"') && rawStr.endsWith('"')) || (rawStr.startsWith("'") && rawStr.endsWith("'"))) {
+    rawStr = rawStr.slice(1, -1).trim();
+  }
+
+  // If base64 encoded (doesn't start with '{'), decode base64 first
+  if (!rawStr.startsWith("{") && !rawStr.startsWith("[")) {
+    try {
+      const cleaned = rawStr.replace(/[\r\n\s]+/g, "");
+      const decoded = Buffer.from(cleaned, "base64").toString("utf-8").trim();
+      if (decoded.startsWith("{")) {
+        rawStr = decoded;
+      }
+    } catch {}
+  }
+
+  // 1. Direct JSON parse attempt
+  try {
+    return JSON.parse(rawStr) as Record<string, unknown>;
+  } catch (err1) {
+    // 2. Normalize raw unescaped newlines into escaped \n inside strings
+    try {
+      const fixedNewlines = rawStr.replace(/\r?\n/g, "\\n");
+      return JSON.parse(fixedNewlines) as Record<string, unknown>;
+    } catch (err2) {
+      // 3. Normalize double-escaped characters
+      try {
+        const sanitized = rawStr
+          .replace(/\\\\n/g, "\\n")
+          .replace(/\\\\"/g, '"');
+        return JSON.parse(sanitized) as Record<string, unknown>;
+      } catch (err3) {
+        throw err1;
+      }
+    }
+  }
+}
+
 function getAdminApp(): App | null {
   // Fast path — already attempted (success or failure)
   if (_initAttempted) {
@@ -93,32 +134,13 @@ function getAdminApp(): App | null {
   try {
     let parsed: Record<string, unknown>;
     try {
-      let rawStr = raw.trim();
-      if ((rawStr.startsWith('"') && rawStr.endsWith('"')) || (rawStr.startsWith("'") && rawStr.endsWith("'"))) {
-        rawStr = rawStr.slice(1, -1);
-      }
-      if (!rawStr.startsWith("{") && /^[A-Za-z0-9+/=]+$/.test(rawStr)) {
-        try {
-          rawStr = Buffer.from(rawStr, "base64").toString("utf-8");
-        } catch {}
-      }
-      try {
-        parsed = JSON.parse(rawStr) as Record<string, unknown>;
-      } catch {
-        const sanitized = rawStr
-          .replace(/\\n/g, "\n")
-          .replace(/\\"/g, '"')
-          .replace(/\\\\/g, "\\");
-        parsed = JSON.parse(sanitized) as Record<string, unknown>;
-      }
+      parsed = parseFirebaseServiceAccount(raw);
     } catch (parseErr: unknown) {
       const e = parseErr as Error;
       _initFailReason = `JSON.parse failed: ${e.message}`;
       logger.error(
-        { err: parseErr, rawLength: raw.length, rawPrefix: raw.slice(0, 60) },
-        "[FCM_STARTUP] FATAL — FIREBASE_SERVICE_ACCOUNT is not valid JSON. " +
-        "Paste the complete service-account JSON (not base64, not escaped). " +
-        `Parse error: ${e.message}`,
+        { errMessage: e.message, rawLength: raw.length, rawPrefix: raw.slice(0, 30) },
+        "[FCM] Firebase Admin SDK FAILED TO INITIALIZE — FIREBASE_SERVICE_ACCOUNT is not valid JSON. Parse error: " + e.message,
       );
       return null;
     }
@@ -134,7 +156,7 @@ function getAdminApp(): App | null {
       _initFailReason = `Service account JSON missing required fields: ${missingFields.join(", ")}`;
       logger.error(
         { missingFields, presentFields: Object.keys(parsed) },
-        "[FCM_STARTUP] FATAL — service account JSON is missing required fields",
+        "[FCM] Firebase Admin SDK FAILED TO INITIALIZE — service account JSON missing required fields: " + missingFields.join(", "),
       );
       return null;
     }
@@ -144,9 +166,6 @@ function getAdminApp(): App | null {
         project_id:   parsed.project_id,
         client_email: parsed.client_email,
         type:         parsed.type,
-        private_key_prefix: typeof parsed.private_key === "string"
-          ? (parsed.private_key as string).slice(0, 40)
-          : "NOT_A_STRING",
       },
       "[FCM] Parsed service account — project_id and client_email verified",
     );
@@ -155,7 +174,7 @@ function getAdminApp(): App | null {
     const existing = getApps().find((a) => a?.name === "[DEFAULT]");
     if (existing) {
       _app = existing;
-      logger.info("[FCM] Reusing existing Firebase Admin app");
+      logger.info("[FCM] Admin initialized (reusing existing app instance)");
       return _app;
     }
 
@@ -165,7 +184,7 @@ function getAdminApp(): App | null {
 
     logger.info(
       { appsLength: getApps().length },
-      "[FCM] Firebase Admin SDK initialised successfully",
+      "[FCM] Admin initialized",
     );
     return _app;
   } catch (err: unknown) {
@@ -173,15 +192,10 @@ function getAdminApp(): App | null {
     _initFailReason = `admin.initializeApp() threw: ${e.message ?? String(err)}`;
     logger.error(
       {
-        err,
         code:       e.code,
-        errorInfo:  e.errorInfo,
-        stack:      e.stack,
         message:    e.message,
       },
-      "[FCM_STARTUP] FATAL — admin.initializeApp() threw an exception. " +
-      "Check that FIREBASE_SERVICE_ACCOUNT is the full service-account JSON " +
-      "from Firebase Console → Project Settings → Service Accounts.",
+      "[FCM] Firebase Admin SDK FAILED TO INITIALIZE — admin.initializeApp() threw an exception: " + e.message,
     );
     return null;
   }
@@ -197,7 +211,7 @@ function getAdminApp(): App | null {
  * Safe to call multiple times — the underlying singleton is initialized exactly once.
  */
 export function initFirebaseAdmin(): void {
-  logger.info("[FCM_STARTUP] === Firebase Admin SDK initialization ===");
+  logger.info("[FCM] === Firebase Admin SDK initialization ===");
 
   const raw = process.env["FIREBASE_SERVICE_ACCOUNT"];
   logger.info(
@@ -207,12 +221,12 @@ export function initFirebaseAdmin(): void {
       prefix:      raw ? raw.slice(0, 20) : "(not set)",
       nodeEnv:     process.env["NODE_ENV"],
     },
-    `[FCM_STARTUP] FIREBASE_SERVICE_ACCOUNT exists: ${!!raw}`,
+    `[FCM] FIREBASE_SERVICE_ACCOUNT exists: ${!!raw}`,
   );
 
   if (!raw) {
     logger.error(
-      "[FCM_STARTUP] FIREBASE_SERVICE_ACCOUNT is NOT set. " +
+      "[FCM] FIREBASE_SERVICE_ACCOUNT is NOT set. " +
       "Go to Render Dashboard → o2o-api → Environment → Add Environment Variable. " +
       "Key: FIREBASE_SERVICE_ACCOUNT  Value: (paste entire service-account JSON)",
     );
@@ -224,13 +238,12 @@ export function initFirebaseAdmin(): void {
   if (app) {
     logger.info(
       { appsLength: getApps().length },
-      "[FCM_STARTUP] Firebase Admin SDK ready — admin.apps.length > 0",
+      "[FCM] Admin initialized",
     );
   } else {
     logger.error(
       { reason: _initFailReason, appsLength: getApps().length },
-      "[FCM_STARTUP] Firebase Admin SDK FAILED TO INITIALIZE — no pushes will be sent. " +
-      "Reason: " + _initFailReason,
+      "[FCM] Firebase Admin SDK FAILED TO INITIALIZE — " + _initFailReason,
     );
   }
 }
@@ -366,36 +379,27 @@ async function sendBatch(
 
   logger.info(
     {
-      payload: message,
       tokenCount: batchTokens.length,
       notificationType: message.notification ? "visible" : "data-only",
       channelId,
       collapseKey: message.android?.collapseKey,
       ttl: message.android?.ttl,
     },
-    "[FCM] Sending",
+    "[FCM] Notification send started",
   );
 
   let response: Awaited<ReturnType<ReturnType<typeof getMessaging>["sendEachForMulticast"]>>;
   try {
     response = await getMessaging(app).sendEachForMulticast(message);
   } catch (err: any) {
-    // Top-level failure (e.g. auth error, network) — log with full payload context
+    const safeError = err?.message || String(err);
     logger.error(
       {
-        err,
-        code:        err?.errorInfo?.code ?? err?.code ?? err?.name ?? "unknown",
-        errMessage:  err?.message,
-        stack:       err?.stack,
-        validationErrors: err?.errorInfo ?? err?.details ?? "none",
-        invalidFields: message,
-        channelId,
-        title,
-        tokenCount:  batchTokens.length,
-        // Print last 8 chars of each token for correlation without leaking full tokens
-        tokens:      batchTokens.map((t) => t.slice(-8)),
+        safeError,
+        code: err?.errorInfo?.code ?? err?.code ?? err?.name ?? "unknown",
+        tokenCount: batchTokens.length,
       },
-      "[FCM] Firebase Error — sendEachForMulticast threw",
+      "[FCM] Notification send failed",
     );
     throw err;
   }
@@ -406,12 +410,8 @@ async function sendBatch(
     const tokenSuffix = batchTokens[i]?.slice(-8) ?? "?";
     if (r.success) {
       logger.info(
-        { token: tokenSuffix, messageId: r.messageId },
-        "[FCM] Firebase Success",
-      );
-      logger.info(
-        { token: tokenSuffix, messageId: r.messageId },
-        "[FCM] Message ID",
+        { tokenSuffix, messageId: r.messageId },
+        "[FCM] Notification send successful",
       );
       return;
     }
@@ -423,23 +423,16 @@ async function sendBatch(
     logger.error(
       {
         code,
-        token:      tokenSuffix,
-        errMessage: errMsg,
-        stack:      r.error?.stack,
-        validationErrors: r.error?.errorInfo ?? r.error ?? "none",
-        invalidFields: message,
-        // Full payload context so the caller can reproduce the failing request
-        channelId,
-        title,
-        payloadDataKeys: Object.keys(message.data ?? {}),
+        tokenSuffix,
+        safeError: errMsg,
       },
-      "[FCM] Firebase Error",
+      "[FCM] Notification send failed",
     );
 
     if (isStaleCode(code)) {
       stale.push(batchTokens[i]!);
       logger.info(
-        { token: tokenSuffix, code },
+        { tokenSuffix, code },
         "[FCM] Invalid Token Removed — flagged for DB purge",
       );
     }
@@ -453,6 +446,8 @@ async function sendBatch(
     { sent: batchTokens.length, success: response.successCount, failure: response.failureCount },
     "[FCM] Batch completed",
   );
+
+  return response.successCount;
 
   return response.successCount;
 }

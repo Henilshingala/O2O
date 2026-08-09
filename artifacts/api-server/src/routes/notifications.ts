@@ -251,7 +251,7 @@ router.post("/fcm-token", async (req: AuthRequest, res) => {
         .update(fcmTokens)
         .set({ token, updatedAt: new Date() })
         .where(eq(fcmTokens.id, existing[0].id));
-      logger.info({ userId, deviceId }, "[FCM] Token updated (existing device)");
+      logger.info({ userId, deviceId, tokenSuffix: token.slice(-8) }, "[FCM] Token registered (updated)");
     } else {
       await db.insert(fcmTokens).values({
         id:       genId("fcm"),
@@ -261,7 +261,7 @@ router.post("/fcm-token", async (req: AuthRequest, res) => {
         platform: "android",
         updatedAt: new Date(),
       });
-      logger.info({ userId, deviceId }, "[FCM] Token inserted (new device)");
+      logger.info({ userId, deviceId, tokenSuffix: token.slice(-8) }, "[FCM] Token registered (inserted)");
     }
 
     return res.json({ success: true });
