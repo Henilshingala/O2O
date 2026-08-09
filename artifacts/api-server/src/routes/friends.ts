@@ -1,11 +1,11 @@
 import { Router } from "express";
 import { db } from "@workspace/db";
 import { friendsContacts, users } from "@workspace/db/schema";
-import { and, eq, or, ilike, ne, count, desc } from "drizzle-orm";
+import { and, eq, or, ilike, ne, count, desc, inArray } from "drizzle-orm";
 import { requireAuth, type AuthRequest } from "../middlewares/auth";
 import { rateLimit } from "express-rate-limit";
 import { createNotification } from "./notifications";
-import { getIo } from "../socket/index";
+import { getIo, emitToUser } from "../socket/index";
 import { parseOffsetPagination, sendListResponse, buildOffsetMeta } from "../lib/pagination";
 import { validateBody, friendRequestSchema, friendActionSchema, friendRemoveSchema } from "../lib/validation";
 
@@ -46,7 +46,7 @@ router.get("/", async (req: AuthRequest, res) => {
   }
 });
 
-// GET /api/friends/requests — pending incoming requests
+// GET /api/friends/requests — pending incoming, outgoing, and request history
 router.get("/requests", async (req: AuthRequest, res) => {
   try {
     const myId = req.user!.userId;
@@ -61,7 +61,7 @@ router.get("/requests", async (req: AuthRequest, res) => {
       .from(friendsContacts)
       .where(and(eq(friendsContacts.userId, myId), eq(friendsContacts.status, "pending")));
 
-    const incoming = await db
+    const incomingRows = await db
       .select({
         id: users.id,
         username: users.username,
@@ -70,6 +70,7 @@ router.get("/requests", async (req: AuthRequest, res) => {
         avatar: users.avatar,
         city: users.city,
         role: users.role,
+        updatedAt: friendsContacts.updatedAt,
       })
       .from(friendsContacts)
       .innerJoin(users, eq(users.id, friendsContacts.userId))
@@ -77,7 +78,7 @@ router.get("/requests", async (req: AuthRequest, res) => {
       .limit(limit)
       .offset(offset);
 
-    const outgoing = await db
+    const outgoingRows = await db
       .select({
         id: users.id,
         username: users.username,
@@ -86,6 +87,7 @@ router.get("/requests", async (req: AuthRequest, res) => {
         avatar: users.avatar,
         city: users.city,
         role: users.role,
+        updatedAt: friendsContacts.updatedAt,
       })
       .from(friendsContacts)
       .innerJoin(users, eq(users.id, friendsContacts.contactId))
@@ -93,9 +95,76 @@ router.get("/requests", async (req: AuthRequest, res) => {
       .limit(limit)
       .offset(offset);
 
+    // Fetch processed requests history (accepted or rejected)
+    const historyRows = await db
+      .select({
+        userId: friendsContacts.userId,
+        contactId: friendsContacts.contactId,
+        status: friendsContacts.status,
+        updatedAt: friendsContacts.updatedAt,
+      })
+      .from(friendsContacts)
+      .where(
+        and(
+          or(eq(friendsContacts.userId, myId), eq(friendsContacts.contactId, myId)),
+          or(eq(friendsContacts.status, "accepted"), eq(friendsContacts.status, "rejected"))
+        )
+      )
+      .orderBy(desc(friendsContacts.updatedAt));
+
+    // Deduplicate history by other user ID, taking the latest status
+    const seenOtherIds = new Set<string>();
+    const deduplicatedHistory: { otherId: string; status: "accepted" | "rejected"; updatedAt: Date; isSender: boolean }[] = [];
+
+    for (const row of historyRows) {
+      const otherId = row.userId === myId ? row.contactId : row.userId;
+      if (seenOtherIds.has(otherId)) continue;
+      seenOtherIds.add(otherId);
+      deduplicatedHistory.push({
+        otherId,
+        status: row.status as "accepted" | "rejected",
+        updatedAt: row.updatedAt,
+        isSender: row.userId === myId,
+      });
+    }
+
+    let history: any[] = [];
+    if (deduplicatedHistory.length > 0) {
+      const otherIds = deduplicatedHistory.map((h) => h.otherId);
+      const userList = await db
+        .select({
+          id: users.id,
+          username: users.username,
+          fullName: users.fullName,
+          email: users.email,
+          avatar: users.avatar,
+          city: users.city,
+          role: users.role,
+        })
+        .from(users)
+        .where(inArray(users.id, otherIds));
+
+      const userMap = new Map(userList.map((u) => [u.id, u]));
+
+      history = deduplicatedHistory
+        .map((h) => {
+          const u = userMap.get(h.otherId);
+          if (!u) return null;
+          return {
+            id: `hist_${myId}_${h.otherId}`,
+            user: u,
+            status: h.status,
+            updatedAt: h.updatedAt,
+            isSender: h.isSender,
+          };
+        })
+        .filter(Boolean);
+    }
+
     return res.json({
-      incoming,
-      outgoing,
+      incoming: incomingRows,
+      outgoing: outgoingRows,
+      history,
       pagination: {
         incomingTotal: incomingCount[0]?.count ?? 0,
         outgoingTotal: outgoingCount[0]?.count ?? 0,
@@ -111,7 +180,7 @@ router.get("/requests", async (req: AuthRequest, res) => {
 
 const requestLimiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
-  limit: 10, // Limit each IP to 10 requests per window
+  limit: 30, // Limit each IP
   message: { error: "Too many friend requests sent, please try again later" },
   standardHeaders: true,
   legacyHeaders: false,
@@ -139,9 +208,15 @@ router.post("/request", requestLimiter, validateBody(friendRequestSchema), async
       const row = existing[0];
       if (row.status === "accepted") return res.status(400).json({ error: "Already friends" });
       if (row.status === "pending") return res.status(400).json({ error: "Request already sent" });
-    }
 
-    await db.insert(friendsContacts).values({ userId: myId, contactId, status: "pending" });
+      // If existing row was rejected, update row to pending
+      await db
+        .update(friendsContacts)
+        .set({ userId: myId, contactId, status: "pending", updatedAt: new Date() })
+        .where(and(eq(friendsContacts.userId, row.userId), eq(friendsContacts.contactId, row.contactId)));
+    } else {
+      await db.insert(friendsContacts).values({ userId: myId, contactId, status: "pending", updatedAt: new Date() });
+    }
 
     const requester = await db.select().from(users).where(eq(users.id, myId)).limit(1);
     if (requester[0]) {
@@ -161,6 +236,11 @@ router.post("/request", requestLimiter, validateBody(friendRequestSchema), async
       );
     }
 
+    // Emit real-time Socket.IO events to both user rooms
+    emitToUser(contactId, "friend_request:new", { requesterId: myId });
+    emitToUser(contactId, "notification:new", { type: "friend_request" });
+    emitToUser(myId, "friend_request:sent", { contactId });
+
     return res.json({ success: true });
   } catch (e: any) {
     return res.status(500).json({ error: e.message });
@@ -172,11 +252,12 @@ router.post("/accept", validateBody(friendActionSchema), async (req: AuthRequest
   try {
     const myId = req.user!.userId;
     const { requesterId } = req.body;
+    const now = new Date();
 
     await db.transaction(async (tx) => {
       await tx
         .update(friendsContacts)
-        .set({ status: "accepted" })
+        .set({ status: "accepted", updatedAt: now })
         .where(and(eq(friendsContacts.userId, requesterId), eq(friendsContacts.contactId, myId)));
 
       const existing = await tx
@@ -185,11 +266,11 @@ router.post("/accept", validateBody(friendActionSchema), async (req: AuthRequest
         .where(and(eq(friendsContacts.userId, myId), eq(friendsContacts.contactId, requesterId)));
 
       if (existing.length === 0) {
-        await tx.insert(friendsContacts).values({ userId: myId, contactId: requesterId, status: "accepted" });
+        await tx.insert(friendsContacts).values({ userId: myId, contactId: requesterId, status: "accepted", updatedAt: now });
       } else {
         await tx
           .update(friendsContacts)
-          .set({ status: "accepted" })
+          .set({ status: "accepted", updatedAt: now })
           .where(and(eq(friendsContacts.userId, myId), eq(friendsContacts.contactId, requesterId)));
       }
     });
@@ -212,6 +293,11 @@ router.post("/accept", validateBody(friendActionSchema), async (req: AuthRequest
       );
     }
 
+    // Emit real-time Socket.IO events to both users
+    emitToUser(requesterId, "friend_request:accepted", { accepterId: myId });
+    emitToUser(myId, "friend_request:accepted", { requesterId });
+    emitToUser(requesterId, "notification:new", { type: "friend_accepted" });
+
     return res.json({ success: true });
   } catch (e: any) {
     return res.status(500).json({ error: e.message });
@@ -225,9 +311,17 @@ router.post("/reject", validateBody(friendActionSchema), async (req: AuthRequest
     const { requesterId } = req.body;
     if (!requesterId) return res.status(400).json({ error: "requesterId required" });
 
+    const now = new Date();
+
+    // Mark as rejected in DB so history is preserved
     await db
-      .delete(friendsContacts)
+      .update(friendsContacts)
+      .set({ status: "rejected", updatedAt: now })
       .where(and(eq(friendsContacts.userId, requesterId), eq(friendsContacts.contactId, myId)));
+
+    // Emit real-time Socket.IO events to both users
+    emitToUser(requesterId, "friend_request:rejected", { rejecterId: myId });
+    emitToUser(myId, "friend_request:rejected", { requesterId });
 
     return res.json({ success: true });
   } catch (e: any) {
@@ -245,6 +339,9 @@ router.post("/cancel", validateBody(friendRemoveSchema), async (req: AuthRequest
     await db
       .delete(friendsContacts)
       .where(and(eq(friendsContacts.userId, myId), eq(friendsContacts.contactId, contactId)));
+
+    emitToUser(contactId, "friend_request:canceled", { requesterId: myId });
+    emitToUser(myId, "friend_request:canceled", { contactId });
 
     return res.json({ success: true });
   } catch (e: any) {
@@ -267,6 +364,9 @@ router.delete("/remove", validateBody(friendRemoveSchema), async (req: AuthReque
           and(eq(friendsContacts.userId, contactId), eq(friendsContacts.contactId, myId))
         )
       );
+
+    emitToUser(contactId, "friend_removed", { userId: myId });
+    emitToUser(myId, "friend_removed", { contactId });
 
     return res.json({ success: true });
   } catch (e: any) {

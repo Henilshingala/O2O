@@ -383,7 +383,8 @@ export const blockingUsers = pgTable("blocking_users", {
 export const friendsContacts = pgTable("friends_contacts", {
   userId: text("user_id").references(() => users.id).notNull(),
   contactId: text("contact_id").references(() => users.id).notNull(),
-  status: text("status", { enum: ["pending", "accepted", "blocked"] }).default("pending").notNull(),
+  status: text("status", { enum: ["pending", "accepted", "rejected", "blocked"] }).default("pending").notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
 }, (t) => ({
   pk: primaryKey({ columns: [t.userId, t.contactId] }),
   userIdx: index("idx_friends_contacts_user_id").on(t.userId),

@@ -83,7 +83,8 @@ async function ensureTablesExist() {
       sql`ALTER TABLE "bids" ALTER COLUMN "budget" DROP NOT NULL`,
       sql`ALTER TABLE "bids" ALTER COLUMN "budget" SET DEFAULT 0`,
       sql`ALTER TABLE "bid_offers" ALTER COLUMN "delivery_time" DROP NOT NULL`,
-      sql`ALTER TABLE "bid_offers" ALTER COLUMN "delivery_time" SET DEFAULT ''`
+      sql`ALTER TABLE "bid_offers" ALTER COLUMN "delivery_time" SET DEFAULT ''`,
+      sql`ALTER TABLE "friends_contacts" ADD COLUMN IF NOT EXISTS "updated_at" timestamp without time zone DEFAULT now() NOT NULL`
     ];
 
     for (const migration of migrations) {

@@ -15,10 +15,19 @@ export interface FriendUser {
   relationship?: "none" | "friends" | "pending_sent" | "pending_received";
 }
 
+export interface FriendRequestHistoryItem {
+  id: string;
+  user: FriendUser;
+  status: "accepted" | "rejected";
+  updatedAt: string;
+  isSender: boolean;
+}
+
 interface FriendsContextType {
   friends: FriendUser[];
   incoming: FriendUser[];
   outgoing: FriendUser[];
+  history: FriendRequestHistoryItem[];
   isLoading: boolean;
   sendRequest: (contactId: string) => Promise<void>;
   acceptRequest: (requesterId: string) => Promise<void>;
@@ -41,7 +50,11 @@ export function FriendsProvider({ children }: { children: React.ReactNode }) {
     enabled,
   });
 
-  const { data: requests, isLoading: loadingRequests } = useQuery<{ incoming: FriendUser[]; outgoing: FriendUser[] }>({
+  const { data: requests, isLoading: loadingRequests } = useQuery<{
+    incoming: FriendUser[];
+    outgoing: FriendUser[];
+    history: FriendRequestHistoryItem[];
+  }>({
     queryKey: ["friend-requests"],
     queryFn: () => customFetch("/api/friends/requests"),
     enabled,
@@ -122,6 +135,7 @@ export function FriendsProvider({ children }: { children: React.ReactNode }) {
         friends,
         incoming: requests?.incoming ?? [],
         outgoing: requests?.outgoing ?? [],
+        history: requests?.history ?? [],
         isLoading,
         sendRequest,
         acceptRequest,

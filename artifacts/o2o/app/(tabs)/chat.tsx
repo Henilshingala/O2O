@@ -89,7 +89,7 @@ export default function ChatTab() {
   }));
 
   const fabActions = [
-    { id: "friend", label: "Add New Friend", icon: "user-plus", route: "/new-chat" },
+    { id: "friend", label: "Friends", icon: "users", route: "/friends" },
     { id: "group", label: "Create Group", icon: "users", route: "/group/create" },
     ...(user.role === "seller" ? [{ id: "channel", label: "Create Channel", icon: "radio", route: "/channel/create" }] : []),
   ];

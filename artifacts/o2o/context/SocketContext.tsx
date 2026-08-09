@@ -287,6 +287,11 @@ export function SocketProvider({ children }: { children: React.ReactNode }) {
         queryClient.invalidateQueries({ queryKey: ["friend-requests"] });
       };
 
+      // ── friend events ─────────────────────────────────────────────────────
+      const handleFriendEvent = () => {
+        debouncedInvalidateFriends();
+      };
+
       sock.on("message:new", handleMessageNew);
       sock.on("message:delete", handleMessageDelete);
       sock.on("message:deleteForMe", handleMessageDeleteForMe);
@@ -306,6 +311,12 @@ export function SocketProvider({ children }: { children: React.ReactNode }) {
       sock.on("channel:update", handleChannelUpdate);
       sock.on("product:stats:update", handleProductStats);
       sock.on("channel:subscriber:update", handleChannelSubscriberUpdate);
+      sock.on("friend_request:new", handleFriendEvent);
+      sock.on("friend_request:sent", handleFriendEvent);
+      sock.on("friend_request:accepted", handleFriendEvent);
+      sock.on("friend_request:rejected", handleFriendEvent);
+      sock.on("friend_request:canceled", handleFriendEvent);
+      sock.on("friend_removed", handleFriendEvent);
       sock.on("connect", handleReconnect);
 
       cleanupRef.current = () => {
@@ -328,6 +339,12 @@ export function SocketProvider({ children }: { children: React.ReactNode }) {
         sock.off("channel:update", handleChannelUpdate);
         sock.off("product:stats:update", handleProductStats);
         sock.off("channel:subscriber:update", handleChannelSubscriberUpdate);
+        sock.off("friend_request:new", handleFriendEvent);
+        sock.off("friend_request:sent", handleFriendEvent);
+        sock.off("friend_request:accepted", handleFriendEvent);
+        sock.off("friend_request:rejected", handleFriendEvent);
+        sock.off("friend_request:canceled", handleFriendEvent);
+        sock.off("friend_removed", handleFriendEvent);
         sock.off("connect", handleReconnect);
       };
     });

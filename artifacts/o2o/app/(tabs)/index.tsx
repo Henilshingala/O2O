@@ -201,7 +201,7 @@ function FabMenu({ role, colors }: { role: string; colors: any }) {
   });
 
   const options = [
-    { label: "Add New Friend", icon: "user-plus", route: "/people-search" },
+    { label: "Friends", icon: "users", route: "/friends" },
     { label: "Create Group", icon: "users", route: "/group/create" },
   ];
   if (role === "seller") {
