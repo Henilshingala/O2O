@@ -61,6 +61,7 @@ export function SocketProvider({ children }: { children: React.ReactNode }) {
 
       // ── message:new ───────────────────────────────────────────────────────
       const handleMessageNew = (msg: Message & { chatId?: string; groupId?: string; channelId?: string }) => {
+        console.log(`[SOCKET] message received on client messageId=${msg.id} chatId=${msg.chatId ?? msg.groupId ?? msg.channelId}`);
         if (msg.chatId) {
           queryClient.setQueryData<Chat[]>(["chats"], (old) =>
             old?.map((c) =>

@@ -8,6 +8,27 @@ const TOKEN_KEY = "@o2o_token";
 let socket: Socket | null = null;
 let appStateSubscription: ReturnType<typeof AppState.addEventListener> | null = null;
 let currentBaseUrl: string | null = null;
+const socketConnectedListeners = new Set<(s: Socket) => void>();
+
+export function subscribeSocketConnected(cb: (s: Socket) => void): () => void {
+  socketConnectedListeners.add(cb);
+  if (socket && socket.connected) {
+    cb(socket);
+  }
+  return () => {
+    socketConnectedListeners.delete(cb);
+  };
+}
+
+function notifySocketConnected(s: Socket) {
+  socketConnectedListeners.forEach((cb) => {
+    try {
+      cb(s);
+    } catch (e) {
+      console.warn("[SOCKET] error in listener:", e);
+    }
+  });
+}
 
 export async function connectSocket(baseUrl: string): Promise<Socket> {
   currentBaseUrl = baseUrl;
@@ -22,6 +43,7 @@ export async function connectSocket(baseUrl: string): Promise<Socket> {
 
   // If socket already exists and is connected with the same auth, reuse it
   if (socket && socket.connected) {
+    notifySocketConnected(socket);
     return socket;
   }
 
@@ -39,6 +61,17 @@ export async function connectSocket(baseUrl: string): Promise<Socket> {
     reconnectionAttempts: Infinity,
     reconnectionDelay: 1000,
     reconnectionDelayMax: 10000,
+  });
+
+  socket.on("connect", () => {
+    console.log(`[SOCKET] connected on client socketId=${socket?.id}`);
+    if (socket) {
+      notifySocketConnected(socket);
+    }
+  });
+
+  socket.on("disconnect", (reason) => {
+    console.log(`[SOCKET] client disconnected reason=${reason}`);
   });
 
   socket.on("upload:complete", (data: { uploadId: string; url: string }) => {

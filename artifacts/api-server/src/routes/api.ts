@@ -583,13 +583,16 @@ router.post("/chats", validateBody(createChatSchema), async (req: AuthRequest, r
 router.post("/chats/:id/messages", validateBody(sendMessageSchema), async (req: AuthRequest, res) => {
   try {
     const chatId = req.params.id as string;
+    const senderId = req.user!.userId;
+    console.log(`[SOCKET] message received chatId=${chatId} senderId=${senderId}`);
+
     const parts = await db.select().from(schema.chatParticipants).where(eq(schema.chatParticipants.chatId, chatId));
     const participantIds = parts.map((p) => p.userId);
-    if (!participantIds.includes(req.user!.userId)) {
+    if (!participantIds.includes(senderId)) {
       return res.status(403).json({ error: "Not a chat participant" });
     }
-    const otherId = participantIds.find((id) => id !== req.user!.userId);
-    if (otherId && !(await areFriends(req.user!.userId, otherId))) {
+    const otherId = participantIds.find((id) => id !== senderId);
+    if (otherId && !(await areFriends(senderId, otherId))) {
       return res.status(403).json({ error: "You can only chat with accepted friends" });
     }
     const id = genId("msg");
@@ -598,7 +601,7 @@ router.post("/chats/:id/messages", validateBody(sendMessageSchema), async (req: 
       ...restBody,
       id,
       chatId,
-      senderId: req.user!.userId,
+      senderId,
       type: req.body.type || "text",
       metadata: req.body.metadata || {},
       timestamp: timestamp ? new Date(timestamp) : new Date(),
@@ -606,11 +609,14 @@ router.post("/chats/:id/messages", validateBody(sendMessageSchema), async (req: 
     // ── 1. Persist to DB (must succeed before any IO) ──────────────────────
     await db.insert(schema.messages).values(newMsg);
     await db.update(schema.chats).set({ updatedAt: new Date() }).where(eq(schema.chats.id, chatId));
-    console.log(`[MESSAGE_SAVED] Message ${id} saved to db`);
+    console.log(`[SOCKET] message persisted messageId=${id} chatId=${chatId}`);
 
-    // ── 2. Socket.IO — real-time to all online participants ─────────────────
+    // ── 2. Socket.IO — real-time to chat room and participant user rooms ────
     emitToChat(chatId, "message:new", newMsg);
-    console.log(`[SOCKET_EMIT] Emitted message:new to chat ${chatId}`);
+    for (const pId of participantIds) {
+      emitToUser(pId, "message:new", newMsg);
+      console.log(`[SOCKET] message emitted chatId=${chatId} recipient=${pId}`);
+    }
 
     // ── 3. Firebase push — to the recipient (never the sender) ──────────────
     if (otherId) {
@@ -972,8 +978,11 @@ router.post("/groups", validateBody(createGroupSchema), async (req: AuthRequest,
 router.post("/groups/:id/messages", validateBody(sendMessageSchema), async (req: AuthRequest, res) => {
   try {
     const groupId = req.params.id as string;
+    const senderId = req.user!.userId;
+    console.log(`[SOCKET] message received groupId=${groupId} senderId=${senderId}`);
+
     const membership = await db.select().from(schema.groupMembers).where(
-      and(eq(schema.groupMembers.groupId, groupId), eq(schema.groupMembers.userId, req.user!.userId))
+      and(eq(schema.groupMembers.groupId, groupId), eq(schema.groupMembers.userId, senderId))
     );
     if (membership.length === 0) {
       return res.status(403).json({ error: "Not a group member" });
@@ -984,23 +993,25 @@ router.post("/groups/:id/messages", validateBody(sendMessageSchema), async (req:
       ...restBody,
       id,
       groupId,
-      senderId: req.user!.userId,
+      senderId,
       type: req.body.type || "text",
       metadata: req.body.metadata || {},
       timestamp: timestamp ? new Date(timestamp) : new Date(),
     };
     // ── 1. Persist to DB ────────────────────────────────────────────────────
     await db.insert(schema.messages).values(newMsg);
+    console.log(`[SOCKET] message persisted messageId=${id} groupId=${groupId}`);
 
     // ── 2. Socket.IO ────────────────────────────────────────────────────────
     emitToGroup(groupId, "message:new", newMsg);
-
-    // ── 3. Firebase push to all members except sender ───────────────────────
     const allMembers = await db
       .select({ userId: schema.groupMembers.userId })
       .from(schema.groupMembers)
       .where(eq(schema.groupMembers.groupId, groupId));
-    const senderId = req.user!.userId;
+    for (const member of allMembers) {
+      emitToUser(member.userId, "message:new", newMsg);
+      console.log(`[SOCKET] message emitted groupId=${groupId} recipient=${member.userId}`);
+    }
     // Fetch sender name from DB — never trust req.body for notification title
     const senderRow2 = await db.select({ fullName: schema.users.fullName })
       .from(schema.users)

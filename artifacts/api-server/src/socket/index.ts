@@ -1,6 +1,6 @@
 import { Server as HttpServer } from "http";
 import { Server, type Socket } from "socket.io";
-import { verifyAccessToken } from "../lib/tokens";
+import { verifyAccessToken } from "../lib/tokens.js";
 
 export type AppSocketServer = Server;
 
@@ -17,30 +17,75 @@ export function initSocket(httpServer: HttpServer): Server {
 
   io.use((socket, next) => {
     const token = socket.handshake.auth?.token as string | undefined;
-    if (!token) return next(new Error("Unauthorized"));
+    if (!token) {
+      console.warn("[SOCKET] Connection attempt rejected: Missing token");
+      return next(new Error("Unauthorized"));
+    }
     const payload = verifyAccessToken(token);
-    if (!payload) return next(new Error("Unauthorized"));
+    if (!payload) {
+      console.warn("[SOCKET] Connection attempt rejected: Invalid token");
+      return next(new Error("Unauthorized"));
+    }
     (socket as Socket & { userId: string }).userId = payload.userId;
     next();
   });
 
   io.on("connection", (socket: Socket & { userId: string }) => {
     const userId = socket.userId;
+    // Every authenticated user joins their personal user room
     socket.join(`user:${userId}`);
+    console.log(`[SOCKET] connected userId=${userId} socketId=${socket.id}`);
 
-    socket.on("join:chat", (chatId: string) => socket.join(`chat:${chatId}`));
-    socket.on("leave:chat", (chatId: string) => socket.leave(`chat:${chatId}`));
-    socket.on("join:group", (groupId: string) => socket.join(`group:${groupId}`));
-    socket.on("leave:group", (groupId: string) => socket.leave(`group:${groupId}`));
-    socket.on("join:channel", (channelId: string) => socket.join(`channel:${channelId}`));
-    socket.on("leave:channel", (channelId: string) => socket.leave(`channel:${channelId}`));
-    socket.on("join:bid", (bidId: string) => socket.join(`bid:${bidId}`));
-    socket.on("leave:bid", (bidId: string) => socket.leave(`bid:${bidId}`));
+    socket.on("join:chat", (chatId: string) => {
+      if (!chatId) return;
+      socket.join(`chat:${chatId}`);
+      console.log(`[SOCKET] joined chat room=${chatId} userId=${userId}`);
+    });
+    socket.on("leave:chat", (chatId: string) => {
+      if (!chatId) return;
+      socket.leave(`chat:${chatId}`);
+      console.log(`[SOCKET] left chat room=${chatId} userId=${userId}`);
+    });
+    socket.on("join:group", (groupId: string) => {
+      if (!groupId) return;
+      socket.join(`group:${groupId}`);
+      console.log(`[SOCKET] joined group room=${groupId} userId=${userId}`);
+    });
+    socket.on("leave:group", (groupId: string) => {
+      if (!groupId) return;
+      socket.leave(`group:${groupId}`);
+      console.log(`[SOCKET] left group room=${groupId} userId=${userId}`);
+    });
+    socket.on("join:channel", (channelId: string) => {
+      if (!channelId) return;
+      socket.join(`channel:${channelId}`);
+      console.log(`[SOCKET] joined channel room=${channelId} userId=${userId}`);
+    });
+    socket.on("leave:channel", (channelId: string) => {
+      if (!channelId) return;
+      socket.leave(`channel:${channelId}`);
+      console.log(`[SOCKET] left channel room=${channelId} userId=${userId}`);
+    });
+    socket.on("join:bid", (bidId: string) => {
+      if (!bidId) return;
+      socket.join(`bid:${bidId}`);
+      console.log(`[SOCKET] joined bid room=${bidId} userId=${userId}`);
+    });
+    socket.on("leave:bid", (bidId: string) => {
+      if (!bidId) return;
+      socket.leave(`bid:${bidId}`);
+      console.log(`[SOCKET] left bid room=${bidId} userId=${userId}`);
+    });
     socket.on("typing:start", (data: { chatId: string }) => {
+      if (!data?.chatId) return;
       socket.to(`chat:${data.chatId}`).emit("typing:start", { chatId: data.chatId, userId });
     });
     socket.on("typing:stop", (data: { chatId: string }) => {
+      if (!data?.chatId) return;
       socket.to(`chat:${data.chatId}`).emit("typing:stop", { chatId: data.chatId, userId });
+    });
+    socket.on("disconnect", (reason) => {
+      console.log(`[SOCKET] disconnected userId=${userId} reason=${reason}`);
     });
   });
 

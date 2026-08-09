@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { customFetch } from "@workspace/api-client-react";
-import { getSocket } from "@/lib/socket";
+import { getSocket, subscribeSocketConnected } from "@/lib/socket";
 import { UploadEmitter } from "../lib/uploadMedia";
 import type { Message } from "@/types";
 
@@ -40,12 +40,10 @@ export function useRealtimeMessages({
 
   useEffect(() => {
     if (!roomId) return;
-    const socket = getSocket();
-    if (!socket) return;
 
     const joinEvent = `join:${roomType}` as "join:chat" | "join:group" | "join:channel";
     const leaveEvent = `leave:${roomType}` as "leave:chat" | "leave:group" | "leave:channel";
-    socket.emit(joinEvent, roomId);
+    let activeSocket: any = null;
 
     // ── message:new ──────────────────────────────────────────────────────────
     const handleNew = (msg: Message) => {
@@ -54,6 +52,8 @@ export function useRealtimeMessages({
         (roomType === "group" && (msg as any).groupId === roomId) ||
         (roomType === "channel" && (msg as any).channelId === roomId);
       if (!belongs) return;
+
+      console.log(`[SOCKET] message received on client messageId=${msg.id} chatId=${(msg as any).chatId ?? roomId}`);
 
       setMessages((prev) => {
         if (prev.some((m) => m.id === msg.id)) {
@@ -141,26 +141,34 @@ export function useRealtimeMessages({
       );
     };
 
-    // ── reconnect: re-join the room so messages keep arriving ─────────────────
-    const handleReconnect = () => {
+    const unsubscribe = subscribeSocketConnected((socket) => {
+      activeSocket = socket;
       socket.emit(joinEvent, roomId);
-    };
+      console.log(`[SOCKET] joined ${roomType} room=${roomId}`);
 
-    socket.on("message:new", handleNew);
-    socket.on("message:delete", handleDelete);
-    socket.on("message:deleteForMe", handleDeleteForMe);
-    socket.on("message:vote", handleVote);
-    socket.on("message:read", handleRead);
-    socket.on("connect", handleReconnect);
-
-    return () => {
       socket.off("message:new", handleNew);
       socket.off("message:delete", handleDelete);
       socket.off("message:deleteForMe", handleDeleteForMe);
       socket.off("message:vote", handleVote);
       socket.off("message:read", handleRead);
-      socket.off("connect", handleReconnect);
-      socket.emit(leaveEvent, roomId);
+
+      socket.on("message:new", handleNew);
+      socket.on("message:delete", handleDelete);
+      socket.on("message:deleteForMe", handleDeleteForMe);
+      socket.on("message:vote", handleVote);
+      socket.on("message:read", handleRead);
+    });
+
+    return () => {
+      unsubscribe();
+      if (activeSocket) {
+        activeSocket.off("message:new", handleNew);
+        activeSocket.off("message:delete", handleDelete);
+        activeSocket.off("message:deleteForMe", handleDeleteForMe);
+        activeSocket.off("message:vote", handleVote);
+        activeSocket.off("message:read", handleRead);
+        activeSocket.emit(leaveEvent, roomId);
+      }
     };
   }, [roomId, roomType, queryClient, queryKey]);
 
