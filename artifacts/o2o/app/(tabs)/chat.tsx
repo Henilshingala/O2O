@@ -281,36 +281,38 @@ export default function ChatTab() {
                   >
                     {item.name}
                   </Text>
-                  <View style={styles.topRight}>
-                    {item.lastTs > 0 && (
-                      <Text
-                        style={[
-                          styles.time,
-                          { color: item.unread > 0 ? colors.primary : colors.mutedForeground },
-                        ]}
-                      >
-                        {formatTime(item.lastTs)}
-                      </Text>
-                    )}
-                    {item.unread > 0 && (
-                      <View style={[styles.badge, { backgroundColor: colors.primary }]}>
-                        <Text style={styles.badgeText}>{item.unread > 99 ? "99+" : item.unread}</Text>
-                      </View>
-                    )}
-                  </View>
+                  {item.lastTs > 0 && (
+                    <Text
+                      style={[
+                        styles.time,
+                        { color: item.unread > 0 ? colors.primary : colors.mutedForeground },
+                      ]}
+                    >
+                      {formatTime(item.lastTs)}
+                    </Text>
+                  )}
                 </View>
-                <Text
-                  style={[
-                    styles.preview,
-                    {
-                      color: item.unread > 0 ? colors.foreground : colors.mutedForeground,
-                      fontWeight: item.unread > 0 ? "600" : "400",
-                    },
-                  ]}
-                  numberOfLines={1}
-                >
-                  {item.lastMessage ?? "No messages yet"}
-                </Text>
+                <View style={styles.bottomRow}>
+                  <Text
+                    style={[
+                      styles.preview,
+                      {
+                        color: item.unread > 0 ? colors.foreground : colors.mutedForeground,
+                        fontWeight: item.unread > 0 ? "600" : "400",
+                        flex: 1,
+                        marginRight: 8,
+                      },
+                    ]}
+                    numberOfLines={1}
+                  >
+                    {item.lastMessage ?? "No messages yet"}
+                  </Text>
+                  {item.unread > 0 && (
+                    <View style={[styles.badge, { backgroundColor: colors.primary }]}>
+                      <Text style={styles.badgeText}>{item.unread > 99 ? "99+" : item.unread}</Text>
+                    </View>
+                  )}
+                </View>
               </View>
             </TouchableOpacity>
           );
@@ -386,6 +388,7 @@ const styles = StyleSheet.create({
   content: { flex: 1 },
   top: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginBottom: 4 },
   topRight: { flexDirection: "row", alignItems: "center", gap: 6 },
+  bottomRow: { flexDirection: "row", alignItems: "center", justifyContent: "space-between" },
   name: { fontSize: 15, flex: 1 },
   time: { fontSize: 12 },
   preview: { fontSize: 13 },
