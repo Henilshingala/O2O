@@ -88,7 +88,7 @@ interface DataContextType {
   /** Vote on a poll option */
   voteOnPoll: (messageId: string, roomType: "chat" | "group" | "channel", roomId: string, optionIndex: number) => Promise<void>;
   /** Mark all messages in a chat/group as read for the current user */
-  markRoomRead: (roomType: "chat" | "group", roomId: string) => Promise<void>;
+  markRoomRead: (roomType: "chat" | "group" | "channel", roomId: string) => Promise<void>;
   /** Delete an entire chat conversation (both participants) */
   deleteChat: (chatId: string) => Promise<void>;
   /** Clear all messages in a chat (conversation stays) */
@@ -489,12 +489,14 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
 
   // ── New: mark all messages in a room as read ───────────────────────────────
   const markRoomRead = useCallback(async (
-    roomType: "chat" | "group",
+    roomType: "chat" | "group" | "channel",
     roomId: string
   ): Promise<void> => {
     const endpoint = roomType === "chat"
       ? `/api/data/chats/${roomId}/read`
-      : `/api/data/groups/${roomId}/read`;
+      : roomType === "group"
+      ? `/api/data/groups/${roomId}/read`
+      : `/api/data/channels/${roomId}/read`;
 
     const userId = user?.id;
     if (userId) {
@@ -513,7 +515,7 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
               : c
           ) ?? old
         );
-      } else {
+      } else if (roomType === "group") {
         queryClient.setQueryData<Group[]>(["groups"], (old) =>
           old?.map((g) =>
             g.id === roomId
@@ -526,6 +528,21 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
                   ),
                 }
               : g
+          ) ?? old
+        );
+      } else {
+        queryClient.setQueryData<Channel[]>(["channels"], (old) =>
+          old?.map((ch) =>
+            ch.id === roomId
+              ? {
+                  ...ch,
+                  messages: ch.messages.map((m) =>
+                    m.senderId !== userId && !((m.metadata?.readBy as string[] | undefined)?.includes(userId))
+                      ? { ...m, metadata: { ...m.metadata, readBy: [...new Set([...((m.metadata?.readBy as string[]) || []), userId])] } }
+                      : m
+                  ),
+                }
+              : ch
           ) ?? old
         );
       }

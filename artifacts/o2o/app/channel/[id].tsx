@@ -35,6 +35,7 @@ import * as Haptics from "@/compat/haptics";
 import { ProductCard } from "@/components/ProductCard";
 import { useAuth } from "@/context/AuthContext";
 import { useData } from "@/context/DataContext";
+import { useSocket } from "@/context/SocketContext";
 import { useColors } from "@/hooks/useColors";
 import { getSocket } from "@/lib/socket";
 import { useQueryClient } from "@tanstack/react-query";
@@ -71,8 +72,9 @@ export default function ChannelScreen() {
   const { user } = useAuth();
   const {
     getChannel, followChannel, sendChannelMessage,
-    toggleWishlist, isWishlisted,
+    toggleWishlist, isWishlisted, markRoomRead,
   } = useData();
+  const socketContext = useSocket();
   const queryClient = useQueryClient();
   const params = useLocalSearchParams<{ id: string }>();
 
@@ -156,6 +158,23 @@ export default function ChannelScreen() {
   };
 
   const channel = getChannel(params.id);
+
+  // Mark as read on enter and when messages arrive
+  useEffect(() => {
+    if (channel?.id) {
+      markRoomRead("channel", channel.id);
+    }
+  }, [channel?.id, channel?.messages.length]);
+
+  // Set active room for SocketContext to handle incoming messages/read-receipts
+  useEffect(() => {
+    if (channel?.id) {
+      socketContext?.setActiveRoom("channel", channel.id);
+      return () => {
+        socketContext?.setActiveRoom(null, null);
+      };
+    }
+  }, [channel?.id, socketContext]);
 
   const isOwner = channel?.ownerId === user?.id;
   const isFollowing = user ? (channel?.followers.includes(user.id) ?? false) : false;

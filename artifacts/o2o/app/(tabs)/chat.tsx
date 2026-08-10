@@ -160,13 +160,20 @@ export default function ChatTab() {
       .forEach((ch) => {
         const msgs = Array.isArray(ch.messages) ? ch.messages : [];
         const last = msgs[msgs.length - 1];
+        const unread = msgs.filter(
+          (m) =>
+            m.senderId !== user.id &&
+            !m.deletedAt &&
+            !((m.metadata?.deletedFor as string[] | undefined)?.includes(user.id)) &&
+            !((m.metadata?.readBy as string[] | undefined)?.includes(user.id))
+        ).length;
         result.push({
           id: ch.id,
           type: "channel",
           name: ch.name,
           lastMessage: last ? previewText(last) : undefined,
           lastTs: last ? new Date(last.timestamp).getTime() : new Date(ch.createdAt).getTime(),
-          unread: 0, // channels are broadcast — no per-user unread
+          unread,
           raw: ch,
         });
       });

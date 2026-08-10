@@ -278,6 +278,33 @@ router.post("/channels/:id/messages", validateBody(sendMessageSchema), async (re
   } catch (error) { return res.status(500).json({ error: "Server error" }); }
 });
 
+router.post("/channels/:id/read", async (req: AuthRequest, res) => {
+  try {
+    const channelId = req.params.id as string;
+    const userId = req.user!.userId;
+    const seenAt = new Date().toISOString();
+    const msgs = await db.select({ id: schema.messages.id, senderId: schema.messages.senderId, metadata: schema.messages.metadata })
+      .from(schema.messages)
+      .where(and(eq(schema.messages.channelId, channelId), isNull(schema.messages.deletedAt)));
+    const messageIds: string[] = [];
+    for (const m of msgs) {
+      if (m.senderId === userId) continue;
+      const meta: any = m.metadata || {};
+      const readBy: string[] = meta.readBy || [];
+      if (!readBy.includes(userId)) {
+        await db.update(schema.messages)
+          .set({ metadata: { ...meta, readBy: [...readBy, userId], seenAt } })
+          .where(eq(schema.messages.id, m.id));
+        messageIds.push(m.id);
+      }
+    }
+    if (messageIds.length > 0) {
+      emitToChannel(channelId, "message:read", { messageIds, userId, seenAt });
+    }
+    return res.json({ success: true, messageIds });
+  } catch (error) { return res.status(500).json({ error: "Server error" }); }
+});
+
 router.patch("/channels/:id", async (req: AuthRequest, res) => {
   try {
     const channelId = req.params.id as string;
@@ -485,16 +512,18 @@ router.get("/counts", async (req: AuthRequest, res) => {
     const chatIds = chatParts.map((p) => p.chatId);
     const groupParts = await db.select({ groupId: schema.groupMembers.groupId }).from(schema.groupMembers).where(eq(schema.groupMembers.userId, userId));
     const groupIds = groupParts.map((p) => p.groupId);
+    const followedChannelParts = await db.select({ channelId: schema.channelFollowers.channelId }).from(schema.channelFollowers).where(eq(schema.channelFollowers.userId, userId));
+    const followedChannelIds = followedChannelParts.map((p) => p.channelId);
+    const ownedChannelIds = ownedChannels.map((c) => c.id);
+    const allChannelIds = [...new Set([...ownedChannelIds, ...followedChannelIds])];
 
     let messageCount = 0;
-    let roomCondition;
-    if (chatIds.length > 0 && groupIds.length > 0) {
-      roomCondition = or(inArray(schema.messages.chatId, chatIds), inArray(schema.messages.groupId, groupIds));
-    } else if (chatIds.length > 0) {
-      roomCondition = inArray(schema.messages.chatId, chatIds);
-    } else if (groupIds.length > 0) {
-      roomCondition = inArray(schema.messages.groupId, groupIds);
-    }
+    const roomConditions = [];
+    if (chatIds.length > 0) roomConditions.push(inArray(schema.messages.chatId, chatIds));
+    if (groupIds.length > 0) roomConditions.push(inArray(schema.messages.groupId, groupIds));
+    if (allChannelIds.length > 0) roomConditions.push(inArray(schema.messages.channelId, allChannelIds));
+
+    const roomCondition = roomConditions.length > 0 ? or(...roomConditions) : undefined;
 
     if (roomCondition) {
       const [msgResult] = await db.select({ count: count() })

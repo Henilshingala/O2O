@@ -14,7 +14,7 @@ function debounce<T extends (...args: unknown[]) => void>(fn: T, ms = 500) {
 }
 
 interface SocketContextType {
-  setActiveRoom: (roomType: "chat" | "group" | null, roomId: string | null) => void;
+  setActiveRoom: (roomType: "chat" | "group" | "channel" | null, roomId: string | null) => void;
 }
 
 const SocketContext = createContext<SocketContextType | null>(null);
@@ -26,8 +26,8 @@ export function SocketProvider({ children }: { children: React.ReactNode }) {
   // disconnecting the socket (which we only do on actual logout).
   const cleanupRef = useRef<(() => void) | null>(null);
 
-  const activeRoomRef = useRef<{ roomType: "chat" | "group"; roomId: string } | null>(null);
-  const setActiveRoom = useCallback((roomType: "chat" | "group" | null, roomId: string | null) => {
+  const activeRoomRef = useRef<{ roomType: "chat" | "group" | "channel"; roomId: string } | null>(null);
+  const setActiveRoom = useCallback((roomType: "chat" | "group" | "channel" | null, roomId: string | null) => {
     if (roomType && roomId) {
       activeRoomRef.current = { roomType, roomId };
     } else {
@@ -107,7 +107,8 @@ export function SocketProvider({ children }: { children: React.ReactNode }) {
         const activeRoom = activeRoomRef.current;
         const isActive = activeRoom &&
           ((activeRoom.roomType === "chat" && msg.chatId === activeRoom.roomId) ||
-           (activeRoom.roomType === "group" && msg.groupId === activeRoom.roomId));
+           (activeRoom.roomType === "group" && msg.groupId === activeRoom.roomId) ||
+           (activeRoom.roomType === "channel" && msg.channelId === activeRoom.roomId));
 
         if (isActive) {
           const currentUserId = user?.id;
@@ -150,6 +151,25 @@ export function SocketProvider({ children }: { children: React.ReactNode }) {
                   );
                 })
                 .catch((err) => console.error("Error marking msg read from socket", err));
+            } else if (activeRoom.roomType === "channel" && msg.channelId) {
+              customFetch(`/api/data/channels/${msg.channelId}/read`, { method: "POST" })
+                .then(() => {
+                  queryClient.setQueryData<Channel[]>(["channels"], (old) =>
+                    old?.map((ch) =>
+                      ch.id === msg.channelId
+                        ? {
+                            ...ch,
+                            messages: ch.messages.map((m) =>
+                              m.id === msg.id
+                                ? { ...m, metadata: { ...m.metadata, readBy: [...new Set([...((m.metadata?.readBy as string[] | undefined) || []), currentUserId])] } }
+                                : m
+                            ),
+                          }
+                        : ch
+                    ) ?? old
+                  );
+                })
+                .catch((err) => console.error("Error marking msg read from socket", err));
             }
           }
         } else {
@@ -169,6 +189,7 @@ export function SocketProvider({ children }: { children: React.ReactNode }) {
 
         queryClient.setQueryData<Chat[]>(["chats"], (old) => old?.map(c => ({ ...c, messages: markRead(c.messages) })) ?? old);
         queryClient.setQueryData<Group[]>(["groups"], (old) => old?.map(g => ({ ...g, messages: markRead(g.messages) })) ?? old);
+        queryClient.setQueryData<Channel[]>(["channels"], (old) => old?.map(ch => ({ ...ch, messages: markRead(ch.messages) })) ?? old);
         
         debouncedInvalidateCounts();
       };
