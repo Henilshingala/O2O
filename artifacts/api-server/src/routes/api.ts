@@ -127,6 +127,7 @@ router.post("/channels", validateBody(createChannelSchema), async (req: AuthRequ
     await db.transaction(async (tx) => {
       await tx.insert(schema.channels).values(newChannel);
     });
+    getIo()?.emit("channel:update");
     return res.json({ ...newChannel, image: newChannel.logo, products: [], followers: [], messages: [] });
   } catch (error) { return res.status(500).json({ error: "Server error" }); }
 });
@@ -482,9 +483,31 @@ router.get("/counts", async (req: AuthRequest, res) => {
     const [bidResult] = await db.select({ count: count() }).from(schema.bids).where(and(bidWhere, eq(schema.bids.status, "active")));
     const chatParts = await db.select({ chatId: schema.chatParticipants.chatId }).from(schema.chatParticipants).where(eq(schema.chatParticipants.userId, userId));
     const chatIds = chatParts.map((p) => p.chatId);
+    const groupParts = await db.select({ groupId: schema.groupMembers.groupId }).from(schema.groupMembers).where(eq(schema.groupMembers.userId, userId));
+    const groupIds = groupParts.map((p) => p.groupId);
+
     let messageCount = 0;
-    if (chatIds.length > 0) {
-      const [msgResult] = await db.select({ count: count() }).from(schema.messages).where(and(inArray(schema.messages.chatId, chatIds), not(eq(schema.messages.senderId, userId))));
+    let roomCondition;
+    if (chatIds.length > 0 && groupIds.length > 0) {
+      roomCondition = or(inArray(schema.messages.chatId, chatIds), inArray(schema.messages.groupId, groupIds));
+    } else if (chatIds.length > 0) {
+      roomCondition = inArray(schema.messages.chatId, chatIds);
+    } else if (groupIds.length > 0) {
+      roomCondition = inArray(schema.messages.groupId, groupIds);
+    }
+
+    if (roomCondition) {
+      const [msgResult] = await db.select({ count: count() })
+        .from(schema.messages)
+        .where(
+          and(
+            roomCondition,
+            not(eq(schema.messages.senderId, userId)),
+            isNull(schema.messages.deletedAt),
+            not(sql`COALESCE(${schema.messages.metadata}->'deletedFor', '[]'::jsonb) @> jsonb_build_array(${userId}::text)`),
+            not(sql`COALESCE(${schema.messages.metadata}->'readBy', '[]'::jsonb) @> jsonb_build_array(${userId}::text)`)
+          )
+        );
       messageCount = msgResult.count ?? 0;
     }
 
@@ -761,12 +784,12 @@ router.post("/chats/:chatId/read", async (req: AuthRequest, res) => {
     const chatId = req.params.chatId as string;
     const userId = req.user!.userId;
     const seenAt = new Date().toISOString();
-    const msgs = await db.select({ id: schema.messages.id, metadata: schema.messages.metadata })
+    const msgs = await db.select({ id: schema.messages.id, metadata: schema.messages.metadata, senderId: schema.messages.senderId })
       .from(schema.messages)
       .where(and(eq(schema.messages.chatId, chatId), isNull(schema.messages.deletedAt)));
     const messageIds: string[] = [];
     for (const m of msgs) {
-      if ((m as any).senderId === userId) continue; // don't mark own messages as read
+      if (m.senderId === userId) continue; // don't mark own messages as read
       const meta: any = m.metadata || {};
       const readBy: string[] = meta.readBy || [];
       if (!readBy.includes(userId)) {

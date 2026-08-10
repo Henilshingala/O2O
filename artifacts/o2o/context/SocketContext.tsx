@@ -1,8 +1,8 @@
-import React, { createContext, useContext, useEffect, useRef } from "react";
+import React, { createContext, useContext, useEffect, useRef, useCallback } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "@/context/AuthContext";
 import { connectSocket, disconnectSocket } from "@/lib/socket";
-import { getBaseUrl } from "@workspace/api-client-react";
+import { getBaseUrl, customFetch } from "@workspace/api-client-react";
 import type { Bid, BidOffer, Chat, Group, Channel, Message } from "@/types";
 
 function debounce<T extends (...args: unknown[]) => void>(fn: T, ms = 500) {
@@ -13,7 +13,11 @@ function debounce<T extends (...args: unknown[]) => void>(fn: T, ms = 500) {
   };
 }
 
-const SocketContext = createContext<null>(null);
+interface SocketContextType {
+  setActiveRoom: (roomType: "chat" | "group" | null, roomId: string | null) => void;
+}
+
+const SocketContext = createContext<SocketContextType | null>(null);
 
 export function SocketProvider({ children }: { children: React.ReactNode }) {
   const { user } = useAuth();
@@ -21,6 +25,15 @@ export function SocketProvider({ children }: { children: React.ReactNode }) {
   // Track registered listeners so we can remove them on cleanup without
   // disconnecting the socket (which we only do on actual logout).
   const cleanupRef = useRef<(() => void) | null>(null);
+
+  const activeRoomRef = useRef<{ roomType: "chat" | "group"; roomId: string } | null>(null);
+  const setActiveRoom = useCallback((roomType: "chat" | "group" | null, roomId: string | null) => {
+    if (roomType && roomId) {
+      activeRoomRef.current = { roomType, roomId };
+    } else {
+      activeRoomRef.current = null;
+    }
+  }, []);
 
   useEffect(() => {
     if (!user) {
@@ -51,6 +64,7 @@ export function SocketProvider({ children }: { children: React.ReactNode }) {
         queryClient.invalidateQueries({ queryKey: ["friends"] });
         queryClient.invalidateQueries({ queryKey: ["friend-requests"] });
         queryClient.invalidateQueries({ queryKey: ["counts"] });
+        queryClient.invalidateQueries({ queryKey: ["chats"] });
       });
       const debouncedInvalidateGroups = debounce(() =>
         queryClient.invalidateQueries({ queryKey: ["groups"] })
@@ -89,6 +103,73 @@ export function SocketProvider({ children }: { children: React.ReactNode }) {
             ) ?? old
           );
         }
+
+        const activeRoom = activeRoomRef.current;
+        const isActive = activeRoom &&
+          ((activeRoom.roomType === "chat" && msg.chatId === activeRoom.roomId) ||
+           (activeRoom.roomType === "group" && msg.groupId === activeRoom.roomId));
+
+        if (isActive) {
+          const currentUserId = user?.id;
+          if (currentUserId) {
+            if (activeRoom.roomType === "chat" && msg.chatId) {
+              customFetch(`/api/data/chats/${msg.chatId}/read`, { method: "POST" })
+                .then(() => {
+                  queryClient.setQueryData<Chat[]>(["chats"], (old) =>
+                    old?.map((c) =>
+                      c.id === msg.chatId
+                        ? {
+                            ...c,
+                            messages: c.messages.map((m) =>
+                              m.id === msg.id
+                                ? { ...m, metadata: { ...m.metadata, readBy: [...new Set([...((m.metadata?.readBy as string[] | undefined) || []), currentUserId])] } }
+                                : m
+                            ),
+                          }
+                        : c
+                    ) ?? old
+                  );
+                })
+                .catch((err) => console.error("Error marking msg read from socket", err));
+            } else if (activeRoom.roomType === "group" && msg.groupId) {
+              customFetch(`/api/data/groups/${msg.groupId}/read`, { method: "POST" })
+                .then(() => {
+                  queryClient.setQueryData<Group[]>(["groups"], (old) =>
+                    old?.map((g) =>
+                      g.id === msg.groupId
+                        ? {
+                            ...g,
+                            messages: g.messages.map((m) =>
+                              m.id === msg.id
+                                ? { ...m, metadata: { ...m.metadata, readBy: [...new Set([...((m.metadata?.readBy as string[] | undefined) || []), currentUserId])] } }
+                                : m
+                            ),
+                          }
+                        : g
+                    ) ?? old
+                  );
+                })
+                .catch((err) => console.error("Error marking msg read from socket", err));
+            }
+          }
+        } else {
+          if (msg.senderId !== user?.id) {
+            debouncedInvalidateCounts();
+          }
+        }
+      };
+
+      // ── message:read ──────────────────────────────────────────────────────
+      const handleMessageRead = (payload: { messageIds: string[]; userId: string; seenAt: string }) => {
+        const markRead = (messages: Message[]) => 
+          messages.map(m => payload.messageIds.includes(m.id)
+            ? { ...m, metadata: { ...m.metadata, readBy: [...new Set([...((m.metadata?.readBy as string[]) || []), payload.userId])], seenAt: payload.seenAt } }
+            : m
+          );
+
+        queryClient.setQueryData<Chat[]>(["chats"], (old) => old?.map(c => ({ ...c, messages: markRead(c.messages) })) ?? old);
+        queryClient.setQueryData<Group[]>(["groups"], (old) => old?.map(g => ({ ...g, messages: markRead(g.messages) })) ?? old);
+        
         debouncedInvalidateCounts();
       };
 
@@ -293,6 +374,7 @@ export function SocketProvider({ children }: { children: React.ReactNode }) {
       };
 
       sock.on("message:new", handleMessageNew);
+      sock.on("message:read", handleMessageRead);
       sock.on("message:delete", handleMessageDelete);
       sock.on("message:deleteForMe", handleMessageDeleteForMe);
       sock.on("bid:offer", handleBidOffer);
@@ -321,6 +403,7 @@ export function SocketProvider({ children }: { children: React.ReactNode }) {
 
       cleanupRef.current = () => {
         sock.off("message:new", handleMessageNew);
+        sock.off("message:read", handleMessageRead);
         sock.off("message:delete", handleMessageDelete);
         sock.off("message:deleteForMe", handleMessageDeleteForMe);
         sock.off("bid:offer", handleBidOffer);
@@ -364,7 +447,7 @@ export function SocketProvider({ children }: { children: React.ReactNode }) {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user?.id, queryClient]);
 
-  return <SocketContext.Provider value={null}>{children}</SocketContext.Provider>;
+  return <SocketContext.Provider value={{ setActiveRoom }}>{children}</SocketContext.Provider>;
 }
 
 export function useSocket() {

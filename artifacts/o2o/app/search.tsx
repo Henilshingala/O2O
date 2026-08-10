@@ -100,7 +100,6 @@ export default function SearchScreen() {
 
     if (activeTab === "all" || activeTab === "channel") {
       channels
-        .filter((c) => c.followers.includes(user.id) || c.ownerId === user.id)
         .forEach((c) => {
           if (!q || c.name.toLowerCase().includes(q) || c.category.toLowerCase().includes(q)) {
             results.push({

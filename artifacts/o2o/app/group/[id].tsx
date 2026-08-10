@@ -26,6 +26,7 @@ import { ForwardModal } from "@/components/ForwardModal";
 import { MessageInfoModal } from "@/components/MessageInfoModal";
 import { useAuth } from "@/context/AuthContext";
 import { useData } from "@/context/DataContext";
+import { useSocket } from "@/context/SocketContext";
 import { useRealtimeMessages } from "@/hooks/useRealtimeMessages";
 import { useColors } from "@/hooks/useColors";
 import { resolveMediaUrl } from "@/lib/mediaUrl";
@@ -36,6 +37,7 @@ export default function GroupChatScreen() {
   const insets = useSafeAreaInsets();
   const { user, getUserById } = useAuth();
   const { getGroup, sendGroupMessage, deleteMessage, voteOnPoll, markRoomRead } = useData();
+  const socketContext = useSocket();
   const params = useLocalSearchParams<{ id: string }>();
 
   const [text, setText] = useState("");
@@ -101,6 +103,16 @@ export default function GroupChatScreen() {
   useEffect(() => {
     if (group?.id) markRoomRead("group", group.id);
   }, [group?.id, displayMessages.length]);
+
+  // Set active room for SocketContext to handle incoming messages/read-receipts
+  useEffect(() => {
+    if (group?.id) {
+      socketContext?.setActiveRoom("group", group.id);
+      return () => {
+        socketContext?.setActiveRoom(null, null);
+      };
+    }
+  }, [group?.id, socketContext]);
 
   // ── Placeholder callbacks ─────────────────────────────────────────────────
   const handleSendPlaceholder = useCallback(

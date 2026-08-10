@@ -495,8 +495,45 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
     const endpoint = roomType === "chat"
       ? `/api/data/chats/${roomId}/read`
       : `/api/data/groups/${roomId}/read`;
+
+    const userId = user?.id;
+    if (userId) {
+      if (roomType === "chat") {
+        queryClient.setQueryData<Chat[]>(["chats"], (old) =>
+          old?.map((c) =>
+            c.id === roomId
+              ? {
+                  ...c,
+                  messages: c.messages.map((m) =>
+                    m.senderId !== userId && !((m.metadata?.readBy as string[] | undefined)?.includes(userId))
+                      ? { ...m, metadata: { ...m.metadata, readBy: [...new Set([...((m.metadata?.readBy as string[]) || []), userId])] } }
+                      : m
+                  ),
+                }
+              : c
+          ) ?? old
+        );
+      } else {
+        queryClient.setQueryData<Group[]>(["groups"], (old) =>
+          old?.map((g) =>
+            g.id === roomId
+              ? {
+                  ...g,
+                  messages: g.messages.map((m) =>
+                    m.senderId !== userId && !((m.metadata?.readBy as string[] | undefined)?.includes(userId))
+                      ? { ...m, metadata: { ...m.metadata, readBy: [...new Set([...((m.metadata?.readBy as string[]) || []), userId])] } }
+                      : m
+                  ),
+                }
+              : g
+          ) ?? old
+        );
+      }
+      queryClient.invalidateQueries({ queryKey: ["counts"] });
+    }
+
     await customFetch(endpoint, { method: "POST" }).catch(() => {});
-  }, []);
+  }, [user?.id, queryClient]);
 
   // ── Delete entire chat ─────────────────────────────────────────────────────
   const deleteChat = useCallback(async (chatId: string): Promise<void> => {

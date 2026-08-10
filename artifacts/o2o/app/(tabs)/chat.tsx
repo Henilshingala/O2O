@@ -107,6 +107,8 @@ export default function ChatTab() {
         const unread = msgs.filter(
           (m) =>
             m.senderId !== user.id &&
+            !m.deletedAt &&
+            !((m.metadata?.deletedFor as string[] | undefined)?.includes(user.id)) &&
             !((m.metadata?.readBy as string[] | undefined)?.includes(user.id))
         ).length;
         const otherId = c.participants.find((p) => p !== user.id) ?? "";
@@ -135,6 +137,8 @@ export default function ChatTab() {
         const unread = msgs.filter(
           (m) =>
             m.senderId !== user.id &&
+            !m.deletedAt &&
+            !((m.metadata?.deletedFor as string[] | undefined)?.includes(user.id)) &&
             !((m.metadata?.readBy as string[] | undefined)?.includes(user.id))
         ).length;
         result.push({

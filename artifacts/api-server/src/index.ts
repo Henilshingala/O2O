@@ -112,8 +112,30 @@ async function ensureTablesExist() {
   }
 }
 
+async function reconcileStaleMessages() {
+  try {
+    // 1. Delete messages belonging to non-existent chats or groups
+    await db.execute(sql`
+      DELETE FROM messages WHERE chat_id IS NOT NULL AND chat_id NOT IN (SELECT id FROM chats);
+    `);
+    await db.execute(sql`
+      DELETE FROM messages WHERE group_id IS NOT NULL AND group_id NOT IN (SELECT id FROM groups);
+    `);
+
+    // 2. Perform a one-time migration/fix for any old messages that might have null metadata
+    await db.execute(sql`
+      UPDATE messages SET metadata = '{}'::jsonb WHERE metadata IS NULL;
+    `);
+
+    logger.info("One-time database message state reconciliation completed successfully.");
+  } catch (err: any) {
+    logger.error({ err: err.message }, "Error reconciling database message state");
+  }
+}
+
 async function startup() {
   await ensureTablesExist();
+  await reconcileStaleMessages();
   initFirebaseAdmin(); // pre-warm Firebase Admin SDK — errors surface here at startup
   await seedSuperAdmin();
 

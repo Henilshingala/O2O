@@ -1,7 +1,7 @@
 import { Router } from "express";
 import { db } from "@workspace/db";
-import { friendsContacts, users } from "@workspace/db/schema";
-import { and, eq, or, ilike, ne, count, desc, inArray } from "drizzle-orm";
+import { friendsContacts, users, chats, chatParticipants } from "@workspace/db/schema";
+import { and, eq, or, ilike, ne, count, desc, inArray, sql } from "drizzle-orm";
 import { requireAuth, type AuthRequest } from "../middlewares/auth";
 import { rateLimit } from "express-rate-limit";
 import { createNotification } from "./notifications";
@@ -272,6 +272,24 @@ router.post("/accept", validateBody(friendActionSchema), async (req: AuthRequest
           .update(friendsContacts)
           .set({ status: "accepted", updatedAt: now })
           .where(and(eq(friendsContacts.userId, myId), eq(friendsContacts.contactId, requesterId)));
+      }
+      
+      // Feature: Immediately create/show the personal chat between both users
+      const existingParts = await tx.select().from(chatParticipants).where(eq(chatParticipants.userId, myId));
+      const myChatIds = existingParts.map((p) => p.chatId);
+      let alreadyHasChat = false;
+      if (myChatIds.length > 0) {
+        const shared = await tx
+          .select()
+          .from(chatParticipants)
+          .where(and(inArray(chatParticipants.chatId, myChatIds), eq(chatParticipants.userId, requesterId)));
+        if (shared.length > 0) alreadyHasChat = true;
+      }
+      
+      if (!alreadyHasChat) {
+        const chatId = `chat_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`;
+        await tx.insert(chats).values({ id: chatId, updatedAt: now });
+        await tx.insert(chatParticipants).values([{ chatId, userId: myId }, { chatId, userId: requesterId }]);
       }
     });
 
