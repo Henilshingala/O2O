@@ -62,7 +62,7 @@ export default function ChatTab() {
   const insets = useSafeAreaInsets();
   const { user, getUserById } = useAuth();
   const { friends } = useFriends();
-  const { chats, groups, channels, deleteChat, clearChat } = useData();
+  const { chats, groups, channels, deleteChat, clearChat, counts } = useData();
 
   const [fabOpen, setFabOpen] = useState(false);
   const fabRotation = useSharedValue(0);
@@ -104,13 +104,7 @@ export default function ChatTab() {
       .forEach((c) => {
         const msgs = Array.isArray(c.messages) ? c.messages : [];
         const last = msgs[msgs.length - 1];
-        const unread = msgs.filter(
-          (m) =>
-            m.senderId !== user.id &&
-            !m.deletedAt &&
-            !((m.metadata?.deletedFor as string[] | undefined)?.includes(user.id)) &&
-            !((m.metadata?.readBy as string[] | undefined)?.includes(user.id))
-        ).length;
+        const unread = counts?.unreadPerRoom?.[c.id] ?? 0;
         const otherId = c.participants.find((p) => p !== user.id) ?? "";
         const other = otherId
           ? friends.find((f) => f.id === otherId) || getUserById(otherId)
@@ -134,13 +128,7 @@ export default function ChatTab() {
       .forEach((g) => {
         const msgs = Array.isArray(g.messages) ? g.messages : [];
         const last = msgs[msgs.length - 1];
-        const unread = msgs.filter(
-          (m) =>
-            m.senderId !== user.id &&
-            !m.deletedAt &&
-            !((m.metadata?.deletedFor as string[] | undefined)?.includes(user.id)) &&
-            !((m.metadata?.readBy as string[] | undefined)?.includes(user.id))
-        ).length;
+        const unread = counts?.unreadPerRoom?.[g.id] ?? 0;
         result.push({
           id: g.id,
           type: "group",
@@ -160,13 +148,7 @@ export default function ChatTab() {
       .forEach((ch) => {
         const msgs = Array.isArray(ch.messages) ? ch.messages : [];
         const last = msgs[msgs.length - 1];
-        const unread = msgs.filter(
-          (m) =>
-            m.senderId !== user.id &&
-            !m.deletedAt &&
-            !((m.metadata?.deletedFor as string[] | undefined)?.includes(user.id)) &&
-            !((m.metadata?.readBy as string[] | undefined)?.includes(user.id))
-        ).length;
+        const unread = counts?.unreadPerRoom?.[ch.id] ?? 0;
         result.push({
           id: ch.id,
           type: "channel",
@@ -180,7 +162,7 @@ export default function ChatTab() {
 
     // Sort by latest activity descending
     return result.sort((a, b) => b.lastTs - a.lastTs);
-  }, [chats, groups, channels, user.id, friends, getUserById]);
+  }, [chats, groups, channels, user.id, friends, getUserById, counts?.unreadPerRoom]);
 
   const handleLongPress = (item: ConvoItem) => {
     if (item.type !== "chat") return;

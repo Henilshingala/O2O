@@ -524,9 +524,15 @@ router.get("/counts", async (req: AuthRequest, res) => {
     if (allChannelIds.length > 0) roomConditions.push(inArray(schema.messages.channelId, allChannelIds));
 
     const roomCondition = roomConditions.length > 0 ? or(...roomConditions) : undefined;
+    const unreadPerRoom: Record<string, number> = {};
 
     if (roomCondition) {
-      const [msgResult] = await db.select({ count: count() })
+      const msgResult = await db.select({
+          count: count(),
+          chatId: schema.messages.chatId,
+          groupId: schema.messages.groupId,
+          channelId: schema.messages.channelId
+        })
         .from(schema.messages)
         .where(
           and(
@@ -536,8 +542,16 @@ router.get("/counts", async (req: AuthRequest, res) => {
             not(sql`COALESCE(${schema.messages.metadata}->'deletedFor', '[]'::jsonb) @> jsonb_build_array(${userId}::text)`),
             not(sql`COALESCE(${schema.messages.metadata}->'readBy', '[]'::jsonb) @> jsonb_build_array(${userId}::text)`)
           )
-        );
-      messageCount = msgResult.count ?? 0;
+        )
+        .groupBy(schema.messages.chatId, schema.messages.groupId, schema.messages.channelId);
+
+      for (const row of msgResult) {
+        messageCount += row.count;
+        const roomId = row.chatId || row.groupId || row.channelId;
+        if (roomId) {
+          unreadPerRoom[roomId] = (unreadPerRoom[roomId] || 0) + row.count;
+        }
+      }
     }
 
     return res.json({
@@ -548,6 +562,7 @@ router.get("/counts", async (req: AuthRequest, res) => {
       channels: ownedChannels.length + (followedChannels[0]?.count ?? 0),
       bids: bidResult.count ?? 0,
       messages: messageCount,
+      unreadPerRoom,
     });
   } catch (error) { return res.status(500).json({ error: "Server error" }); }
 });

@@ -14,6 +14,7 @@ interface Counts {
   channels: number;
   bids: number;
   messages: number;
+  unreadPerRoom?: Record<string, number>;
 }
 
 interface DataContextType {
@@ -546,6 +547,20 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
           ) ?? old
         );
       }
+      // Optimistically update counts
+      queryClient.setQueryData<Counts>(["counts"], (old) => {
+        if (!old) return old;
+        const currentRoomUnread = old.unreadPerRoom?.[roomId] ?? 0;
+        return {
+          ...old,
+          messages: Math.max(0, old.messages - currentRoomUnread),
+          unreadPerRoom: {
+            ...old.unreadPerRoom,
+            [roomId]: 0,
+          },
+        };
+      });
+      // Invalidate to ensure accuracy
       queryClient.invalidateQueries({ queryKey: ["counts"] });
     }
 
